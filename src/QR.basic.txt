@@ -32,7 +32,7 @@ If not(K
 Goto N0
 0→P
 Lbl P
-Menu("NOTEFOLIO FILES",sub(Str4,8P+1,8),N1,sub(Str4,8P+9,8),N2,sub(Str4,8P+17,8),N3,sub(Str4,8P+25,8),N4,sub(Str4,8P+33,8),N5,"More",PM,"Back",0
+Menu("NoteFolio Files",sub(Str4,8P+1,8),N1,sub(Str4,8P+9,8),N2,sub(Str4,8P+17,8),N3,sub(Str4,8P+25,8),N4,sub(Str4,8P+33,8),N5,"More",PM,"Back",0
 Lbl PM
 P+5→P
 If P≥K
@@ -57,7 +57,7 @@ Goto Y
 3→E
 Goto Q
 Lbl N0
-Menu("NO NOTEFOLIOS","Back",0,"Exit",X
+Menu("No Files","Back",0,"Exit",X
 Lbl A:0:Goto M
 Lbl B:1:Goto M
 Lbl C:2
@@ -109,18 +109,18 @@ Goto Y
 If E=3
 Then
 ClrHome
-Disp "NON-ASCII CHAR","AT POSITION",K
+Disp "Non-ASCII char","at pos=",K
 Pause 
-"NON-ASCII CHAR
+"Non-ASCII char
 Else
-"BAD CHAR: "+sub(Str1,K,1
+"Bad char: "+sub(Str1,K,1
 End
 Menu(Ans,"Continue",W,"Abort",0
 Lbl W
 0→S
 Goto D
 Lbl Y
-Menu("ENGINE ERROR","Back",0,"Exit",X
+Menu("ERR:QRENGINE","Back",0,"Exit",X
 Lbl Z
 If ʟQR(3
 StorePic 1

@@ -1,6 +1,6 @@
 0→U
 Lbl 0
-Menu("QR CODE","ASCII",A,"NoteFolio",N,"Alphanumeric",AN,"Binary",B,"Set version",S,"Exit",X
+Menu("QR CODE","ASCII",A,"NoteFolio",N,"Alphanumeric",C,"Binary",B,"Set version",S,"Exit",X
 Lbl S
 ClrHome
 Disp "0=auto, 1-11
@@ -31,12 +31,12 @@ If not(P
 Goto 0
 P-5→P
 Goto P
-Lbl N1:1:Goto NS
-Lbl N2:2:Goto NS
-Lbl N3:3:Goto NS
-Lbl N4:4:Goto NS
+Lbl N1:1:Goto L
+Lbl N2:2:Goto L
+Lbl N3:3:Goto L
+Lbl N4:4:Goto L
 Lbl N5:5
-Lbl NS
+Lbl L
 P+Ans→I
 If I>K
 Goto P
@@ -51,8 +51,8 @@ Goto Y
 Goto Q
 Lbl N0
 Menu("No Files","Back",0,"Exit",X
+Lbl C:0:Goto M
 Lbl A:1:Goto M
-Lbl AN:0:Goto M
 Lbl B:2
 Lbl M
 Ans→E

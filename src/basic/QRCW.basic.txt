@@ -115,8 +115,7 @@ End
 For(X,1,M-dim(ʟCW
 236-219not(fPart(X/2→ʟCW(1+dim(ʟCW
 End
-{1,1,1,1,1,2,2,2,2,4,4
-Ans(V→Z
+1+(V>5)+2(V>9→Z
 int(M/Z→Q
 M-ZQ→Y
 dim(L₂→R

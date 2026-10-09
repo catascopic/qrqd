@@ -1,0 +1,32 @@
+C and S are always 1, so just remove them from the logic!
+We might still want to provide an actual row/col offset, either a binary C (centered or not)
+
+If F
+!If T
+I+1→T
+End
+End
+
+{1,1,1,1,1,2,2,2,2,4,4 -> 1+(V>5)+2(V>9
+full inline version with θQRBIT
+stopwatch
+multiple pages of QR codes
+Display "page" on graph
+Reserve Str1, use others in order
+Also use lists in order
+Why 65534? 4^8 instead of 65536
+Use 1-letter Lbl when possible
+What do the labels stand for?
+QRENGINE -> θQR?
+
+1:Message
+2:NoteFolio
+3:Binary (ʟBIN)
+4:Set version
+5:Mode:ASCII
+6:Quit
+
+Auto-detect mode?
+
+Separate LOADNF program (Load NoteFolio)?
+Would there be a good way to do the menu in assembly (maybe using the small font) to avoid the kind of annoying paging menus?

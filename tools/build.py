@@ -1,6 +1,7 @@
 """Build and decompile TI-83+ programs for this project.
 
-  python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/
+  python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
+                                           and the pure-BASIC set src/basic/ -> build/basic/
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
   python tools/build.py decompile F.8xp -o out.txt
 
@@ -13,9 +14,16 @@ import struct
 import sys
 from pathlib import Path
 
+import tivars.models
 from tivars import TIProgram
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# tivars 1.1.1 decompiles the π token (ACh) as "π" but only accepts "pi" when tokenizing,
+# and "pi" inside a string becomes two lowercase letters. Teach every model's trie "π".
+for _model in (v for k, v in vars(tivars.models).items() if k.startswith('TI_')):
+    for _trie in _model.tokens.tries.values():
+        _trie.children.setdefault('π', type(_trie)()).token = _model.tokens.bytes[b'\xac']
 TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 _entries = json.load(open(ROOT / 'tools' / 'axe_tokens.json', encoding='utf-8'))
@@ -95,6 +103,18 @@ def build():
     prog.load_string(text)
     save_program('QR', bytes(prog.data), ROOT / 'build' / 'QR.8xp', 'QR code menus (BASIC front end)')
     print('build/QR.8xp     %5d token bytes' % len(prog.data))
+
+    # Pure-BASIC generator (the original, cleaned up); its prgmQR collides with the one above.
+    # "max" mode keeps tokens inside strings (the r₁ expressions in QRDRAW need them);
+    # write \= etc. where a string needs single characters ("<\=>" is <,=,> not ≤,>).
+    (ROOT / 'build' / 'basic').mkdir(exist_ok=True)
+    for src in sorted((ROOT / 'src' / 'basic').glob('*.basic.txt')):
+        name = src.name.split('.')[0]
+        prog = TIProgram(name=name)
+        prog.load_string(src.read_text(encoding='utf-8').rstrip('\n'), mode='max')
+        save_program(name, bytes(prog.data), ROOT / 'build' / 'basic' / (name + '.8xp'),
+                     'QR code generator, pure BASIC')
+        print('build/basic/%-8s %5d token bytes' % (name + '.8xp', len(prog.data)))
 
 
 def decompile(path, out=None):

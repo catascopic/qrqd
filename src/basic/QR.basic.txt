@@ -1,0 +1,33 @@
+SetUpEditor CW,BIN,QR
+If 5≠dim(ʟQR
+{1,1,0,0,0→QR
+0→V
+Lbl 0
+Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary",C,"Set version",S,"Options",O,"Exit",X
+Lbl S
+Input "ver=",V
+int(V→V
+If V<0 or V>11
+Goto S
+Goto 0
+Lbl O
+"NY
+Menu("OPTIONS","Center:    "+sub(Ans,1+ʟQR(1),1),1,"Safe mode: "+sub(Ans,1+ʟQR(2),1),2,"StorePic 1:"+sub(Ans,1+ʟQR(3),1),3,"Alt punct: "+sub(Ans,1+ʟQR(4),1),4,"ASCII fix: "+sub(Ans,1+ʟQR(5),1),5,"Back",0
+Lbl 1:1:Goto F
+Lbl 2:2:Goto F
+Lbl 3:3:Goto F
+Lbl 4:4:Goto F
+Lbl 5:5
+Lbl F
+1-ʟQR(Ans→ʟQR(Ans
+Goto O
+Lbl A:0:Goto M
+Lbl B:1:Goto M
+Lbl C:2
+Lbl M
+Ans→E
+If E≠2
+Input "msg=",Str1
+prgmQRCW
+prgmQRDRAW
+Lbl X

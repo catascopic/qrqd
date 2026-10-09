@@ -1,0 +1,15 @@
+S→R
+8fPart(L/8→O
+If O
+Then
+min(8-O,R→T
+ʟCW(dim(ʟCW))+2^TfPart(int(N2^(T-R))/2^T)2^(8-O-T→ʟCW(dim(ʟCW
+R-T→R
+End
+While R≥8
+256fPart(int(N2^(8-R))/256→ʟCW(1+dim(ʟCW
+R-8→R
+End
+If R
+256fPart(N/2^R→ʟCW(1+dim(ʟCW
+L+S→L

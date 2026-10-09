@@ -26,6 +26,9 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (modes 3-5), `qrtest.py` helpers |
 | `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
 | `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
+| `src/basic/` | the pure-BASIC generator, cleaned up (QRECC inlined into QRCW); built to `build/basic/` |
+| `tests/test_basic.py` | runs `build/basic` in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
+| `tests/test_frontend.py` | menu flows of `src/QR.basic.txt` in tibasic, with a BASIC stand-in for the engine |
 
 ## Commands
 
@@ -34,10 +37,13 @@ pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow
 python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp
 python tests/test_engine.py --quick      # drop --quick for the full sweep (a few minutes)
 python tests/test_notefolio.py
+python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1
+python tests/test_basic.py --quick       # pure-BASIC set; same needs
 python tools/build.py decompile build/QRSRC.8xp
 ```
 
-Workflow for every change: edit `src/` → build → run both suites → give the user `build/*.8xp`.
+Workflow for every change: edit `src/` → build → run the engine suites (and `test_frontend.py`
+for BASIC changes) → give the user `build/*.8xp`.
 `build.py` refuses to write QRSRC.8xp if tokenizing changes any code line, and fixes the header
 (product ID byte 0 like TI Connect files; tivars writes 13h).
 
@@ -45,7 +51,12 @@ Workflow for every change: edit `src/` → build → run both suites → give th
 
 TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Options → shell
 "No Shell" (the `.QRENGINE` header line names the output), run prgmQR. Old QRCW/QRBIT/QRECC/
-QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete.
+QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`) still
+uses ʟGFL/ʟGFX/ʟCW, and its prgmQR has the same name as the front end's.
+
+`src/basic/` is tokenized in tivars "max" mode (tokens inside strings, as QRDRAW's r₁ strings
+need), so a string wanting single characters escapes them: `<\=>`, `[\\]`, `|~` (the tilde
+token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 can't tokenize.
 
 ## Engine interface (BASIC sets OS variables, runs `Asm(prgmQRENGINE)`, reads Ans)
 

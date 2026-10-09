@@ -24,6 +24,17 @@
    always on; its warning gained "Use ASCII" for alphanumeric input. The engine still takes C
    and S, so this needed no recompile.
 8. Main menu reordered: ASCII, Notefolio, Alphanumeric, Binary.
+9. The pure-BASIC generator was cleaned up separately in `src/basic/` (`originals/` untouched).
+   QRCW's three hard-coded ECC/interleave branches became one loop over blocks: Z blocks,
+   short length Q=int(M/Z), the last Y=M-ZQ blocks one byte longer (only v10). Each block's
+   EC goes straight to its interleaved slot in L₄ = [long blocks' extra bytes][EC][0]; data is
+   interleaved with one `seq(` lookup per byte, then L₄ is appended with a loop (not
+   `augment(`, which copies the whole list). QRECC was then called once, so it was inlined:
+   4 programs. Generator tables are stored as log+1, so `ʟGFL(F)+L₂` and `Ans-255(Ans>255`
+   give every ʟGFX index for a codeword in two list ops. Also: `min({a,b` → `min(a,b`;
+   "Abort" in QRCW now `Stop`s (was Goto 0 → ERR:LABEL); odd-length alphanumeric uses the
+   truncated count. Versions 5 and 9 are still skipped (one line), though the code handles them.
+   Not tried: XOR across the whole remainder in 8 bit passes instead of R element passes.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -103,7 +114,8 @@ it) / Abort, plus "Use ASCII" (Lbl AS: E=1, back through version selection) in a
 mode. Version selection lives
 in BASIC: capacity table (alnum or byte, EC L) into L₁; auto picks the smallest that fits; too
 long → Resize / Truncate / Abort. Notefolio picker: E=4 fills Str4, Menu( shows 5 names + More +
-Back, the pick goes into Str5, E=5 measures it, then the normal version flow with E=3. Scratch:
+Back (More wraps from the last page to the first; Back goes back a page, or to the main menu
+from the first), the pick goes into Str5, E=5 measures it, then the normal version flow with E=3. Scratch:
 U requested version, L length, K, P, I, L₁, Str1, Str4, Str5.
 
 ## Risks: not verified on hardware

@@ -60,7 +60,7 @@ QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete.
 
 Encode modes also read `V` (version 1-11, chosen by BASIC), `N` (characters/bytes to encode;
 engine clamps to capacity and input length), `C` (center), `S` (safe mode). EC level L, mask 0.
-The engine draws into the graph buffer and calls DispGraph; BASIC handles StorePic and display.
+The engine draws into the graph buffer and calls DispGraph; BASIC handles display (always passes C=1, S=1).
 
 ## Axe rules that bite (Axe 1.2.2)
 

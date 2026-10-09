@@ -19,6 +19,11 @@
    (typing `?` stored `$`), so scanned text differed from what was typed. Unsupported characters
    in alphanumeric mode now become `*` (was `$`, which only made sense under alt punct).
 6. The negative-sign token (B0h) is treated as minus (71h) in both text modes.
+7. Options menu removed (ʟQR list no longer used). Center and StorePic made sense when drawing
+   took minutes; now centering is always on and StorePic is left to the user. Safe mode is
+   always on; its warning gained "Use ASCII" for alphanumeric input. The engine still takes C
+   and S, so this needed no recompile.
+8. Main menu reordered: ASCII, Notefolio, Alphanumeric, Binary.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -92,8 +97,10 @@ P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opene
 
 ## BASIC front end (src/QR.basic.txt)
 
-Main menu: Alphanumeric, ASCII, Binary, Notefolio, Set version, Options, Exit. Options (ʟQR):
-1 center, 2 safe mode, 3 StorePic 1; `If 3>dim(ʟQR` resets to `{1,1,0}`. Version selection lives
+Main menu: ASCII (Lbl A), Notefolio (N), Alphanumeric (AN), Binary (B), Set version, Exit.
+Always C=1 (centered) and S=1 (safe). A bad character shows Continue (rerun with S=0, replacing
+it) / Abort, plus "Use ASCII" (Lbl AS: E=1, back through version selection) in alphanumeric
+mode. Version selection lives
 in BASIC: capacity table (alnum or byte, EC L) into L₁; auto picks the smallest that fits; too
 long → Resize / Truncate / Abort. Notefolio picker: E=4 fills Str4, Menu( shows 5 names + More +
 Back, the pick goes into Str5, E=5 measures it, then the normal version flow with E=3. Scratch:

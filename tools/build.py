@@ -1,0 +1,118 @@
+"""Build and decompile TI-83+ programs for this project.
+
+  python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/
+  python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
+  python tools/build.py decompile F.8xp -o out.txt
+
+BASIC is tokenized with the tivars library. Axe source is tokenized with the
+Axe 1.2.1 token table in tools/axe_tokens.json, because Axe renames many TI
+tokens (conj( shows as Copy(, fPart( as float{, the u token as "var", ...).
+"""
+import json
+import struct
+import sys
+from pathlib import Path
+
+from tivars import TIProgram
+
+ROOT = Path(__file__).resolve().parent.parent
+TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
+
+_entries = json.load(open(ROOT / 'tools' / 'axe_tokens.json', encoding='utf-8'))
+ENC, DEC = {}, {}
+for e in _entries:
+    b = bytes(int(x, 16) for x in e['bytes'])
+    if e['string']:
+        DEC[b] = e['string']
+    for s in [e['string']] + e['alts']:
+        if s:
+            ENC[s] = b
+MAXLEN = max(map(len, ENC))
+
+
+def axe_tokenize(text):
+    """Greedy longest-match tokenization, the same way the calculator's editor stores tokens."""
+    out, i = bytearray(), 0
+    while i < len(text):
+        if text[i] == '\n':
+            out.append(0x3F); i += 1; continue
+        for n in range(min(MAXLEN, len(text) - i), 0, -1):
+            if text[i:i + n] in ENC:
+                out += ENC[text[i:i + n]]; i += n; break
+        else:
+            raise ValueError('no Axe token for %r (line %d)' % (text[i:i + 12], text.count('\n', 0, i) + 1))
+    return bytes(out)
+
+
+def axe_detokenize(data):
+    out, i = [], 0
+    while i < len(data):
+        if data[i] == 0x3F:
+            out.append('\n'); i += 1; continue
+        n = 2 if data[i] in TWO_BYTE else 1
+        out.append(DEC[data[i:i + n]]); i += n
+    return ''.join(out)
+
+
+def finish_8xp(path, comment):
+    """Match the header style of files saved by TI Connect: product ID 0, readable comment."""
+    b = bytearray(path.read_bytes())
+    b[10] = 0x00
+    c = comment.encode('ascii')[:42]
+    b[11:53] = c + bytes(42 - len(c))
+    path.write_bytes(b)
+    # structural self-check
+    dlen = struct.unpack_from('<H', b, 53)[0]
+    data = bytes(b[55:55 + dlen])
+    assert b[:11] == b'**TI83F*\x1a\x0a\x00' and len(b) == 57 + dlen
+    assert sum(data) & 0xFFFF == struct.unpack_from('<H', b, 55 + dlen)[0], 'checksum'
+
+
+def save_program(name, tokens, path, comment):
+    prog = TIProgram(name=name)
+    prog.data = tokens
+    prog.save(str(path))
+    finish_8xp(path, comment)
+    assert bytes(TIProgram.open(str(path)).data) == tokens
+
+
+def build():
+    (ROOT / 'build').mkdir(exist_ok=True)
+
+    # Axe engine source
+    src = (ROOT / 'src' / 'QRSRC.axe.txt').read_text(encoding='utf-8').rstrip('\n')
+    tokens = axe_tokenize(src)
+    back = axe_detokenize(tokens).split('\n')
+    changed = [(a, b) for a, b in zip(src.split('\n'), back) if a != b and not a.startswith('.')]
+    if changed:
+        raise SystemExit('Axe round trip changed code lines: %r' % changed[:3])
+    save_program('QRSRC', tokens, ROOT / 'build' / 'QRSRC.8xp', 'QR engine source - compile with Axe')
+    print('build/QRSRC.8xp  %5d token bytes' % len(tokens))
+
+    # BASIC front end
+    text = (ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n')
+    prog = TIProgram(name='QR')
+    prog.load_string(text)
+    save_program('QR', bytes(prog.data), ROOT / 'build' / 'QR.8xp', 'QR code menus (BASIC front end)')
+    print('build/QR.8xp     %5d token bytes' % len(prog.data))
+
+
+def decompile(path, out=None):
+    prog = TIProgram.open(str(path))
+    data = bytes(prog.data)
+    if data[:1] == b'\x3a':          # Axe sources start with a "." header line
+        text = axe_detokenize(data)
+    else:
+        text = prog.string()
+    if out:
+        Path(out).write_text(text.rstrip('\n') + '\n', encoding='utf-8')
+    else:
+        print(text)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) >= 3 and sys.argv[1] == 'decompile':
+        out = sys.argv[sys.argv.index('-o') + 1] if '-o' in sys.argv else None
+        decompile(sys.argv[2], out)
+    else:
+        build()

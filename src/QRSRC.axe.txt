@@ -1,0 +1,671 @@
+.QRENGINE
+.QR CODE ENGINE FOR PRGMQR
+.VERSIONS 1-11, EC LEVEL L, MASK 0
+.E=0 STR1 AS ALPHANUMERIC
+.  1 STR1 AS ASCII
+.  2 LIST BIN AS BYTES
+.  3 NOTEFOLIO NAMED IN STR5
+.  4 LIST NOTEFOLIOS INTO STR4
+.  5 TEXT LENGTH OF STR5 NOTEFOLIO
+.IN V=VERSION N=COUNT
+.   C=CENTER S=SAFE MODE
+.OUT ANS=0 OK, ANS=K BAD CHAR AT K
+.    ANS=65535 BAD INPUT OR MISSING VAR
+.
+.TWO-BYTE TOKEN PREFIXES
+[5C5D5E606162637EAABBEF00]→GDB1
+.OS NAME OF LIST BIN
+[015D42494E00]→GDB2
+.DATA CODEWORDS PER VERSION
+[13002200370050006C0088009C00C200E80012014401]→GDB3
+.EC CODEWORDS PER BLOCK
+[070A0F141A1214181E1214]→GDB4
+.NUMBER OF BLOCKS
+[0101010101020202020404]→GDB5
+.VERSION INFO FOR V7-V11
+[947CBC85999AD3A4F6BB]→GDB6
+.INTERLEAVED CODEWORDS
+Buff(406)→GDB7
+.NOTEFOLIO SIGNATURE
+[F347BFAF]→GDB8
+.TOKENS FOR ALPHANUMERIC 0-44
+[30003100320033003400350036003700380039004100420043004400450046004700480049004A004B004C004D004E004F0050005100520053005400550056005700580059005A002900BBD3BBDA8200700071003A0083003E00]→GDB9
+.TOKENS FOR ASCII 32-126
+[29002D002A00BBD2BBD3BBDABBD4AE0010001100820070002B0071003A00830030003100320033003400350036003700380039003E00BBD66B006A006C00AF00BBD14100420043004400450046004700480049004A004B004C004D004E004F0050005100520053005400550056005700580059005A000600BBD70700F000BBD9BBD5BBB0BBB1BBB2BBB3BBB4BBB5BBB6BBB7BBB8BBB9BBBABBBCBBBDBBBEBBBFBBC0BBC1BBC2BBC3BBC4BBC5BBC6BBC7BBC8BBC9BBCA0800BBD80900BBCF]→GDB0
+.
+.READ PARAMETERS
+float{GetCalc("varE")}→E
+If E=4
+sub(LS)
+Return
+End
+If E=5
+sub(NF)
+If X
+T→Ans
+Else
+65535→Ans
+End
+Return
+End
+float{GetCalc("varV")}→V
+float{GetCalc("varN")}→N
+float{GetCalc("varC")}→C
+float{GetCalc("varS")}→F
+If V-1>10 or (E>3)
+65535→Ans
+Return
+End
+V*4+17→S
+0→G
+0→H
+If C
+31-(S/2)→G
+47-(S/2)→H
+End
+{V*2+GDB3-2}ʳ→M
+{V+GDB4-1}→R
+{V+GDB5-1}→B
+.
+.FIND THE INPUT DATA
+If E=2
+GetCalc(GDB2)→P
+!If P
+65535→Ans
+Return
+End
+If N>{P-2}ʳ
+{P-2}ʳ→N
+End
+End
+If E=3
+sub(NF)
+!If X
+65535→Ans
+Return
+End
+If N>T
+T→N
+End
+0→K
+While K<N
+sub(RB,K+24)
+C→{K+GDB7}
+K+1→K
+End
+End
+If E<2
+GetCalc("Str1")→P
+!If P
+65535→Ans
+Return
+End
+If E
+GDB0→θ
+95→Q
+Else
+GDB9→θ
+45→Q
+End
+.COUNT TOKENS IN STR1
+{P-2}ʳ+P→X
+P→Z
+0→I
+While Z<X
+If inData({Z},GDB1)
+Z+1→Z
+End
+Z+1→Z
+I+1→I
+End
+If N>I
+I→N
+End
+End
+.
+.CLAMP N TO CAPACITY
+If E
+M*8-4-(V≥10*8+8)/8→X
+Else
+M*8-4-(V≥10*2+9)→X
+X/11*2+(X^11≥6)→X
+End
+If N>X
+X→N
+End
+.
+.BUILD DATA CODEWORDS AT L1
+0→T
+0→O
+L₁→D
+0→W
+0→K
+If E
+4→A
+4→Z
+sub(AB)
+N→A
+V≥10*8+8→Z
+sub(AB)
+Else
+2→A
+4→Z
+sub(AB)
+N→A
+V≥10*2+9→Z
+sub(AB)
+End
+If E=2
+1→I
+While I≤N
+float{P}→A
+P+9→P
+8→Z
+sub(AB)
+I+1→I
+End
+End
+If E=1
+1→I
+While I≤N
+sub(NX)
+J+32→A
+8→Z
+sub(AB)
+I+1→I
+End
+End
+!If E
+1→I
+While I≤(N/2)
+sub(NX)
+J*45→L
+sub(NX)
+L+J→A
+11→Z
+sub(AB)
+I+1→I
+End
+If N^2
+sub(NX)
+J→A
+6→Z
+sub(AB)
+End
+End
+If E=3
+0→I
+While I<N
+{I+GDB7}→C
+sub(MA)
+!If A
+If F
+!If T
+I+1→T
+End
+End
+63→A
+End
+8→Z
+sub(AB)
+I+1→I
+End
+End
+If T
+T→Ans
+Return
+End
+.TERMINATOR, BYTE ALIGN, PAD BYTES
+M*8-(D-L₁*8+K)→Z
+If Z>4
+4→Z
+End
+If Z
+0→A
+sub(AB)
+End
+If K
+0→A
+8-K→Z
+sub(AB)
+End
+236→A
+While D<(L₁+M)
+A→{D}
+D+1→D
+A xor 253→A
+End
+.
+.GF(256) EXP AT L3, LOG AT L3+512
+1→X
+For(I,0,254)
+X→{I+L₃}
+X→{I+L₃+255}
+I→{X+L₃+512}
+X*2→X
+If X>255
+X-256 xor 29→X
+End
+End
+.GENERATOR POLY AT L1+420 AS LOGS
+1→{L₁+420}
+For(J,1,R)
+0→{J+L₁+420}
+End
+For(I,0,R-1)
+I+1→J
+While J
+{J+L₁+419}→C
+If C
+{J+L₁+420} xor {{C+L₃+512}+I+L₃}→{J+L₁+420}
+End
+J-1→J
+End
+End
+For(J,1,R)
+{{J+L₁+420}+L₃+512}→{J+L₁+420}
+End
+.EC BYTES FOR EACH BLOCK AT L1+330
+M/B→Y
+M^B→U
+L₁→A
+L₁+330→Z
+For(K,1,B)
+Y+(K>(B-U))→L
+sub(RS)
+A+L→A
+Z+R→Z
+End
+.
+.INTERLEAVE INTO GDB7
+GDB7→X
+For(I,0,Y)
+L₁→A
+For(K,1,B)
+Y+(K>(B-U))→L
+If I<L
+{A+I}→{X}
+X+1→X
+End
+A+L→A
+End
+End
+For(I,0,R-1)
+For(K,0,B-1)
+{K*R+I+L₁+330}→{X}
+X+1→X
+End
+End
+0→{X}
+.
+.RESERVED MODULES IN BACK BUFFER
+ClrDraw
+ClrDrawʳ
+sub(RV,0,0,9,9)
+sub(RV,S-8,0,8,9)
+sub(RV,0,S-8,9,8)
+sub(RV,0,6,S,1)
+sub(RV,6,0,1,S)
+If V≥7
+sub(RV,S-11,0,3,6)
+sub(RV,0,S-11,6,3)
+End
+.FINDER PATTERNS
+0→X
+0→Y
+sub(FP)
+S-7→X
+sub(FP)
+0→X
+S-7→Y
+sub(FP)
+.TIMING PATTERNS
+For(K,8,S-9)
+!If K^2
+Pxl-On(K+H,6+G)
+Pxl-On(6+H,K+G)
+End
+End
+.ALIGNMENT PATTERNS
+If V≥2
+6→{L₁+500}
+If V≥7
+S-1/2→W
+W→{L₁+501}
+S-7→{L₁+502}
+3→A
+Else
+0→W
+S-7→{L₁+501}
+2→A
+End
+For(U,0,A-1)
+For(Z,0,A-1)
+{U+L₁+500}→X
+{Z+L₁+500}→Y
+!If X=6 and (Y≠W) or (Y=6 and (X≠W))
+sub(AP)
+End
+End
+End
+End
+.FORMAT BITS (EC L, MASK 0)
+30660→A
+For(I,0,14)
+If A^2
+If I<6
+Pxl-On(8+H,I+G)
+End
+If I=6
+Pxl-On(8+H,7+G)
+End
+If I=7
+Pxl-On(8+H,8+G)
+End
+If I=8
+Pxl-On(7+H,8+G)
+End
+If I>8
+Pxl-On(14-I+H,8+G)
+End
+If I<8
+Pxl-On(S-1-I+H,8+G)
+Else
+Pxl-On(8+H,S-15+I+G)
+End
+End
+A/2→A
+End
+Pxl-On(8+H,S-8+G)
+.VERSION INFO (V7+)
+If V≥7
+{V*2+GDB6-14}ʳ→A
+For(I,0,17)
+If A^2
+I^3+S-11→X
+I/3→Y
+Pxl-On(X+H,Y+G)
+Pxl-On(Y+H,X+G)
+End
+A/2→A
+End
+End
+.
+.DATA MODULES, ZIGZAG
+GDB7→P
+128→Z
+0→K
+While K<(S/2)
+S-1-(K*2)→X
+If X≤6
+X-1→X
+End
+For(I,0,S-1)
+If K^2
+I→Y
+Else
+S-1-I→Y
+End
+For(J,0,1)
+X-J→C
+!If pxl-Test(C,Y)ʳ
+If {P} and Z≠0=(C+Y^2)
+Pxl-On(C+H,Y+G)
+End
+Z/2→Z
+!If Z
+128→Z
+P+1→P
+End
+End
+End
+End
+K+1→K
+End
+DispGraph
+0→Ans
+Return
+.
+.APPEND LOW Z BITS OF A
+Lbl AB
+1→X
+While Z>1
+X*2→X
+Z-1→Z
+End
+While X
+W*2+(A·X≠0)→W
+K+1→K
+If K=8
+W→{D}
+D+1→D
+0→W
+0→K
+End
+X/2→X
+End
+Return
+.
+.NEXT TOKEN OF STR1 TO VALUE J
+Lbl NX
+O+1→O
+{P}→Y
+P+1→P
+If inData(Y,GDB1)
+{P}*256+Y→Y
+P+1→P
+End
+If Y=176
+113→Y
+End
+0→U
+While U<Q
+If {U*2+θ}ʳ=Y
+U→J
+Return
+End
+U+1→U
+End
+If F
+!If T
+O→T
+End
+End
+39-(E*8)→J
+Return
+.
+.EC BYTES DATA A, LENGTH L, OUT Z
+Lbl RS
+For(J,0,R)
+0→{J+L₁+460}
+End
+For(I,0,L-1)
+{A+I} xor {L₁+460}→C
+Copy(L₁+461,L₁+460,R)
+If C
+{C+L₃+512}→C
+For(J,0,R-1)
+{J+L₁+460} xor {{J+L₁+421}+C+L₃}→{J+L₁+460}
+End
+End
+End
+Copy(L₁+460,Z,R)
+Return
+.
+.RESERVE RECT R1,R2 SIZE R3 BY R4
+Lbl RV
+For(I,0,r₄-1)
+For(J,0,r₃-1)
+Pxl-On(r₁+J,r₂+I)ʳ
+End
+End
+Return
+.
+.FINDER PATTERN AT X,Y
+Lbl FP
+For(K,0,6)
+Pxl-On(X+K+H,Y+G)
+Pxl-On(X+K+H,Y+6+G)
+Pxl-On(X+H,Y+K+G)
+Pxl-On(X+6+H,Y+K+G)
+End
+For(K,2,4)
+For(J,2,4)
+Pxl-On(X+K+H,Y+J+G)
+End
+End
+Return
+.
+.ALIGNMENT PATTERN AT X,Y
+Lbl AP
+sub(RV,X-2,Y-2,5,5)
+For(K,0,4)
+Pxl-On(X-2+K+H,Y-2+G)
+Pxl-On(X-2+K+H,Y+2+G)
+Pxl-On(X-2+H,Y-2+K+G)
+Pxl-On(X+2+H,Y-2+K+G)
+End
+Pxl-On(X+H,Y+G)
+Return
+.
+.TI CHARACTER C TO ASCII A, 0 IF NONE
+Lbl MA
+C→A
+If C-32>94 or (C=36) or (C=91)
+0→A
+End
+If C=193
+91→A
+End
+If C=214
+10→A
+End
+If C=241
+32→A
+End
+If C=210 or (C=26)
+45→A
+End
+Return
+.
+.LIST NOTEFOLIO APPVARS INTO STR4
+Lbl LS
+{ᴇ9830}ʳ→P
+0→K
+While P>{ᴇ982E}ʳ
+{P-6}→L
+If {P} and 31=21 and (L-1<8)
+sub(NC)
+If X and (K<80)
+sub(NH)
+If X
+For(I,0,7)
+41→{K*8+L₁+I}
+End
+Copy(L₁+701,K*8+L₁,L)
+K+1→K
+End
+End
+End
+P-7-L→P
+End
+GetCalc("Str4",K*8+48)→W
+!If W
+65535→Ans
+Return
+End
+If K
+Copy(L₁,W,K*8)
+End
+For(I,0,47)
+41→{K*8+W+I}
+End
+K→Ans
+Return
+.
+.VAT NAME AT P, LENGTH L, TO L1+700
+Lbl NC
+21→{L₁+700}
+1→X
+For(I,0,L-1)
+{P-7-I}→C
+C→{I+L₁+701}
+!If C-48<10 or (C-65<27)
+0→X
+End
+End
+0→{L+L₁+701}
+Return
+.
+.IS L1+700 A NOTEFOLIO? X=1 IF SO
+.RAM DATA AT Z, OR Z=0 AND FILE Y1
+Lbl NH
+0→X
+GetCalc(L₁+700)→Z
+If Z
+{Z-2}ʳ→U
+Else
+!If GetCalc(L₁+700,Y₁)
+Return
+End
+{Y₁-2}ʳ→U
+End
+If U<27
+Return
+End
+For(J,0,3)
+sub(RB,J)
+If C≠{J+GDB8}
+Return
+End
+End
+1→X
+Return
+.
+.OPEN NOTEFOLIO NAMED IN STR5
+.X=1 IF FOUND, T=TEXT LENGTH
+Lbl NF
+0→X
+GetCalc("Str5")→Z
+!If Z
+Return
+End
+{Z-2}ʳ→U
+0→L
+While L<U
+If {Z+L}=41
+L→U
+Else
+{Z+L}→{L+L₁+701}
+L+1→L
+End
+End
+If L-1>7
+Return
+End
+21→{L₁+700}
+0→{L+L₁+701}
+sub(NH)
+!If X
+Return
+End
+0→T
+U-24→U
+While T<U
+sub(RB,T+24)
+If C
+T+1→T
+Else
+T→U
+End
+End
+Return
+.
+.BYTE AT OFFSET R1 OF NOTE TO C
+Lbl RB
+If Z
+{Z+r₁}→C
+Return
+End
+{Y₁+r₁}→C
+Return

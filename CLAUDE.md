@@ -1,0 +1,106 @@
+# TI-83+ QR code generator: TI-BASIC front end + Axe engine
+
+This project started in a claude.ai chat and moved here. That chat isn't available, so this file
+and `docs/design.md` (imported at the bottom) carry what was built and decided. Read both first.
+
+## Where things stand
+
+- Delivered to the user and working in simulation: `build/QR.8xp` (BASIC) and `build/QRSRC.8xp`
+  (Axe source, compiled on-calc into prgmQRENGINE).
+- **The user has since edited prgmQR by hand on the calculator.** Their QR.8xp supersedes
+  `src/QR.basic.txt`. First task: `python tools/build.py decompile <their QR.8xp> -o src/QR.basic.txt`,
+  then `git diff` (the first commit is the version from the chat) and keep their changes.
+  Ask before reverting anything of theirs.
+- No code has run on real hardware except by the user. They compile with Axe and report back.
+
+## Layout
+
+| Path | What |
+| --- | --- |
+| `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
+| `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
+| `build/` | generated, ready-to-send `.8xp` files |
+| `tools/build.py` | builds both `.8xp`; `decompile` turns any `.8xp` back into text |
+| `tools/axe_tokens.json` | Axe 1.2.1 token table (from TokenIDE's AxeTokens.xml by Runer112; reuse permitted) |
+| `tools/axesim.py` | interpreter for the Axe subset the engine uses; the tests run the engine in it |
+| `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (modes 3-5), `qrtest.py` helpers |
+| `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
+| `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
+
+## Commands
+
+```
+pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow
+python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp
+python tests/test_engine.py --quick      # drop --quick for the full sweep (a few minutes)
+python tests/test_notefolio.py
+python tools/build.py decompile build/QRSRC.8xp
+```
+
+Workflow for every change: edit `src/` → build → run both suites → give the user `build/*.8xp`.
+`build.py` refuses to write QRSRC.8xp if tokenizing changes any code line, and fixes the header
+(product ID byte 0 like TI Connect files; tivars writes 13h).
+
+## How the user runs it
+
+TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Options → shell
+"No Shell" (the `.QRENGINE` header line names the output), run prgmQR. Old QRCW/QRBIT/QRECC/
+QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete.
+
+## Engine interface (BASIC sets OS variables, runs `Asm(prgmQRENGINE)`, reads Ans)
+
+| E | Mode | Input | Ans |
+| --- | --- | --- | --- |
+| 0 | alphanumeric | Str1 tokens | 0 ok, k = first bad char (Safe on), 65535 error |
+| 1 | ASCII | Str1 tokens | same |
+| 2 | binary | list ʟBIN (bytes) | 0 / 65535 |
+| 3 | Notefolio as ASCII | note named in Str5 | 0, k = first non-ASCII char, 65535 |
+| 4 | list Notefolio notes | VAT scan | count; names in Str4, 8 chars each + 48 spaces padding |
+| 5 | measure note | Str5 | text length or 65535 |
+
+Encode modes also read `V` (version 1-11, chosen by BASIC), `N` (characters/bytes to encode;
+engine clamps to capacity and input length), `C` (center), `S` (safe mode). EC level L, mask 0.
+The engine draws into the graph buffer and calls DispGraph; BASIC handles StorePic and display.
+
+## Axe rules that bite (Axe 1.2.2)
+
+- Strict left-to-right evaluation, no precedence: `S-1-(K*2)`, never `S-1-K*2`. Parenthesize
+  every comparison after the first in `and`/`or` chains: `A=1 or (B=2)`.
+- All math is 16-bit unsigned. `and or xor` use only the low 8 bits; use `· ﹢ □` (plot-mark
+  tokens) for 16-bit. `^` is modulo. `/` is unsigned division.
+- `{P}` byte, `{P}ʳ` little-endian word. `Pxl-On(X,Y)ʳ`/`pxl-Test(X,Y)ʳ` = back buffer (L₃).
+- `For(V,A,B)` checks the bound before the first pass; `Return` outside a subroutine ends the
+  program; Returning from inside `For(V,..)`/`While` is fine. Subroutines share all globals.
+- Comments start with `.`; a line starting with `...` opens a multi-line comment.
+- Write names as their tokens: `GDB1`, `Str1`, `L₁`, `"varE"` (`var` is the u token). The
+  tokenizer does this from the spellings; plain letters in code would be variables.
+- OS names for GetCalc are OP1 bytes: type, name, 0 (e.g. `[015D42494E00]` = list BIN).
+  `GetCalc` returns 0 for archived vars; archived data is read via `GetCalc(name,Y₁)` and `{Y₁+k}`.
+- Free RAM: L₁ 714 bytes, L₃ 768 (back buffer), L₆ = graph buffer. See design.md for the map.
+
+## TI-BASIC rules that bite
+
+- Menu( allows at most 7 options. Labels are 1-2 characters, per program.
+- Never `Goto` out of a `Then` block (leaks memory); the code uses single-line `If` + `Goto`.
+- `If` conditions don't change Ans; the code relies on that.
+- Before calling the engine: `FnOff`, `AxesOff`, `GridOff`, `PlotsOff`, `ClrDraw`, `DispGraph`, so the
+  OS won't redraw (and erase) the graph when StorePic/DispGraph run afterwards.
+- `65534` is stored in Ans right before `Asm(` so a missing engine shows as an error.
+- A real `"` can't appear inside a program string, but users can type one at an Input prompt.
+
+## Testing approach and its limits
+
+The tests run the real engine source in `axesim.py` (left-to-right, 16-bit, byte/word memory,
+VAT, archive files, graph buffers) and compare each drawn symbol with the `qrcode` library
+(forced version, EC L, mask 0) plus a zxing-cpp decode. Not a valid reference: segno (adds an
+extra 0x00 pad codeword). The simulator raises on anything with uncertain real behavior
+(8-bit ops on values > 255, out-of-range pixels, ROM writes). Not verified on hardware: see the
+risk list in design.md.
+
+## Working with this user
+
+- Wants BASIC for the interface (menus), Axe for math and graphics, cleanly separated.
+- Wants ready-to-send `.8xp` files, tested before delivery, with plain explanations of changes.
+- Asks for opinions on design choices; discuss before removing features.
+
+@docs/design.md

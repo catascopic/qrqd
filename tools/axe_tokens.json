@@ -1,0 +1,9685 @@
+[
+{
+"bytes": [
+"00"
+],
+"string": "",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"01"
+],
+"string": "►Tok",
+"alts": [
+">Tok"
+],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"02"
+],
+"string": "►Dec",
+"alts": [
+">Dec"
+],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"03"
+],
+"string": "►Char",
+"alts": [
+">Char"
+],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"04"
+],
+"string": "→",
+"alts": [
+"->"
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"05"
+],
+"string": "Boxplot",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"06"
+],
+"string": "[",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Data"
+},
+{
+"bytes": [
+"07"
+],
+"string": "]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Data"
+},
+{
+"bytes": [
+"08"
+],
+"string": "{",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Parentheses"
+},
+{
+"bytes": [
+"09"
+],
+"string": "}",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Parentheses"
+},
+{
+"bytes": [
+"0A"
+],
+"string": "ʳ",
+"alts": [
+"^^r"
+],
+"group": "Modifiers",
+"comment": null,
+"site": null,
+"style": "Modifier"
+},
+{
+"bytes": [
+"0B"
+],
+"string": "°",
+"alts": [
+"^^o"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"0C"
+],
+"string": "ˉ¹",
+"alts": [
+"⁻¹",
+"^^-1"
+],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"0D"
+],
+"string": "²",
+"alts": [
+"^^2"
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"0D",
+"0A"
+],
+"string": "²ʳ",
+"alts": [
+"^^2^^r"
+],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"0E"
+],
+"string": "ᵀ",
+"alts": [
+"^^T"
+],
+"group": "Modifiers",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"0F"
+],
+"string": "³",
+"alts": [
+"^^3"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"10"
+],
+"string": "(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Parentheses"
+},
+{
+"bytes": [
+"11"
+],
+"string": ")",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Parentheses"
+},
+{
+"bytes": [
+"12"
+],
+"string": "round(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"13"
+],
+"string": "pxl-Test(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"14"
+],
+"string": "augment(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"15"
+],
+"string": "rowSwap(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"16"
+],
+"string": "row+(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"17"
+],
+"string": "*row(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"18"
+],
+"string": "*row+(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"19"
+],
+"string": "max(",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"1A"
+],
+"string": "min(",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"1B"
+],
+"string": "R►Pr(",
+"alts": [
+"R>Pr("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"1C"
+],
+"string": "R►Pθ(",
+"alts": [
+"R►Ptheta(",
+"R>Pθ(",
+"R>Ptheta("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"1D"
+],
+"string": "P►Rx(",
+"alts": [
+"P>Rx("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"1E"
+],
+"string": "P►Ry(",
+"alts": [
+"P>Ry("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"1F"
+],
+"string": "median(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"20"
+],
+"string": "randM(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"21"
+],
+"string": "mean(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"22"
+],
+"string": "solve(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"23"
+],
+"string": "seq(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"24"
+],
+"string": "fnInt(",
+"alts": [],
+"group": "Interrupts",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"25"
+],
+"string": "nDeriv(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"27"
+],
+"string": "fMin(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"28"
+],
+"string": "fMax(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"29"
+],
+"string": " ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"2A"
+],
+"string": "\"",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "String"
+},
+{
+"bytes": [
+"2B"
+],
+"string": ",",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"2C"
+],
+"string": "[i]",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"2D"
+],
+"string": "!",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"2D",
+"CE"
+],
+"string": "!If ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"2E"
+],
+"string": "CubicReg ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"2F"
+],
+"string": "QuartReg ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"30"
+],
+"string": "0",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"31"
+],
+"string": "1",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"32"
+],
+"string": "2",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"33"
+],
+"string": "3",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"34"
+],
+"string": "4",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"35"
+],
+"string": "5",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"36"
+],
+"string": "6",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"37"
+],
+"string": "7",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"38"
+],
+"string": "8",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"39"
+],
+"string": "9",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Number"
+},
+{
+"bytes": [
+"3A"
+],
+"string": ".",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"3B"
+],
+"string": "ᴇ",
+"alts": [
+"|E"
+],
+"group": "Modifiers",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"3C"
+],
+"string": " or ",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"3D"
+],
+"string": " xor ",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"3E"
+],
+"string": ":",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"3F"
+],
+"string": "\\n",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"40"
+],
+"string": " and ",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"41"
+],
+"string": "A",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"42"
+],
+"string": "B",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"43"
+],
+"string": "C",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"44"
+],
+"string": "D",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"45"
+],
+"string": "E",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"46"
+],
+"string": "F",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"47"
+],
+"string": "G",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"48"
+],
+"string": "H",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"48",
+"9C"
+],
+"string": "HLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"49"
+],
+"string": "I",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"49",
+"48"
+],
+"string": "IH",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"49",
+"48",
+"9C"
+],
+"string": "IHLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"49",
+"56"
+],
+"string": "IV",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"49",
+"56",
+"9C"
+],
+"string": "IVLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"49",
+"9C"
+],
+"string": "ILine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"49",
+"A5"
+],
+"string": "ICircle(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"49",
+"BB"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"49",
+"BB",
+"2D"
+],
+"string": "IRect(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"4A"
+],
+"string": "J",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"4B"
+],
+"string": "K",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"4C"
+],
+"string": "L",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"4D"
+],
+"string": "M",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"4E"
+],
+"string": "N",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"4F"
+],
+"string": "O",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"50"
+],
+"string": "P",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"51"
+],
+"string": "Q",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"52"
+],
+"string": "R",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"53"
+],
+"string": "S",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"54"
+],
+"string": "T",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"55"
+],
+"string": "U",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"56"
+],
+"string": "V",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"56",
+"9C"
+],
+"string": "VLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"57"
+],
+"string": "W",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"57",
+"48"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"57",
+"48",
+"9C"
+],
+"string": "WHLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"57",
+"56"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"57",
+"56",
+"9C"
+],
+"string": "WVLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"57",
+"9C"
+],
+"string": "WLine(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"57",
+"A5"
+],
+"string": "WCircle(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"57",
+"BB"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"57",
+"BB",
+"2D"
+],
+"string": "WRect(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"58"
+],
+"string": "X",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"59"
+],
+"string": "Y",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5A"
+],
+"string": "Z",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5B"
+],
+"string": "θ",
+"alts": [
+"theta"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5C"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"00"
+],
+"string": "[A]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"01"
+],
+"string": "[B]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"02"
+],
+"string": "[C]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"03"
+],
+"string": "[D]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"04"
+],
+"string": "[E]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"05"
+],
+"string": "[F]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"06"
+],
+"string": "[G]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"07"
+],
+"string": "[H]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"08"
+],
+"string": "[I]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5C",
+"09"
+],
+"string": "[J]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5D"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5D",
+"00"
+],
+"string": "L₁",
+"alts": [
+"L1"
+],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5D",
+"01"
+],
+"string": "L₂",
+"alts": [
+"L2"
+],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5D",
+"02"
+],
+"string": "L₃",
+"alts": [
+"L3"
+],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5D",
+"03"
+],
+"string": "L₄",
+"alts": [
+"L4"
+],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5D",
+"04"
+],
+"string": "L₅",
+"alts": [
+"L5"
+],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5D",
+"05"
+],
+"string": "L₆",
+"alts": [
+"L6"
+],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5E"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"5E",
+"10"
+],
+"string": "Y₁",
+"alts": [
+"{Y1}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"11"
+],
+"string": "Y₂",
+"alts": [
+"{Y2}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"12"
+],
+"string": "Y₃",
+"alts": [
+"{Y3}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"13"
+],
+"string": "Y₄",
+"alts": [
+"{Y4}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"14"
+],
+"string": "Y₅",
+"alts": [
+"{Y5}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"15"
+],
+"string": "Y₆",
+"alts": [
+"{Y6}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"16"
+],
+"string": "Y₇",
+"alts": [
+"{Y7}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"17"
+],
+"string": "Y₈",
+"alts": [
+"{Y8}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"18"
+],
+"string": "Y₉",
+"alts": [
+"{Y9}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"19"
+],
+"string": "Y₀",
+"alts": [
+"{Y0}"
+],
+"group": "Files",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"20"
+],
+"string": "X₁ᴛ",
+"alts": [
+"{X1T}"
+],
+"group": "Trackers",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"21"
+],
+"string": "Y₁ᴛ",
+"alts": [
+"{Y1T}"
+],
+"group": "Trackers",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"22"
+],
+"string": "X₂ᴛ",
+"alts": [
+"{X2T}"
+],
+"group": "Trackers",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"23"
+],
+"string": "Y₂ᴛ",
+"alts": [
+"{Y2T}"
+],
+"group": "Trackers",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"24"
+],
+"string": "X₃ᴛ",
+"alts": [
+"{X3T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"25"
+],
+"string": "Y₃ᴛ",
+"alts": [
+"{Y3T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"26"
+],
+"string": "X₄ᴛ",
+"alts": [
+"{X4T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"27"
+],
+"string": "Y₄ᴛ",
+"alts": [
+"{Y4T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"28"
+],
+"string": "X₅ᴛ",
+"alts": [
+"{X5T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"29"
+],
+"string": "Y₅ᴛ",
+"alts": [
+"{Y5T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"2A"
+],
+"string": "X₆ᴛ",
+"alts": [
+"{X6T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"2B"
+],
+"string": "Y₆ᴛ",
+"alts": [
+"{Y6T}"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"40"
+],
+"string": "r₁",
+"alts": [
+"{r1}"
+],
+"group": "Arguments",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"41"
+],
+"string": "r₂",
+"alts": [
+"{r2}"
+],
+"group": "Arguments",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"42"
+],
+"string": "r₃",
+"alts": [
+"{r3}"
+],
+"group": "Arguments",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"43"
+],
+"string": "r₄",
+"alts": [
+"{r4}"
+],
+"group": "Arguments",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"44"
+],
+"string": "r₅",
+"alts": [
+"{r5}"
+],
+"group": "Arguments",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"45"
+],
+"string": "r₆",
+"alts": [
+"{r6}"
+],
+"group": "Arguments",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"5E",
+"80"
+],
+"string": "var",
+"alts": [],
+"group": "OS Variable Types",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5E",
+"81"
+],
+"string": "appv",
+"alts": [],
+"group": "OS Variable Types",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5E",
+"82"
+],
+"string": "tmp",
+"alts": [],
+"group": "OS Variable Types",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"5F"
+],
+"string": "prgm",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"60"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"60",
+"00"
+],
+"string": "Pic1",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"01"
+],
+"string": "Pic2",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"02"
+],
+"string": "Pic3",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"03"
+],
+"string": "Pic4",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"04"
+],
+"string": "Pic5",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"05"
+],
+"string": "Pic6",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"06"
+],
+"string": "Pic7",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"07"
+],
+"string": "Pic8",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"08"
+],
+"string": "Pic9",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"60",
+"09"
+],
+"string": "Pic0",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"61",
+"00"
+],
+"string": "GDB1",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"01"
+],
+"string": "GDB2",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"02"
+],
+"string": "GDB3",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"03"
+],
+"string": "GDB4",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"04"
+],
+"string": "GDB5",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"05"
+],
+"string": "GDB6",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"06"
+],
+"string": "GDB7",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"07"
+],
+"string": "GDB8",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"08"
+],
+"string": "GDB9",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"61",
+"09"
+],
+"string": "GDB0",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"62"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"01"
+],
+"string": "[RegEQ]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"02"
+],
+"string": "[n]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"03"
+],
+"string": "ẋ",
+"alts": [
+"[xhat]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"04"
+],
+"string": "Σx",
+"alts": [
+"[Sigmax]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"05"
+],
+"string": "Σx²",
+"alts": [
+"Σx^2",
+"sigmax²",
+"[Sigmax^2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"06"
+],
+"string": "[Sx]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"07"
+],
+"string": "σx",
+"alts": [
+"[sigmax]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"08"
+],
+"string": "[minX]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"09"
+],
+"string": "[maxX]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"0A"
+],
+"string": "[minY]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"0B"
+],
+"string": "[maxY]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"0C"
+],
+"string": "ȳ",
+"alts": [
+"[yhat]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"0D"
+],
+"string": "Σy",
+"alts": [
+"[Sigmay]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"0E"
+],
+"string": "Σy²",
+"alts": [
+"Σy^2",
+"sigmay²",
+"[Sigmay^2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"0F"
+],
+"string": "[Sy]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"10"
+],
+"string": "σy",
+"alts": [
+"[sigmay]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"11"
+],
+"string": "Σxy",
+"alts": [
+"[Sigmaxy]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"12"
+],
+"string": "[r]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"13"
+],
+"string": "[Med]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"14"
+],
+"string": "[Q1]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"15"
+],
+"string": "[Q3]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"16"
+],
+"string": "[|a]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"17"
+],
+"string": "[|b]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"18"
+],
+"string": "[|c]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"19"
+],
+"string": "[|d]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"1A"
+],
+"string": "[|e]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"1B"
+],
+"string": "x₁",
+"alts": [
+"[x1]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"1C"
+],
+"string": "x₂",
+"alts": [
+"[x2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"1D"
+],
+"string": "x₃",
+"alts": [
+"[x3]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"1E"
+],
+"string": "y₁",
+"alts": [
+"[y1]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"1F"
+],
+"string": "y₂",
+"alts": [
+"[y2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"20"
+],
+"string": "y₃",
+"alts": [
+"[y3]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"21"
+],
+"string": "[recursiven]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"22"
+],
+"string": "[p]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"23"
+],
+"string": "[z]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"24"
+],
+"string": "[t]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"25"
+],
+"string": "χ²",
+"alts": [
+"χ^2",
+"chi²",
+"[chi^2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"26"
+],
+"string": "[|F]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"27"
+],
+"string": "[df]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"28"
+],
+"string": "[ṗ]",
+"alts": [
+"[phat]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"29"
+],
+"string": "ṗ₁",
+"alts": [
+"ṗ1",
+"phat₁",
+"[phat1]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"2A"
+],
+"string": "ṗ₂",
+"alts": [
+"ṗ2",
+"phat₂",
+"[phat2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"2B"
+],
+"string": "ẋ₁",
+"alts": [
+"ẋ1",
+"xhat₁",
+"[xhat1]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"2C"
+],
+"string": "Sx₁",
+"alts": [
+"[Sx1]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"2D"
+],
+"string": "n₁",
+"alts": [
+"[n1]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"2E"
+],
+"string": "ẋ₂",
+"alts": [
+"ẋ2",
+"xhat₂",
+"[xhat2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"2F"
+],
+"string": "Sx₂",
+"alts": [
+"[Sx2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"30"
+],
+"string": "n₂",
+"alts": [
+"[n2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"31"
+],
+"string": "[Sxp]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"32"
+],
+"string": "[lower]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"33"
+],
+"string": "[upper]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"34"
+],
+"string": "[s]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"35"
+],
+"string": "r²",
+"alts": [
+"[r^2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"36"
+],
+"string": "R²",
+"alts": [
+"[R^2]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"37"
+],
+"string": "[factordf]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"38"
+],
+"string": "[factorSS]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"39"
+],
+"string": "[factorMS]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"3A"
+],
+"string": "[errordf]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"3B"
+],
+"string": "[errorSS]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"62",
+"3C"
+],
+"string": "[errorMS]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"00"
+],
+"string": "ZXscl",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"01"
+],
+"string": "ZYscl",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"02"
+],
+"string": "Xscl",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"03"
+],
+"string": "Yscl",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"04"
+],
+"string": "u(nMin)",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"05"
+],
+"string": "v(nMin)",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"06"
+],
+"string": "Un-₁",
+"alts": [
+"Un-1"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"07"
+],
+"string": "Vn-₁",
+"alts": [
+"Vn-1"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"08"
+],
+"string": "Zu(nmin)",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"09"
+],
+"string": "Zv(nmin)",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"0A"
+],
+"string": "Xmin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"0B"
+],
+"string": "Xmax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"0C"
+],
+"string": "Ymin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"0D"
+],
+"string": "Ymax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"0E"
+],
+"string": "Tmin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"0F"
+],
+"string": "Tmax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"10"
+],
+"string": "θMin",
+"alts": [
+"thetaMin"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"11"
+],
+"string": "θMax",
+"alts": [
+"thetaMax"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"12"
+],
+"string": "ZXmin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"13"
+],
+"string": "ZXmax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"14"
+],
+"string": "ZYmin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"15"
+],
+"string": "ZYmax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"16"
+],
+"string": "Zθmin",
+"alts": [
+"Zthetamin"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"17"
+],
+"string": "Zθmax",
+"alts": [
+"Zthetamax"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"18"
+],
+"string": "ZTmin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"19"
+],
+"string": "ZTmax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"1A"
+],
+"string": "TblStart",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"1B"
+],
+"string": "PlotStart",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"1C"
+],
+"string": "ZPlotStart",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"1D"
+],
+"string": "nMax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"1E"
+],
+"string": "ZnMax",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"1F"
+],
+"string": "nMin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"20"
+],
+"string": "ZnMin",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"21"
+],
+"string": "∆Tbl",
+"alts": [
+"DeltaTbl"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"22"
+],
+"string": "Tstep",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"23"
+],
+"string": "θstep",
+"alts": [
+"thetastep"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"24"
+],
+"string": "ZTstep",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"25"
+],
+"string": "Zθstep",
+"alts": [
+"Zthetastep"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"26"
+],
+"string": "∆X",
+"alts": [
+"DeltaX"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"27"
+],
+"string": "∆Y",
+"alts": [
+"DeltaY"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"28"
+],
+"string": "XFact",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"29"
+],
+"string": "YFact",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"2A"
+],
+"string": "TblInput",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"2B"
+],
+"string": "|N",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"2C"
+],
+"string": "I%",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"2D"
+],
+"string": "PV",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"2E"
+],
+"string": "PMT",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"2F"
+],
+"string": "FV",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"30"
+],
+"string": "|P/Y",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"31"
+],
+"string": "|C/Y",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"32"
+],
+"string": "w(nMin)",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"33"
+],
+"string": "Zw(nMin)",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"34"
+],
+"string": "PlotStep",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"35"
+],
+"string": "ZPlotStep",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"36"
+],
+"string": "Xres",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"63",
+"37"
+],
+"string": "ZXres",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"64"
+],
+"string": "Radian",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"65"
+],
+"string": "Degree",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"66"
+],
+"string": "Normal",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"67"
+],
+"string": "Sci",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"68"
+],
+"string": "Eng",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"69"
+],
+"string": "Float",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"6A"
+],
+"string": "=",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6A",
+"6A"
+],
+"string": "==",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6B"
+],
+"string": "<",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6B",
+"6B"
+],
+"string": "<<",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6C"
+],
+"string": ">",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6C",
+"6C"
+],
+"string": ">>",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6D"
+],
+"string": "≤",
+"alts": [
+"<="
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6D",
+"6D"
+],
+"string": "<=<=",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6E"
+],
+"string": "≥",
+"alts": [
+">="
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6E",
+"6E"
+],
+"string": ">=>=",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6F"
+],
+"string": "≠",
+"alts": [
+"!="
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"6F",
+"6F"
+],
+"string": "!=!=",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"70"
+],
+"string": "+",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"70",
+"70"
+],
+"string": "++",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"71"
+],
+"string": "-",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"71",
+"71"
+],
+"string": "--",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"72"
+],
+"string": "Ans",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"73"
+],
+"string": "Fix ",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"74"
+],
+"string": "Horiz",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"75"
+],
+"string": "Full",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"76"
+],
+"string": "Func",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"77"
+],
+"string": "Param",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"78"
+],
+"string": "Polar",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"79"
+],
+"string": "Seq",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7A"
+],
+"string": "IndpntAuto",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7B"
+],
+"string": "IndpntAsk",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7C"
+],
+"string": "DependAuto",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7D"
+],
+"string": "DependAsk",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"00"
+],
+"string": "Sequential",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"01"
+],
+"string": "Simul",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"02"
+],
+"string": "PolarGC",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"03"
+],
+"string": "RectGC",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"04"
+],
+"string": "CoordOn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"05"
+],
+"string": "CoordOff",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"06"
+],
+"string": "Connected",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"07"
+],
+"string": "Dot",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"08"
+],
+"string": "AxesOn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"09"
+],
+"string": "AxesOff",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"0A"
+],
+"string": "GridOn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"0B"
+],
+"string": "GridOff",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"0C"
+],
+"string": "LabelOn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"0D"
+],
+"string": "LabelOff",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"0E"
+],
+"string": "Web",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"0F"
+],
+"string": "Time",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"10"
+],
+"string": "uvAxes",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"11"
+],
+"string": "vwAxes",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7E",
+"12"
+],
+"string": "uwAxes",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"7F"
+],
+"string": "□",
+"alts": [
+"squareplot",
+"plotsquare"
+],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"80"
+],
+"string": "﹢",
+"alts": [
+"crossplot",
+"plotcross"
+],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"81"
+],
+"string": "·",
+"alts": [
+"dotplot",
+"plotdot"
+],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"82"
+],
+"string": "*",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"82",
+"82"
+],
+"string": "**",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"82",
+"F0"
+],
+"string": "*^",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"83"
+],
+"string": "/",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"83",
+"82"
+],
+"string": "/*",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"83",
+"83"
+],
+"string": "//",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"84"
+],
+"string": "Trace",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"85"
+],
+"string": "ClrDraw",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"86"
+],
+"string": "ZStandard",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"87"
+],
+"string": "ZTrig",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"88"
+],
+"string": "ZBox",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"89"
+],
+"string": "Zoom In",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"8A"
+],
+"string": "Zoom Out",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"8B"
+],
+"string": "ZSquare",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"8C"
+],
+"string": "ZInteger",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"8D"
+],
+"string": "ZPrevious",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"8E"
+],
+"string": "ZDecimal",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"8F"
+],
+"string": "ZoomStat",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"90"
+],
+"string": "ZoomRcl",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"91"
+],
+"string": "PrintScreen",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"92"
+],
+"string": "ZoomSto",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"93"
+],
+"string": "Text(",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"94"
+],
+"string": " nPr ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"95"
+],
+"string": " nCr ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"96"
+],
+"string": "FnOn ",
+"alts": [],
+"group": "Interrupts",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"97"
+],
+"string": "FnOff ",
+"alts": [],
+"group": "Interrupts",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"98"
+],
+"string": "StorePic",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"99"
+],
+"string": "RecallPic",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"9A"
+],
+"string": "StoreGDB ",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"9B"
+],
+"string": "RecallGDB ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"9C"
+],
+"string": "Line(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"9D"
+],
+"string": "Vertical",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"9D",
+"70"
+],
+"string": "Vertical+",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"9D",
+"71"
+],
+"string": "Vertical-",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"9E"
+],
+"string": "Pt-On(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"9F"
+],
+"string": "Pt-Off(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A0"
+],
+"string": "Pt-Change(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A1"
+],
+"string": "Pxl-On(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A2"
+],
+"string": "Pxl-Off(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A3"
+],
+"string": "Pxl-Change(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A4"
+],
+"string": "Shade(",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A5"
+],
+"string": "Circle(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A6"
+],
+"string": "Horizontal",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"A6",
+"70"
+],
+"string": "Horizontal+",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A6",
+"71"
+],
+"string": "Horizontal-",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A7"
+],
+"string": "Bitmap(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A8"
+],
+"string": "DrawInv",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"A9"
+],
+"string": "Text ",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"AA"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"AA",
+"00"
+],
+"string": "Str1",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"01"
+],
+"string": "Str2",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"02"
+],
+"string": "Str3",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"03"
+],
+"string": "Str4",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"04"
+],
+"string": "Str5",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"05"
+],
+"string": "Str6",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"06"
+],
+"string": "Str7",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"07"
+],
+"string": "Str8",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"08"
+],
+"string": "Str9",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AA",
+"09"
+],
+"string": "Str0",
+"alts": [],
+"group": "Data Names",
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"AB"
+],
+"string": "rand",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"AC"
+],
+"string": "π",
+"alts": [
+"pi"
+],
+"group": "Modifiers",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"AD"
+],
+"string": "getKey",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"AE"
+],
+"string": "'",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"AF"
+],
+"string": "?",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"AF",
+"AF"
+],
+"string": "??",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"B0"
+],
+"string": "⁻",
+"alts": [
+"|-",
+"~"
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"B1"
+],
+"string": "sign{",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"B2"
+],
+"string": "abs(",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"B3"
+],
+"string": "Buff(",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Data"
+},
+{
+"bytes": [
+"B4"
+],
+"string": "#Icon(",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"B5"
+],
+"string": "dim(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"B6"
+],
+"string": "sum(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"B7"
+],
+"string": "prod(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"B8"
+],
+"string": "not(",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"B9"
+],
+"string": "nib{",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BA"
+],
+"string": "float{",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"00"
+],
+"string": "npv(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"01"
+],
+"string": "irr(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"02"
+],
+"string": "bal(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"03"
+],
+"string": "ΣPrn(",
+"alts": [
+"SigmaPrn("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"04"
+],
+"string": "ΣInt(",
+"alts": [
+"SigmaInt("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"05"
+],
+"string": "►Nom(",
+"alts": [
+">Nom("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"06"
+],
+"string": "►Eff(",
+"alts": [
+">Eff("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"07"
+],
+"string": "dbd(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"08"
+],
+"string": "lcm(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"09"
+],
+"string": "gcd(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"0A"
+],
+"string": "randInt(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"0B"
+],
+"string": "randBin(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"0C"
+],
+"string": "sub(",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"0D"
+],
+"string": "stdDev(",
+"alts": [],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"0E"
+],
+"string": "variance(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"0F"
+],
+"string": "inData(",
+"alts": [],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"10"
+],
+"string": "normalcdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"11"
+],
+"string": "invNorm(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"12"
+],
+"string": "tcdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"13"
+],
+"string": "χ²cdf(",
+"alts": [
+"χ^2cdf(",
+"chi²cdf(",
+"chi^2cdf("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"14"
+],
+"string": "Fcdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"15"
+],
+"string": "binompdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"16"
+],
+"string": "binomcdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"17"
+],
+"string": "poissonpdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"18"
+],
+"string": "poissoncdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"19"
+],
+"string": "geometpdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"1A"
+],
+"string": "geometcdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"1B"
+],
+"string": "normalpdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"1C"
+],
+"string": "tpdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"1D"
+],
+"string": "χ²pdf(",
+"alts": [
+"χ^2pdf(",
+"chi²pdf(",
+"chi^2pdf("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"1E"
+],
+"string": "Fpdf(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"1F"
+],
+"string": "randNorm(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"20"
+],
+"string": "tvm_Pmt",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"21"
+],
+"string": "tvm_I%",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"22"
+],
+"string": "tvm_PV",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"23"
+],
+"string": "tvm_N",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"24"
+],
+"string": "tvm_FV",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"25"
+],
+"string": "Copy(",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"26"
+],
+"string": "#Realloc(",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"BB",
+"27"
+],
+"string": "imag(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"28"
+],
+"string": "angle(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"29"
+],
+"string": "cumSum(",
+"alts": [],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"2A"
+],
+"string": "Exch(",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"2B"
+],
+"string": "length(",
+"alts": [],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"2C"
+],
+"string": "Data(",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Data"
+},
+{
+"bytes": [
+"BB",
+"2D"
+],
+"string": "Rect(",
+"alts": [],
+"group": "Drawing",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"2E"
+],
+"string": "RectI(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"2F"
+],
+"string": "►Hex",
+"alts": [
+">Hex"
+],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"30"
+],
+"string": "►Polar",
+"alts": [
+">Polar"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"31"
+],
+"string": "[e]",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"BB",
+"31",
+"BB"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"31",
+"BB",
+"31"
+],
+"string": "[e][e]",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"BB",
+"32"
+],
+"string": "Freq(",
+"alts": [],
+"group": "Link Port",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"33"
+],
+"string": "Logistic ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"34"
+],
+"string": "LinRegTTest ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"35"
+],
+"string": "rotC(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"36"
+],
+"string": "rotCC(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"37"
+],
+"string": "flipV(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"38"
+],
+"string": "flipH(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"39"
+],
+"string": "Matr►list(",
+"alts": [
+"Matr>list("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"3A"
+],
+"string": "List►matr(",
+"alts": [
+"List>matr("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"3B"
+],
+"string": "Z-Test(",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"3C"
+],
+"string": "T-Test ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"3D"
+],
+"string": "2-SampZTest(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"3E"
+],
+"string": "1-PropZTest(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"3F"
+],
+"string": "2-PropZTest(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"40"
+],
+"string": "χ²-Test(",
+"alts": [
+"χ^2-Test(",
+"chi²-Test(",
+"chi^2-Test("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"41"
+],
+"string": "ZInterval",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"42"
+],
+"string": "2-SampZInt(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"43"
+],
+"string": "1-PropZInt(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"44"
+],
+"string": "2-PropZInt(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"45"
+],
+"string": "GraphStyle(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"46"
+],
+"string": "2-SampTTest ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"47"
+],
+"string": "2-SampFTest ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"48"
+],
+"string": "TInterval ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"49"
+],
+"string": "2-SampTInt ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"4A"
+],
+"string": "SetUpEditor ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"4B"
+],
+"string": "Pmt_End",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"4C"
+],
+"string": "Pmt_Bgn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"4D"
+],
+"string": "Real",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"4E"
+],
+"string": "re^θi",
+"alts": [
+"re^thetai"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"4F"
+],
+"string": "a+bi",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"50"
+],
+"string": "#ExprOn",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"BB",
+"51"
+],
+"string": "#ExprOff",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"BB",
+"52"
+],
+"string": "ClrAllLists",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"53"
+],
+"string": "GetCalc(",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"54"
+],
+"string": "DelVar ",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"55"
+],
+"string": "Equ►String(",
+"alts": [
+"Equ>String("
+],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"56"
+],
+"string": "String►Equ(",
+"alts": [
+"String>Equ("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"57"
+],
+"string": "Clear Entries",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"58"
+],
+"string": "Select(",
+"alts": [],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"59"
+],
+"string": "ANOVA(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"5A"
+],
+"string": "ModBoxPlot",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"5B"
+],
+"string": "NormProbPlot",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"64"
+],
+"string": "G-T",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"65"
+],
+"string": "ZoomFit",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"66"
+],
+"string": "DiagnosticOn",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"67"
+],
+"string": "DiagnosticOff",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"68"
+],
+"string": "Archive ",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"69"
+],
+"string": "UnArchive ",
+"alts": [],
+"group": "External Variables",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BB",
+"6A"
+],
+"string": "Asm(",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Data"
+},
+{
+"bytes": [
+"BB",
+"6B"
+],
+"string": "#Axiom(",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Preprocessor"
+},
+{
+"bytes": [
+"BB",
+"6C"
+],
+"string": "AsmPrgm",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"6E"
+],
+"string": "Á",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"6F"
+],
+"string": "À",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"70"
+],
+"string": "Â",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"71"
+],
+"string": "Ä",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"72"
+],
+"string": "á",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"73"
+],
+"string": "à",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"74"
+],
+"string": "â",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"75"
+],
+"string": "ä",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"76"
+],
+"string": "É",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"77"
+],
+"string": "È",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"78"
+],
+"string": "Ê",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"79"
+],
+"string": "Ë",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"7A"
+],
+"string": "é",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"7B"
+],
+"string": "è",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"7C"
+],
+"string": "ê",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"7D"
+],
+"string": "ë",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"7F"
+],
+"string": "Ì",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"80"
+],
+"string": "Î",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"81"
+],
+"string": "Ï",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"82"
+],
+"string": "í",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"83"
+],
+"string": "ì",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"84"
+],
+"string": "î",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"85"
+],
+"string": "ï",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"86"
+],
+"string": "Ó",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"87"
+],
+"string": "Ò",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"88"
+],
+"string": "Ô",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"89"
+],
+"string": "Ö",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"8A"
+],
+"string": "ó",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"8B"
+],
+"string": "ò",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"8C"
+],
+"string": "ô",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"8D"
+],
+"string": "ö",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"8E"
+],
+"string": "Ú",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"8F"
+],
+"string": "Ù",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"90"
+],
+"string": "Û",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"91"
+],
+"string": "Ü",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"92"
+],
+"string": "ú",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"93"
+],
+"string": "ù",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"94"
+],
+"string": "û",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"95"
+],
+"string": "ü",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"96"
+],
+"string": "Ç",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"97"
+],
+"string": "ç",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"98"
+],
+"string": "Ñ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"99"
+],
+"string": "ñ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"9A"
+],
+"string": "´",
+"alts": [
+"|'",
+"^^'"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"9B"
+],
+"string": "|`",
+"alts": [
+"^^`"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"9C"
+],
+"string": "¨",
+"alts": [
+"|:",
+"^^:"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"9D"
+],
+"string": "¿",
+"alts": [
+"|?"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"9E"
+],
+"string": "¡",
+"alts": [
+"|!"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"9F"
+],
+"string": "α",
+"alts": [
+"alpha"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A0"
+],
+"string": "β",
+"alts": [
+"beta"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A1"
+],
+"string": "γ",
+"alts": [
+"gamma"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A2"
+],
+"string": "Δ",
+"alts": [
+"Delta"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A3"
+],
+"string": "δ",
+"alts": [
+"delta"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A4"
+],
+"string": "ε",
+"alts": [
+"epsilon"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A5"
+],
+"string": "λ",
+"alts": [
+"lambda"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A6"
+],
+"string": "μ",
+"alts": [
+"mu"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A7"
+],
+"string": "|π",
+"alts": [
+"greek_pi"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A8"
+],
+"string": "ρ",
+"alts": [
+"rho"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"A9"
+],
+"string": "Σ",
+"alts": [
+"Sigma"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"AB"
+],
+"string": "Φ",
+"alts": [
+"Phi"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"AC"
+],
+"string": "Ω",
+"alts": [
+"Omega"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"AD"
+],
+"string": "ṗ",
+"alts": [
+"phat"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"AE"
+],
+"string": "χ",
+"alts": [
+"chi"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"AF"
+],
+"string": "|F",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"B0"
+],
+"string": "a",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B1"
+],
+"string": "b",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B2"
+],
+"string": "c",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B3"
+],
+"string": "d",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B4"
+],
+"string": "e",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B5"
+],
+"string": "f",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B6"
+],
+"string": "g",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B7"
+],
+"string": "h",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B8"
+],
+"string": "i",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"B9"
+],
+"string": "j",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"BA"
+],
+"string": "k",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"BC"
+],
+"string": "l",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"BD"
+],
+"string": "m",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"BE"
+],
+"string": "n",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"BF"
+],
+"string": "o",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C0"
+],
+"string": "p",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C1"
+],
+"string": "q",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C2"
+],
+"string": "r",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C3"
+],
+"string": "s",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C4"
+],
+"string": "t",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C5"
+],
+"string": "u",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C6"
+],
+"string": "v",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C7"
+],
+"string": "w",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C8"
+],
+"string": "x",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"C9"
+],
+"string": "y",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"CA"
+],
+"string": "z",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": "Variable"
+},
+{
+"bytes": [
+"BB",
+"CB"
+],
+"string": "σ",
+"alts": [
+"sigma"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"CC"
+],
+"string": "τ",
+"alts": [
+"tau"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"CD"
+],
+"string": "Í",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"CE"
+],
+"string": "GarbageCollect",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"CF"
+],
+"string": "|~",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D1"
+],
+"string": "@",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D2"
+],
+"string": "#",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D3"
+],
+"string": "$",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D4"
+],
+"string": "&",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D5"
+],
+"string": "`",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D6"
+],
+"string": ";",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D7"
+],
+"string": "\\",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D8"
+],
+"string": "|",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"D9"
+],
+"string": "_",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"DA"
+],
+"string": "%",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"DB"
+],
+"string": "…",
+"alts": [
+"[...]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"DC"
+],
+"string": "∠",
+"alts": [
+"|<"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"DD"
+],
+"string": "ß",
+"alts": [
+"sharps"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"DE"
+],
+"string": "ˣ",
+"alts": [
+"^^x"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"DF"
+],
+"string": "ᴛ",
+"alts": [
+"smallT"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E0"
+],
+"string": "₀",
+"alts": [
+"small0"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E1"
+],
+"string": "₁",
+"alts": [
+"small1"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E2"
+],
+"string": "₂",
+"alts": [
+"small2"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E3"
+],
+"string": "₃",
+"alts": [
+"small3"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E4"
+],
+"string": "₄",
+"alts": [
+"small4"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E5"
+],
+"string": "₅",
+"alts": [
+"small5"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E6"
+],
+"string": "₆",
+"alts": [
+"small6"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E7"
+],
+"string": "₇",
+"alts": [
+"small7"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E8"
+],
+"string": "₈",
+"alts": [
+"small8"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"E9"
+],
+"string": "₉",
+"alts": [
+"small9"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"EA"
+],
+"string": "₁₀",
+"alts": [
+"small10"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"EB"
+],
+"string": "◄",
+"alts": [
+"<|"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"EC"
+],
+"string": "►",
+"alts": [
+"|>"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"ED"
+],
+"string": "↑",
+"alts": [
+"uparrow"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"EE"
+],
+"string": "↓",
+"alts": [
+"downarrow"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"F0"
+],
+"string": "×",
+"alts": [
+"xmark"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"F1"
+],
+"string": "∫",
+"alts": [
+"integral"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"F2"
+],
+"string": "bolduparrow",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"F3"
+],
+"string": "bolddownarrow",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"F4"
+],
+"string": "√",
+"alts": [
+"squareroot"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BB",
+"F5"
+],
+"string": "invertedequal",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BC"
+],
+"string": "√(",
+"alts": [
+"sqrt("
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BD"
+],
+"string": "³√(",
+"alts": [
+"cuberoot("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"BE"
+],
+"string": "ln(",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"BF"
+],
+"string": "e^(",
+"alts": [],
+"group": "Advanced Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"C0"
+],
+"string": "λ(",
+"alts": [
+"lambda("
+],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Data"
+},
+{
+"bytes": [
+"C1"
+],
+"string": "₁₀^(",
+"alts": [
+"10^"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"C2"
+],
+"string": "sin(",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"C3"
+],
+"string": "sin⁻¹(",
+"alts": [
+"sin^-1("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"C4"
+],
+"string": "cos(",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"C5"
+],
+"string": "cos⁻¹(",
+"alts": [
+"cos^-1("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"C6"
+],
+"string": "tan(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"C7"
+],
+"string": "tan⁻¹(",
+"alts": [
+"tan^-1("
+],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"C8"
+],
+"string": "sinh(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"C9"
+],
+"string": "sinh⁻¹(",
+"alts": [
+"sinh^-1("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"CA"
+],
+"string": "cosh(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"CB"
+],
+"string": "soch⁻¹(",
+"alts": [
+"cosh^-1("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"CC"
+],
+"string": "tanh(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"CD"
+],
+"string": "tanh⁻¹(",
+"alts": [
+"tanh^-1("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"CE"
+],
+"string": "If ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"CF"
+],
+"string": "Then",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"D0"
+],
+"string": "Else",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D0",
+"2D"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"D0",
+"2D",
+"CE"
+],
+"string": "Else!If ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D0",
+"CE"
+],
+"string": "ElseIf ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D1"
+],
+"string": "While ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D2"
+],
+"string": "Repeat ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D3"
+],
+"string": "For(",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D4"
+],
+"string": "End",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D4",
+"2D"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"D4",
+"2D",
+"CE"
+],
+"string": "End!If ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D4",
+"CE"
+],
+"string": "EndIf ",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D5"
+],
+"string": "Return",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D5",
+"2D"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"D5",
+"2D",
+"CE"
+],
+"string": "Return!If ",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D5",
+"CE"
+],
+"string": "ReturnIf ",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D6"
+],
+"string": "Lbl ",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D7"
+],
+"string": "Goto ",
+"alts": [],
+"group": "Labels and Subroutines",
+"comment": null,
+"site": null,
+"style": "Control"
+},
+{
+"bytes": [
+"D8"
+],
+"string": "Pause ",
+"alts": [],
+"group": "System",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"D9"
+],
+"string": "Stop",
+"alts": [],
+"group": "Interrupts",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"DA"
+],
+"string": "IS>(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"DB"
+],
+"string": "DS<(",
+"alts": [],
+"group": "Control Blocks",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"DC"
+],
+"string": "input",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"DD"
+],
+"string": "Prompt ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"DE"
+],
+"string": "Disp ",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"DF"
+],
+"string": "DispGraph",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"DF",
+"85"
+],
+"string": "DispGraphClrDraw",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"DF",
+"99"
+],
+"string": "DispGraphRecallPic",
+"alts": [],
+"group": "Screen and Buffer",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E0"
+],
+"string": "Output(",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E1"
+],
+"string": "ClrHome",
+"alts": [],
+"group": "Text",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E2"
+],
+"string": "Fill(",
+"alts": [],
+"group": "Data and Storage",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E3"
+],
+"string": "SortA(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"E4"
+],
+"string": "SortD(",
+"alts": [],
+"group": "Miscellaneous",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E5"
+],
+"string": "DispTable",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"E6"
+],
+"string": "Menu(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"E7"
+],
+"string": "Send(",
+"alts": [],
+"group": "Link Port",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E8"
+],
+"string": "Get",
+"alts": [],
+"group": "Link Port",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"E9"
+],
+"string": "PlotsOn ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EA"
+],
+"string": "PlotsOff ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EB"
+],
+"string": "ʟ",
+"alts": [
+"smallL",
+"|L"
+],
+"group": "Modifiers",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"EC"
+],
+"string": "Pt-Mask(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"ED"
+],
+"string": "pt-Get(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"EE"
+],
+"string": "Pt-And(",
+"alts": [],
+"group": "Sprites",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"EF"
+],
+"string": null,
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"00"
+],
+"string": "setDate(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"01"
+],
+"string": "setTime(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"02"
+],
+"string": "checkTmr(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"03"
+],
+"string": "setDtFmt(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"04"
+],
+"string": "setTmFmt(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"05"
+],
+"string": "timeCnv(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"06"
+],
+"string": "dayOfWk(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"07"
+],
+"string": "getDtStr",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"08"
+],
+"string": "getTmStr(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"09"
+],
+"string": "getDate",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"0A"
+],
+"string": "getTime",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"0B"
+],
+"string": "startTmr",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"0C"
+],
+"string": "getDtFmt",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"0D"
+],
+"string": "getTmFmt",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"0E"
+],
+"string": "isClockOn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"0F"
+],
+"string": "ClockOff",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"10"
+],
+"string": "ClockOn",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"11"
+],
+"string": "OpenLib(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"12"
+],
+"string": "ExecLib",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"13"
+],
+"string": "invT(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"14"
+],
+"string": "χ²GOF-Test(",
+"alts": [
+"χ^2GOF-Test(",
+"chi²GOF-Test(",
+"chi^2GOF-Test("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"15"
+],
+"string": "LinRegTInt ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"16"
+],
+"string": "Manual-Fit ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"17"
+],
+"string": "ZQuadrant1",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"18"
+],
+"string": "ZFrac1/2",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"19"
+],
+"string": "ZFrac1/3",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"1A"
+],
+"string": "ZFrac1/4",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"1B"
+],
+"string": "ZFrac1/5",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"1C"
+],
+"string": "ZFrac1/8",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"1D"
+],
+"string": "ZFrac1/10",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"1E"
+],
+"string": "mathprintbox",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"2E"
+],
+"string": "⁄",
+"alts": [
+"n/d"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"2F"
+],
+"string": "ᵤ",
+"alts": [
+"Un/d"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"30"
+],
+"string": "►n⁄d◄►Un⁄d",
+"alts": [
+"►n/d◄►Un/d",
+">n⁄d<>Un⁄d",
+">n/d<>Un/d"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"31"
+],
+"string": "►F◄►D",
+"alts": [
+">F<>D"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"32"
+],
+"string": "remainder(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"33"
+],
+"string": "Σ(",
+"alts": [
+"Sigma("
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"34"
+],
+"string": "logBASE(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"35"
+],
+"string": "randIntNoRep(",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"37"
+],
+"string": "[MATHPRINT]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"38"
+],
+"string": "[CLASSIC]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"39"
+],
+"string": "n⁄d",
+"alts": [
+"[n/d]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"3A"
+],
+"string": "Un⁄d",
+"alts": [
+"[Un/d]"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"3B"
+],
+"string": "[AUTO]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"3C"
+],
+"string": "[DEC]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"EF",
+"3D"
+],
+"string": "[FRAC]",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F0"
+],
+"string": "^",
+"alts": [],
+"group": "Basic Math",
+"comment": null,
+"site": null,
+"style": "Default_Axe"
+},
+{
+"bytes": [
+"F1"
+],
+"string": "ˣ√",
+"alts": [
+"xroot"
+],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F2"
+],
+"string": "1-Var Stats ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F3"
+],
+"string": "2-Var Stats",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F4"
+],
+"string": "LinReg(a+bx) ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F5"
+],
+"string": "ExpReg ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F6"
+],
+"string": "LnReg",
+"alts": [],
+"group": "Interrupts",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"F7"
+],
+"string": "PwrReg ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F8"
+],
+"string": "Med-Med ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"F9"
+],
+"string": "QuadReg ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"FA"
+],
+"string": "ClrList ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"FB"
+],
+"string": "port",
+"alts": [],
+"group": "Link Port",
+"comment": null,
+"site": null,
+"style": "Command"
+},
+{
+"bytes": [
+"FC"
+],
+"string": "Histogram",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"FD"
+],
+"string": "xyLine",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"FE"
+],
+"string": "Scatter",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+},
+{
+"bytes": [
+"FF"
+],
+"string": "LinReg(ax+b) ",
+"alts": [],
+"group": null,
+"comment": null,
+"site": null,
+"style": null
+}
+]

@@ -1,0 +1,128 @@
+SetUpEditor BIN,QR
+If 3>dim(ʟQR
+{1,1,0→QR
+0→U
+Lbl 0
+Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary",C,"Notefolio",N,"Set version",S,"Options",O,"Exit",X
+Lbl S
+ClrHome
+Disp "0=auto, 1-11
+Input "ver=",U
+int(U→U
+If U<0 or U>11
+Goto S
+Goto 0
+Lbl O
+"NY
+Menu("OPTIONS","Center:    "+sub(Ans,1+ʟQR(1),1),1,"Safe mode: "+sub(Ans,1+ʟQR(2),1),2,"StorePic 1:"+sub(Ans,1+ʟQR(3),1),3,"Back",0
+Lbl 1:1:Goto F
+Lbl 2:2:Goto F
+Lbl 3:3
+Lbl F
+1-ʟQR(Ans→ʟQR(Ans
+Goto O
+Lbl N
+4→E
+65534
+Asm(prgmQRENGINE
+Ans→K
+If K≥65534
+Goto Y
+If not(K
+Goto N0
+0→P
+Lbl P
+Menu("NOTEFOLIO FILES",sub(Str4,8P+1,8),N1,sub(Str4,8P+9,8),N2,sub(Str4,8P+17,8),N3,sub(Str4,8P+25,8),N4,sub(Str4,8P+33,8),N5,"More",PM,"Back",0
+Lbl PM
+P+5→P
+If P≥K
+0→P
+Goto P
+Lbl N1:1:Goto NS
+Lbl N2:2:Goto NS
+Lbl N3:3:Goto NS
+Lbl N4:4:Goto NS
+Lbl N5:5
+Lbl NS
+P+Ans→I
+If I>K
+Goto P
+sub(Str4,8I-7,8→Str5
+5→E
+65534
+Asm(prgmQRENGINE
+Ans→L
+If L≥65534
+Goto Y
+3→E
+Goto Q
+Lbl N0
+Menu("NO NOTEFOLIOS","Back",0,"Exit",X
+Lbl A:0:Goto M
+Lbl B:1:Goto M
+Lbl C:2
+Lbl M
+Ans→E
+If E=2
+dim(ʟBIN→L
+If E<2
+Then
+Input "msg=",Str1
+length(Str1→L
+End
+Lbl Q
+{25,47,77,114,154,195,224,279,335,395,468
+If E
+{17,32,53,78,106,134,154,192,230,271,321
+Ans→L₁
+Lbl V
+U→V
+If not(V
+min(11,1+sum(L₁<L→V
+min(L,L₁(V→N
+If L≤L₁(V
+Goto E
+"Resize
+If V=11
+"Can\'t "+Ans
+Menu("ERR:msg too long",Ans,R,"Truncate",E,"Abort",0
+Lbl R
+0→U
+Goto V
+Lbl E
+ʟQR(1→C
+ʟQR(2→S
+Lbl D
+FnOff 
+AxesOff
+GridOff
+PlotsOff 
+ClrDraw
+DispGraph
+65534
+Asm(prgmQRENGINE
+Ans→K
+If not(K
+Goto Z
+If K≥65534
+Goto Y
+If E=3
+Then
+ClrHome
+Disp "NON-ASCII CHAR","AT POSITION",K
+Pause 
+"NON-ASCII CHAR
+Else
+"BAD CHAR: "+sub(Str1,K,1
+End
+Menu(Ans,"Continue",W,"Abort",0
+Lbl W
+0→S
+Goto D
+Lbl Y
+Menu("ENGINE ERROR","Back",0,"Exit",X
+Lbl Z
+If ʟQR(3
+StorePic 1
+DispGraph
+Lbl X

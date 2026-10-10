@@ -76,7 +76,8 @@ scoring instead of fixed mask 0.
    token → ASCII via GDB0, or note character → ASCII via `MA`; 0 if none) and `AV` (ASCII → alphanumeric value, 99 if none).
    K = first non-ASCII position, X = first non-alphanumeric. Forced alnum uses X as K; auto
    becomes alnum if X=0. If K, return 32768+K. F is now 1 (byte) or 2 (alnum).
-5. V=0: return 2T+F-1 (T capped at 9999). Otherwise read `N`, `O` into θ (count to skip),
+5. V=0: return 2T+F-1, or 65532 if T>16383 (checked before the scan, so 2T+1 and
+   32768+position always fit in Ans). Otherwise read `N`, `O` into θ (count to skip),
    and for auto mode `A` (F=A+1: the check's decision, from prgmQR).
 6. Size `S=4V+17`; offsets `G=31-S/2`, `H=47-S/2` (always centered). Look up M (data
    codewords), R (EC per block), B (blocks). Clamp N to T, and to 468 (only so a bad
@@ -162,8 +163,8 @@ usual encode. After it (Lbl Z, J>1): a fraction at the left edge of the screen: 
 the code number right-aligned over it so ones (and tens) line up, at x=4(int(log(J))-int(log(P)))
 (small-font digits are 4 px including the gap), bar Pxl-On row 31 as wide as J; Text( rows 24
 and 32 (ink rows 25-29 and 33-37, centered on the bar). Up to 3 digits stay clear of the code's 4-module quiet zone
-(v11 starts at x=17). The check call caps lengths at 9999, so 3-digit counts only happen
-with a small set version.
+(v11 starts at x=17). The check call allows 16383 characters (51 version 11 codes), so 3-digit
+counts only happen with a small set version. Longer: ERR:TOO LONG (Lbl G), Pause, main menu.
 Keys (Lbl K): Enter/→ next, ← back, Clear stops; ← on the first and → on the last do nothing;
 Enter on the last ends. Notefolio picker: E=4 fills Str2, Menu( shows 5 names + More +
 Back (More wraps from the last page to the first; Back goes back a page, or to the main menu

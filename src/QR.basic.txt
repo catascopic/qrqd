@@ -57,6 +57,8 @@ Asm(prgmθQR
 Ans→K
 If K≥65534
 Goto Y
+If K=65532
+Goto G
 If K≥32768
 Goto F
 int(K/2→L
@@ -114,6 +116,12 @@ If E=1
 Output(2,1,"Char: "+sub(Str1,K,1
 Output(3,1,"Position:
 Output(3,11,K
+Pause 
+Goto 0
+Lbl G
+ClrHome
+Output(1,1,"ERR:TOO LONG
+Output(2,1,"Max 16383 chars
 Pause 
 Goto 0
 Lbl Y

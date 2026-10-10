@@ -133,6 +133,8 @@ if __name__ == '__main__':
     case('forced alnum says NOT ALNUM', [MODE, MODE, MESSAGE, EXIT], ['AbCD'],
          [(0, 0, 2, 1)], [main('ASCII'), main('Alnum'), main('Alnum')],
          ['ERR:NOT ALNUM', 'Char: b', 'Position: 2'], check=BAD + 2)
+    case('too long: an error, nothing encoded', [MESSAGE, EXIT], ['ABCD'],
+         [CHECKED], [main()], ['ERR:TOO LONG', 'Max 16383 chars'], check=65532)
     case('bad char reported while encoding', [MESSAGE, EXIT], ['ABCD'],
          [CHECKED, (4, 1, 0, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Position: 4'],
          check=2 * 4, encode=BAD + 4)

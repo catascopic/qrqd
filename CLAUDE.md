@@ -76,7 +76,8 @@ For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; i
 ASCII. `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
 can't write past L₁), draws, and returns 0. Either call returns 32768+k if character k can't be encoded
-(non-ASCII, or not alphanumeric when M=2), and 65535 for bad parameters or a missing input.
+(non-ASCII, or not alphanumeric when M=2), 65532 from the check call if the text is longer
+than 16383 (2·16383+1 is the most Ans can carry), and 65535 for bad parameters or a missing input.
 Auto picks alphanumeric when every character allows it. Always centered, EC level L, mask 0.
 The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks
 first, picks the version from the length and mode, then encodes.

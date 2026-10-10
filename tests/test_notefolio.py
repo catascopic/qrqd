@@ -106,6 +106,11 @@ def synthetic():
     expect('check NOTES forced alnum: lowercase at 2', m.ans == BAD + 2, m.ans)
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str3='SHOUT')
     expect('check SHOUT forced ASCII', m.ans == 2 * len(texts[3][1]), m.ans)
+    # 2*16383+1 is the most Ans can carry; longer is "too long", even with a bad char past it
+    for n, extra, want in ((16383, b'', 2 * 16383 + 1), (16384, b'', 65532), (16384, b'\x96', 65532)):
+        big = [('BIG', notefolio('BIG', b'A' * n + extra), True)]
+        m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str3='BIG')
+        expect('check a %d-character note -> %d' % (n + len(extra), want), m.ans == want, m.ans)
     for bad in ('SAVE', 'NOPE', 'TINY', 'FAKE'):
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str3=bad)
         expect('check %s -> 65535' % bad, m.ans == 65535, m.ans)

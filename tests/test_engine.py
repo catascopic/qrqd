@@ -92,6 +92,9 @@ def edge_cases():
            check_text(ascii_tokens('A!') + [PI], ALNUM) == BAD + 2)
     expect('check: pi bad in auto', check_text(ascii_tokens('2') + [PI] + ascii_tokens('r'), AUTO) == BAD + 2)
     expect('check: sin( bad in ASCII', check_text(ascii_tokens('ab') + [SIN], ASCII) == BAD + 3)
+    # two-byte tokens: BB 00 (npv() must not match the second-byte row's zeros; others aren't ASCII
+    expect('check: npv( (BB 00) bad', check_text(ascii_tokens('a') + [b'\xbb\x00'], AUTO) == BAD + 2)
+    expect('check: [A] (5C 00) bad', check_text([b'\x5c\x00'] + ascii_tokens('a'), AUTO) == BAD + 1)
     expect('check: empty text', check_text([], AUTO) == 1)
     # encoding with a bad character fails before drawing
     # encoding trusts the check: it doesn't rescan the text, auto mode takes A from prgmQR

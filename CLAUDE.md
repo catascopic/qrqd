@@ -19,7 +19,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | --- | --- |
 | `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
-| `build/` | generated, ready-to-send `.8xp` files |
+| `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |
 | `tools/build.py` | builds both `.8xp`; `decompile` turns any `.8xp` back into text |
 | `tools/axe_tokens.json` | Axe 1.2.1 token table (from TokenIDE's AxeTokens.xml by Runer112; reuse permitted) |
 | `tools/axesim.py` | interpreter for the Axe subset the engine uses; the tests run the engine in it |
@@ -36,7 +36,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 
 ```
 pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow
-python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp
+python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp (build.bat does the same, for double-clicking)
 python tests/test_engine.py --quick      # drop --quick for the full sweep (a few minutes)
 python tests/test_notefolio.py
 python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1

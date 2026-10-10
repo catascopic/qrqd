@@ -71,6 +71,12 @@
    nothing poses as ASCII: θ ↔ `[`, ⁴ ↔ `$`, its 0Ah ↔ Enter. The check stores the first
    non-ASCII position in B, and prgmQR shows a warning, Pause (ON quits), then encodes.
    Alphanumeric mode and messages (Str1) still fail.
+18. Cheap speedups kept only where the code got no bigger or harder to read: the ASCII table
+   became two byte rows searched with `inData(` (was a 95-step Axe loop per token: a message
+   check is ~10× faster), and the check stops testing alphanumeric after the first failure.
+   Not done: reading a note's length from its header (word at +16 = length+24) instead of
+   scanning for the 00h; NoteFolioEdit itself scans, and a third header word that is
+   documented as the same length isn't, in a real note (XLIB), so the header wasn't trusted.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -128,8 +134,10 @@ Static data: GDB1 two-byte token prefixes (5C 5D 5E 60 61 62 63 7E AA BB EF, for
 GDB2 OS name of ʟBIN; GDB3 data codewords per version (words); GDB4 EC per block; GDB5 block
 counts, then count-field widths at +11 (byte v1-9, v10+, alnum v1-9, v10+: 8 16 9 11); GDB6 version info for v7-v11; GDB7 dark format modules (9 x,y pairs near the top left,
 then 3 k for (S-k,8) and 7 k for (8,S-k), the last being the dark module); GDB8 Notefolio
-signature; GDB9 alphanumeric punctuation (space $%*+-./:, values 36-44); GDB0 ASCII token keys (95 words, ASCII 32-126). A key is the token's bytes as a
-little-endian word (1-byte token t → t; 2-byte p,s → s*256+p).
+signature; GDB9 alphanumeric punctuation (space $%*+-./:, values 36-44); GDB9+10/+20 the note character swaps (see Notefolio format); GDB0 the tokens for ASCII 32-126 as two
+95-byte rows: first bytes (BBh for the lowercase letters and other two-byte ones, which are all
+BB-prefixed), then second bytes (0 for one-byte tokens). `CH` finds a token with one
+`inData(byte,row,95)` (position + 31 = ASCII); a second byte of 0 (BB 00 = npv() is never searched.
 
 Variables: E source, V version, N count, F mode (then 1 byte / 2 alnum), S size, G/H offsets,
 M/R/B version data, P input pointer (later codeword pointer), T text length, O position of the

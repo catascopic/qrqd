@@ -136,14 +136,14 @@ if __name__ == '__main__':
          [(0, 0, 1, 1), (4, 1, 1, 1)], [main('ASCII')], check=2 * 4)
     # bad characters: an error screen, then back to the main menu
     case('bad char in a message', [MESSAGE, EXIT], ['ABCD'],
-         [CHECKED], [main()], ['ERR:BAD CHAR', 'Char: C', 'Position: 3'], check=BAD + 3)
+         [CHECKED], [main()], ['ERR:BAD CHAR', 'Char: C', 'Pos=3'], check=BAD + 3)
     case('forced alnum says NOT ALNUM', [MODE, MODE, MESSAGE, EXIT], ['AbCD'],
          [(0, 0, 2, 1)], [main('ASCII'), main('Alnum'), main('Alnum')],
-         ['ERR:NOT ALNUM', 'Char: b', 'Position: 2'], check=BAD + 2)
+         ['ERR:NOT ALNUM', 'Char: b', 'Pos=2'], check=BAD + 2)
     case('too long: an error, nothing encoded', [MESSAGE, EXIT], ['ABCD'],
          [CHECKED], [main()], ['ERR:TOO LONG', 'Max 16383 chars'], check=65532)
     case('bad char reported while encoding', [MESSAGE, EXIT], ['ABCD'],
-         [CHECKED, (4, 1, 0, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Position: 4'],
+         [CHECKED, (4, 1, 0, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Pos=4'],
          check=2 * 4, encode=BAD + 4)
 
     # NoteFolio picker: menu options are 5 names, More (5), Back (6)
@@ -160,13 +160,13 @@ if __name__ == '__main__':
          LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0), page(1), page(2), page(1)],
          notes=NOTES, check=2 * 12, want_str3='NOTE7')
     case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], ['NON-ASCII CHARS', 'Position: 40'],
+         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
          notes=NOTES, check=2 * 12, warn=40)
     case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO, 0], [],
          LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], [], ['NON-ASCII'],
          notes=NOTES, check=2 * 12)
     case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
-         LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Position: 40'], ['Char:'],
+         LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
          notes=NOTES, check=BAD + 40)
     case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()])
     # too long for one code: always split, into even pieces at the smallest version that fits

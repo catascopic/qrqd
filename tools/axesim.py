@@ -345,8 +345,15 @@ class Machine:
             b, i = self.expr(toks, i + 1)
             i = self.expect(toks, i, ',')
             p, i = self.expr(toks, i)
+            if b > 255: raise AxeError('inData byte %d' % b)
+            if toks[i] == ('T', ','):        # inData(BYTE,PTR,SIZE): search SIZE bytes
+                size, i = self.expr(toks, i + 1)
+                i = self.expect(toks, i, ')')
+                if b == 0: raise AxeError('inData byte 0 with a size')
+                data = self.mem[p:p + size]
+                return (data.index(b) + 1 if b in data else 0), i
             i = self.expect(toks, i, ')')
-            if b == 0 or b > 255: raise AxeError('inData byte %d' % b)
+            if b == 0: return 0, i           # "The byte 0 will never be found" (Axe docs)
             n = 1
             while self.mem[p]:
                 if self.mem[p] == b: return n, i

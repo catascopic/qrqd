@@ -122,8 +122,9 @@ Else
 End
 Disp "ERR:"+Ans
 If E=1
+Disp "Char: "+sub(Str1,K,1
 Disp "Pos=
-Output(3,5,K
+Output(2+(E=1),5,K
 Pause 
 Goto 0
 Lbl G
@@ -149,9 +150,7 @@ getKey→K
 End
 If K=45
 Goto X
-If K=24 and P=1
-Goto K
-If K=26 and P=J
+If K=24 and P=1 or K=26 and P=J
 Goto K
 P+(K≠24)-(K=24→P
 If P≤J

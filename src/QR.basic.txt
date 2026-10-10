@@ -73,20 +73,19 @@ Lbl Q
 If A
 {25,47,77,114,154,195,224,279,335,395,468
 Ans→L₁
-Lbl V
+L₁(11
+If U
+L₁(U
+Ans→C
+max(1,⁻int(⁻L/C→J
+⁻int(⁻L/J→W
 U→V
 If not(V
-min(11,1+sum(L₁<L→V
-min(L,L₁(V→N
-If L≤L₁(V
-Goto E
-"Resize
-If V=11
-"Can\'t "+Ans
-Menu("ERR:msg too long",Ans,R,"Truncate",E,"Abort",0
-Lbl R
-0→U
-Goto V
+min(11,1+sum(L₁<W→V
+1→P
+Lbl H
+(P-1)W→O
+min(W,L-O→N
 Lbl E
 FnOff 
 AxesOff
@@ -121,4 +120,24 @@ Lbl Y
 Menu("ERR:QRENGINE","Back",0,"Exit",X
 Lbl Z
 DispGraph
+If J=1
+Goto X
+Text(24,4(int(log(J))-int(log(P))),P
+Text(32,0,J
+For(I,0,4int(log(J))+2
+Pxl-On(31,I
+End
+Lbl K
+Repeat K=105 or K=26 or K=24 or K=45
+getKey→K
+End
+If K=45
+Goto X
+If K=24 and P=1
+Goto K
+If K=26 and P=J
+Goto K
+P+(K≠24)-(K=24→P
+If P≤J
+Goto H
 Lbl X

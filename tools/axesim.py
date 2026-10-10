@@ -13,7 +13,7 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
-    'ClrDraw', 'DispGraph', 'Ans', ' and ', ' or ', ' xor ',
+    'ClrDraw', 'DispGraph', 'Disp ', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
     '→', 'ʳ', '≠', '≤', '≥', '·', '+', '-', '*', '/', '^', '=', '<', '>',
     '(', ')', '{', '}', ',',
@@ -70,6 +70,9 @@ class Machine:
         self.os = {}          # name -> pointer to data
         self.os_ptr = 0xC000
         self.displays = []
+        self.shown = []       # strings from Disp (home screen)
+        self.free_ram = 12000 # bytes GetCalc(name,SIZE) may create before returning 0
+        self.literals = {}
         self.appvars = {}     # name -> (pointer to data, archived?)
         self.file = None      # data pointer of the open Y1 file
         self.arch_ptr = 0x4000
@@ -154,6 +157,15 @@ class Machine:
             p -= 7 + len(nb)
         self.mem[0x9830:0x9832] = top.to_bytes(2, 'little')   # progPtr
         self.mem[0x982E:0x9830] = p.to_bytes(2, 'little')     # pTemp
+
+    def appvar_create(self, name, size):
+        """GetCalc("appvNAME",SIZE): 0 if there isn't enough RAM; replaces an existing one."""
+        if size > self.free_ram:
+            return 0
+        self.free_ram -= size
+        p = self._alloc(size.to_bytes(2, 'little') + bytes(size))
+        self.appvars[name] = (p + 2, False)
+        return p + 2
 
     def str_create(self, n, size):
         p = self._alloc(size.to_bytes(2, 'little') + bytes(size))
@@ -293,8 +305,11 @@ class Machine:
                 name = toks[i + 1][1]; i += 2
                 if toks[i] == ('T', ','):
                     size, i = self.expr(toks, i + 1)
-                    m = re.fullmatch(r'Str(\d)', name)
-                    v = self.str_create(int(m.group(1)), size)
+                    if name.startswith('appv'):
+                        v = self.appvar_create(name[4:], size)
+                    else:
+                        m = re.fullmatch(r'Str(\d)', name)
+                        v = self.str_create(int(m.group(1)), size)
                 else:
                     v = self.getcalc_str(name)
             else:
@@ -312,6 +327,13 @@ class Machine:
                 else:
                     v = self.getcalc_ptr(p)
             return v, self.expect(toks, i, ')')
+        if k == 'STR':             # string literal: zero-terminated static data
+            if t not in self.literals:
+                self.literals[t] = self.data_ptr
+                data = t.encode('ascii') + bytes(1)
+                self.mem[self.data_ptr:self.data_ptr + len(data)] = data
+                self.data_ptr += len(data)
+            return self.literals[t], i + 1
         if t == 'Y₁':
             if self.file is None: raise AxeError('Y1 used without an open file')
             return self.file, i + 1
@@ -413,6 +435,11 @@ class Machine:
             if h == ('T', 'ClrDraw'):
                 base = L3 if len(t) > 1 and t[1] == ('T', 'ʳ') else L6
                 self.mem[base:base + 768] = bytes(768)
+                pc += 1; continue
+            if h == ('T', 'Disp '):
+                p, j = self.expr(t, 1)
+                assert j == len(t), self.lines[pc]
+                self.shown.append(bytes(self.mem[p:self.mem.index(0, p)]).decode('latin-1'))
                 pc += 1; continue
             if h == ('T', 'DispGraph'):
                 self.displays.append(bytes(self.mem[L6:L6 + 768])); pc += 1; continue

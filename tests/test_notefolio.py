@@ -69,7 +69,7 @@ def machine(notes, params, str3=None, extra=()):
     m.add_appvar('FAKE', b'\x00\x47\xbf\xaf' + bytes(40))   # wrong signature
     m.add_appvar('lower', notefolio('lower', b'hi'))        # name can't be opened by name
     m.build_vat()
-    for k, v in params.items():
+    for k, v in {'O': 0, **params}.items():
         m.set_real(k, v)
     if str3 is not None:
         m.set_str(3, str3.encode().ljust(8, b'\x29'))        # padded with space tokens
@@ -128,6 +128,10 @@ def synthetic():
                     return
                 count += 1
     expect('%d note symbols match the reference and decode' % count, True)
+
+    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 4, 'M': AUTO, 'O': 4}, str3='TODO2')
+    got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
+    expect('skip 4 characters of a note', got == b'milk', got)
 
     m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str3='ODD')
     expect('encoding a note with a bad char fails at 10, nothing drawn',

@@ -7,7 +7,8 @@
 .  4 LIST NOTEFOLIOS INTO STR2
 .IN V=VERSION, 0 TO CHECK TEXT ONLY
 .   M=MODE 0 AUTO 1 ASCII 2 ALNUM
-.   N=COUNT TO ENCODE (V>0)
+.   N=COUNT TO ENCODE (V>0), O=COUNT
+.   TO SKIP FIRST (FOR SPLIT MESSAGES)
 .OUT ANS=2*LENGTH+1 ALNUM, +0 ASCII (V=0)
 .    ANS=0 DRAWN (V>0)
 .    ANS=32768+K BAD CHAR AT K
@@ -126,6 +127,7 @@ T*2+F-1→Ans
 Return
 End
 float{GetCalc("varN")}→N
+float{GetCalc("varO")}→θ
 V*4+17→S
 31-(S/2)→G
 47-(S/2)→H
@@ -133,12 +135,15 @@ V*4+17→S
 {V+GDB4-1}→R
 {V+GDB5-1}→B
 .
-.CLAMP N TO THE LENGTH. PRGMQR KEEPS N
+.CLAMP θ AND N TO THE LENGTH. PRGMQR KEEPS N
 .WITHIN CAPACITY; 468 (THE MOST ANY
 .VERSION HOLDS) ONLY KEEPS A BAD N FROM
 .WRITING PAST L1
-If N>T
-T→N
+If θ>T
+T→θ
+End
+If N>(T-θ)
+T-θ→N
 End
 If N>468
 468→N
@@ -159,7 +164,9 @@ sub(AB)
 If E=1
 GetCalc("Str1")→P
 End
+.SKIP θ BYTES OR CHARACTERS
 If E=2
+P+(θ*9)→P
 1→I
 While I≤N
 float{P}→A
@@ -169,6 +176,9 @@ sub(AB)
 I+1→I
 End
 Else
+While O<θ
+sub(CH)
+End
 If F=1
 1→I
 While I≤N

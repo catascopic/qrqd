@@ -98,15 +98,19 @@ def save_program(name, tokens, path, comment):
 def build():
     (ROOT / 'build').mkdir(exist_ok=True)
 
-    # Axe engine source
-    src = (ROOT / 'src' / 'QRSRC.axe.txt').read_text(encoding='utf-8').rstrip('\n')
-    tokens = axe_tokenize(src)
-    back = axe_detokenize(tokens).split('\n')
-    changed = [(a, b) for a, b in zip(src.split('\n'), back) if a != b and not a.startswith('.')]
-    if changed:
-        raise SystemExit('Axe round trip changed code lines: %r' % changed[:3])
-    save_program('QRSRC', tokens, ROOT / 'build' / 'QRSRC.8xp', 'QR engine source - compile with Axe')
-    print('build/QRSRC.8xp  %5d token bytes' % len(tokens))
+    # Axe sources: the engine, and LOREMSRC (a test tool that writes a long Notefolio note)
+    comments = {'QRSRC': 'QR engine source - compile with Axe',
+                'LOREMSRC': 'Lorem ipsum note maker - compile with Axe'}
+    for path in sorted((ROOT / 'src').glob('*.axe.txt')):
+        name = path.name.split('.')[0]
+        src = path.read_text(encoding='utf-8').rstrip('\n')
+        tokens = axe_tokenize(src)
+        back = axe_detokenize(tokens).split('\n')
+        changed = [(a, b) for a, b in zip(src.split('\n'), back) if a != b and not a.startswith('.')]
+        if changed:
+            raise SystemExit('%s: Axe round trip changed code lines: %r' % (path.name, changed[:3]))
+        save_program(name, tokens, ROOT / 'build' / (name + '.8xp'), comments.get(name, 'Axe source'))
+        print('build/%-11s %5d token bytes' % (name + '.8xp', len(tokens)))
 
     # BASIC front end
     text = (ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n')

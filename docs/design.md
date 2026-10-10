@@ -49,6 +49,12 @@
    the program) was replaced by reading codewords in place. An engine-side NoteFolio picker
    was built (kept on the `filepicker` branch) but left out for its size; BASIC menus run in
    place and cost no extra RAM.
+13. Split messages: independent codes (each a normal QR code, read by any scanner) rather than
+   Structured Append (the spec's linked codes, which most phone scanners ignore). The engine
+   only gained O, a count to skip; BASIC does the rest. Then the "msg too long" menu (Resize /
+   Truncate / Abort) was dropped: everything that doesn't fit is split, and a set version
+   splits at that version. Even pieces vs. filling version 11 first: same number of codes;
+   even was kept so every code is the same size (one line to switch, see the BASIC section).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -64,11 +70,12 @@ scoring instead of fixed mask 0.
    character → ASCII via `MA`; 0 if none) and `AV` (ASCII → alphanumeric value, 99 if none).
    K = first non-ASCII position, X = first non-alphanumeric. Forced alnum uses X as K; auto
    becomes alnum if X=0. If K, return 32768+K. F is now 1 (byte) or 2 (alnum).
-5. V=0: return 2T+F-1 (T capped at 9999). Otherwise read `N`.
+5. V=0: return 2T+F-1 (T capped at 9999). Otherwise read `N`, and `O` into θ (count to skip).
 6. Size `S=4V+17`; offsets `G=31-S/2`, `H=47-S/2` (always centered). Look up M (data
    codewords), R (EC per block), B (blocks). Clamp N to T, and to 468 (only so a bad
    N can't write past L₁: keeping N within the version's capacity is prgmQR's job).
-7. Bit-pack into L₁ via `AB`: mode indicator, count (alnum 9/11 bits, byte 8/16 bits for v<10/≥10),
+7. Skip θ list elements (P+9θ) or characters (calling `CH` θ times; O counts them). Bit-pack
+   into L₁ via `AB`: mode indicator, count (alnum 9/11 bits, byte 8/16 bits for v<10/≥10),
    data (alnum pairs 11 bits, odd last 6 bits; bytes 8 bits; text re-read through `CH`),
    terminator ≤4 zero bits, byte align, pad bytes EC/11.
 8. GF(256) tables (poly 11Dh) in L₃: exp doubled at L₃+0..509, log at L₃+512..767. Generator
@@ -136,12 +143,25 @@ Main menu: Message (Lbl M), NoteFolio (N), Binary (ʟBIN) (B), Set version (S),
 Mode:Auto/ASCII/Alnum (T; cycles M 0→1→2→0, label via `sub("Auto ASCIIAlnum",5M+1,5`), Exit (X).
 Text goes through a check call first (Lbl C: V=0); a bad character goes to Lbl F, a home-screen
 error (ERR:BAD CHAR, or ERR:NOT ALNUM when M=2; the character from Str1, and the position),
-Pause, then the main menu. Version selection lives in BASIC: capacity table (alnum when the
-check says so, else byte; EC L) into L₁; auto picks the smallest that fits; too
-long → Resize / Truncate / Abort. Notefolio picker: E=4 fills Str2, Menu( shows 5 names + More +
+Pause, then the main menu. Version selection and splitting live in BASIC (Lbl Q): capacity
+table (alnum when the check says so, else byte; EC L) into L₁; C = capacity per code (the set
+version's, else version 11's); J = max(1,⌈L/C⌉) codes; W = ⌈L/J⌉ per code (even pieces;
+`⁻int(⁻x` rounds up; for full codes first, that line becomes `min(L,C→W`); the version is the
+set one, else the smallest that holds W, the same for every code. A message that fits one
+code is just J=1. There is no "too long" menu any more: a set version means "codes this
+size", so it splits at that version. Lbl H shows code P: O=(P-1)W, N=min(W,L-O), then the
+usual encode. After it (Lbl Z, J>1): a fraction at the left edge of the screen: the total J at x=0,
+the code number right-aligned over it so ones (and tens) line up, at x=4(int(log(J))-int(log(P)))
+(small-font digits are 4 px including the gap), bar Pxl-On row 31 as wide as J; Text( rows 24
+and 32 (ink rows 25-29 and 33-37, centered on the bar). Up to 3 digits stay clear of the code's 4-module quiet zone
+(v11 starts at x=17). The check call caps lengths at 9999, so 3-digit counts only happen
+with a small set version.
+Keys (Lbl K): Enter/→ next, ← back, Clear stops; ← on the first and → on the last do nothing;
+Enter on the last ends. Notefolio picker: E=4 fills Str2, Menu( shows 5 names + More +
 Back (More wraps from the last page to the first; Back goes back a page, or to the main menu
 from the first), the pick goes into Str3, then the check and version flow with E=3. Scratch:
-U requested version, M mode, L length, A alnum flag, K, P, I, L₁, Str1, Str2, Str3.
+U requested version, M mode, L length, A alnum flag, K, P, I, L₁, Str1, Str2, Str3; split: J
+codes, C capacity per code, W per code, P current, O skip.
 
 ## Risks: not verified on hardware
 

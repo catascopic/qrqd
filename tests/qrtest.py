@@ -63,10 +63,10 @@ AUTO, ASCII, ALNUM = 0, 1, 2                 # M
 BAD = 32768                                  # Ans = BAD + position of the first bad character
 
 
-def run_engine(source, version, count, mode, str1=None, lst=None):
+def run_engine(source, version, count, mode, str1=None, lst=None, skip=0):
     """Run the engine the way prgmQR calls it (version 0 = check text only)."""
     m = Machine(SRC)
-    for name, v in zip('EVNM', (source, version, count, mode)):
+    for name, v in zip('EVNMO', (source, version, count, mode, skip)):
         m.set_real(name, v)
     if source == BINARY:
         m.set_list('BIN', lst)

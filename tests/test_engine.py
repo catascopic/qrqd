@@ -60,6 +60,26 @@ def drawn(toks, mode, version=2):
     return 0, decode(matrix_from(m, version))[0].bytes
 
 
+def skipping():
+    """O skips characters (or list elements) before encoding: one piece of a split message."""
+    def piece(name, source, mode, skip, count, payload, kind, **kw):
+        m = run_engine(source, 2, count, mode, skip=skip, **kw)
+        try:
+            ok = m.ans == 0 and check_symbol(m, 2, payload, kind) is not None
+        except AssertionError as e:
+            ok = e
+        expect(name, ok is True, ok)
+    text = 'Hello, World! abc'                     # lowercase letters are 2-byte tokens
+    piece('skip 7 of ASCII text', TEXT, ASCII, 7, 6, 'World!', 'byte', str1=ascii_tokens(text))
+    piece('skip 6 of alnum text, odd count', TEXT, AUTO, 6, 5, 'WORLD', 'alphanumeric',
+          str1=alnum_tokens('HELLO WORLD 123'))
+    piece('skip 5 list elements', BINARY, AUTO, 5, 4, bytes(range(5, 9)), 'byte', lst=list(range(20)))
+    piece('count past the end stops at the end', TEXT, ASCII, 5, 10, 'FG', 'byte',
+          str1=ascii_tokens('ABCDEFG'))
+    piece('skip past the end gives an empty code', TEXT, ASCII, 100, 10, '', 'byte',
+          str1=ascii_tokens('ABCDEFG'))
+
+
 def edge_cases():
     Q, PI, NEG, SIN = b'\x2a', b'\xac', b'\xb0', b'\xc2'
     # checking text (V=0): 2*length + 1 if it will be alphanumeric, or BAD + position
@@ -90,7 +110,7 @@ def edge_cases():
     # count larger than the message or the capacity is clamped
     # prgmQR keeps N within capacity; a bad N may give a wrong symbol but stays inside L1
     m = Machine(SRC)
-    for name, val in zip('EVNM', (TEXT, 1, 9999, ASCII)):
+    for name, val in zip('EVNMO', (TEXT, 1, 9999, ASCII, 0)):
         m.set_real(name, val)
     m.set_str(1, b''.join(ascii_tokens('x' * 800)))
     beyond = bytes(m.mem[L1 + 714:L1 + 0x800])
@@ -121,6 +141,7 @@ def edge_cases():
 
 if __name__ == '__main__':
     edge_cases()
+    skipping()
     sweep([1, 5, 10] if '--quick' in sys.argv else range(1, 12))
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

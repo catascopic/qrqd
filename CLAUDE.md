@@ -29,6 +29,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `src/basic/` | the pure-BASIC generator, cleaned up (QRECC inlined into QRCW); built to `build/basic/` |
 | `tests/test_basic.py` | runs `build/basic` in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
 | `tests/test_frontend.py` | menu flows of `src/QR.basic.txt` in tibasic, with a BASIC stand-in for the engine |
+| `src/LOREMSRC.axe.txt` | test tool (Axe, compiles to prgmLOREM): writes note LOREM, lorem ipsum ×N (OS var N, ≤100); `tests/test_lorem.py` |
 
 ## Commands
 
@@ -39,6 +40,7 @@ python tests/test_engine.py --quick      # drop --quick for the full sweep (a fe
 python tests/test_notefolio.py
 python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1
 python tests/test_basic.py --quick       # pure-BASIC set; same needs
+python tests/test_lorem.py               # the LOREM note maker
 python tools/build.py decompile build/QRSRC.8xp
 ```
 
@@ -71,7 +73,7 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 
 For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
 ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
-ASCII. `V`=1-11 also reads `N` (count to encode; the engine clamps it to the input length, but
+ASCII. `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
 can't write past L₁), draws, and returns 0. Either call returns 32768+k if character k can't be encoded
 (non-ASCII, or not alphanumeric when M=2), and 65535 for bad parameters or a missing input.

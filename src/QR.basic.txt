@@ -66,9 +66,8 @@ K-2L→A
 If not(B
 Goto Q
 ClrHome
-Output(1,1,"NON-ASCII CHARS
-Output(2,1,"Position:
-Output(2,11,B
+Disp "Non-ASCII chars","Pos=
+Output(2,5,B
 Pause 
 Goto Q
 Lbl N0
@@ -121,17 +120,15 @@ Then
 Else
 "BAD CHAR
 End
-Output(1,1,"ERR:"+Ans
+Disp "ERR:"+Ans
 If E=1
-Output(2,1,"Char: "+sub(Str1,K,1
-Output(3,1,"Position:
-Output(3,11,K
+Disp "Pos=
+Output(3,5,K
 Pause 
 Goto 0
 Lbl G
 ClrHome
-Output(1,1,"ERR:TOO LONG
-Output(2,1,"Max 16383 chars
+Disp "ERR:TOO LONG","Max 16383 chars
 Pause 
 Goto 0
 Lbl Y

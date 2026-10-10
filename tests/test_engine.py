@@ -135,6 +135,21 @@ def edge_cases():
         m.set_str(1, b'')
         m.run()
         expect('E=%d V=%d M=%d rejected' % (e, v, mode), m.ans == 65535 and not m.displays)
+    # a variable that doesn't exist reads as 0 (prgmQR sets them all; another caller might not)
+    def bare(**reals):
+        m = Machine(SRC)
+        for name, val in reals.items():
+            m.set_real(name, val)
+        m.set_str(1, b''.join(alnum_tokens('AB12')))
+        m.run()
+        return m
+    m = bare()
+    expect('no variables at all -> 65535 (E reads as 0)', m.ans == 65535 and not m.displays)
+    m = bare(E=TEXT)
+    expect('only E: a check (V=0) in auto mode (M=0)', m.ans == 2 * 4 + 1, m.ans)
+    m = bare(E=TEXT, V=1, N=4)
+    expect('only E, V, N: encodes in byte mode (A=0) from the start (O=0)',
+           m.ans == 0 and check_symbol(m, 1, 'AB12', 'byte') is not None)
     m = Machine(SRC)
     for name, val in zip('EVNM', (TEXT, 1, 1, AUTO)):
         m.set_real(name, val)

@@ -57,14 +57,17 @@
 .BACK TO 6 MHZ WHEN THE PROGRAM ENDS.
 Full
 .
-.READ PARAMETERS
-float{GetCalc("varE")}→E
+.READ PARAMETERS (A MISSING ONE IS 0)
+sub(GV,"varE")
+r₁→E
 If E=4
 sub(LS)
 Return
 End
-float{GetCalc("varV")}→V
-float{GetCalc("varM")}→F
+sub(GV,"varV")
+r₁→V
+sub(GV,"varM")
+r₁→F
 If V>11 or (E-1>2) or (F>2)
 65535→Ans
 Return
@@ -154,10 +157,13 @@ End
 T*2+F-1→Ans
 Return
 End
-float{GetCalc("varN")}→N
-float{GetCalc("varO")}→θ
+sub(GV,"varN")
+r₁→N
+sub(GV,"varO")
+r₁→θ
 !If F
-float{GetCalc("varA")}+1→F
+sub(GV,"varA")
+r₁+1→F
 End
 .F IS NOW 1 ASCII OR 2 ALNUM
 V*4+17→S
@@ -692,6 +698,15 @@ T+1→T
 Else
 T→U
 End
+End
+Return
+.
+.OS REAL NAMED AT R1 ("VARN") AS AN
+.INTEGER IN R1; 0 IF IT DOESN'T EXIST
+Lbl GV
+GetCalc(r₁)→r₁
+If r₁
+float{r₁}→r₁
 End
 Return
 .

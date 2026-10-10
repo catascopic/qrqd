@@ -18,6 +18,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | Path | What |
 | --- | --- |
 | `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
+| `docs/API.md` | how other programs call prgmθQR (variables, return values, capacity, a tested example) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
 | `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |
 | `tools/build.py` | builds both `.8xp`; `decompile` turns any `.8xp` back into text |
@@ -26,7 +27,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (modes 3-5), `qrtest.py` helpers |
 | `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
 | `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
-| `src/basic/` | the pure-BASIC generator, cleaned up (QRECC inlined into QRCW); built to `build/basic/` |
+| `src/basic/` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/basic/` |
 | `tests/test_basic.py` | runs `build/basic` in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
 | `tests/test_frontend.py` | menu flows of `src/QR.basic.txt` in tibasic, with a BASIC stand-in for the engine |
 | `src/LOREMSRC.axe.txt` | test tool (Axe, compiles to prgmLOREM): writes note LOREM, lorem ipsum ×N (OS var N, ≤100); `tests/test_lorem.py` |
@@ -56,10 +57,10 @@ TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Opti
 "No Shell" (the `.θQR` header line names the output), run prgmQR. Running prgmθQR
 needs free RAM at least its compiled size (`Asm(` copies it to userMem each call), so engine
 size is RAM the user must keep free; static buffers inside the program cost it too. Old QRCW/QRBIT/QRECC/
-QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`) still
-uses ʟGFL/ʟGFX/ʟCW, and its prgmQR has the same name as the front end's.
+QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`: prgmQRBASIC,
+prgmθQRBIT) still uses ʟGFL/ʟGFX/ʟCW and ʟQR (3 options), and overwrites Str2/Str3.
 
-`src/basic/` is tokenized in tivars "max" mode (tokens inside strings, as QRDRAW's r₁ strings
+`src/basic/` is tokenized in tivars "max" mode (tokens inside strings, as the drawing's r₁ strings
 need), so a string wanting single characters escapes them: `<\=>`, `[\\]`, `|~` (the tilde
 token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 can't tokenize.
 
@@ -72,7 +73,7 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 | 3 | text of the Notefolio note named in Str3 (calculator character codes) |
 | 4 | list Notefolio notes: Ans = count; names in Str2, 8 chars each + 48 spaces padding |
 
-For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
+A missing OS variable reads as 0 (subroutine `GV`). For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
 ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
 ASCII. `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N

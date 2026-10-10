@@ -77,6 +77,22 @@
    Not done: reading a note's length from its header (word at +16 = length+24) instead of
    scanning for the 00h; NoteFolioEdit itself scans, and a third header word that is
    documented as the same length isn't, in a real note (XLIB), so the header wasn't trusted.
+19. A public interface for other programs (`docs/API.md`): every OS variable is read through
+   `GV`, so a missing one is 0 instead of a read from address 0 (a caller can leave out O
+   and A). Version picking stays in the caller (prgmQR's tables, copied into the doc).
+20. The pure-BASIC set became prgmQRBASIC + prgmθQRBIT (θQRBIT is called once per value from
+   loops, so it stays separate; QRCW and QRDRAW ran once each and were inlined, about 460
+   bytes smaller). Applied from the hybrid: a bad character fails before any work (ERR:BAD
+   CHAR, the character, Pos=; a loop that ends itself by setting X=N, never a Goto out of it),
+   so safe mode and the `$`/`?` substitutions are gone; too long just truncates, at the set
+   version too, with "X of Y chars/bytes encoded" on the Encoding screen (rows 7-8, no
+   Pause); the Resize/Continue/Abort menu is gone. Drawn at the top left (no centering
+   option, no G/H in any Pxl-On). Options left in ʟQR: StorePic 1, Alt punct, ASCII fix.
+   No auto mode (the menu picks Alphanumeric or ASCII); `⁻` stays a bad character; versions
+   5 and 9 are still skipped (slower than 6 and 10: 108·26 vs 2·68·18 RS steps) and their
+   generator tables were deleted. The ASCII table is copied into Str2 so one check loop and
+   lookup serve both text modes. Known: with ASCII fix on and no Str3, `length(Str3` is
+   ERR:UNDEFINED (BASIC can't test whether a variable exists).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -147,7 +163,7 @@ pointer/accumulator/bit count, A/Z value and bit count for AB. Subroutines: AB a
 next character → ASCII A, AV ASCII A → alnum value J, RS EC for one block, RV reserve rectangle
 (r₁-r₄), FP finder, AP alignment, MA calculator char C → output byte A, LS list notes, NC copy VAT
 name, NH is it a note (sets Q or opens Y₁), NF open note named in Str3, RB read byte r₁ of the
-open note.
+open note, GV OS real named at r₁ → r₁ (0 if missing).
 
 ## Notefolio format (NoteFolioEdit's source, confirmed by tests/data/TEST.8xv)
 

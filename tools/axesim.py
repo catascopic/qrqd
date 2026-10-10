@@ -187,6 +187,8 @@ class Machine:
     def getcalc_ptr(self, p):
         b = self.mem[p:p + 9]
         typ = b[0]
+        if typ == 0x00:                      # real variable, e.g. "varN"
+            return self.os.get(('real', chr(b[1])), 0)
         if typ == 0x01 and b[1] == 0x5D:
             name = bytes(b[2:]).split(b'\0')[0].decode()
             return self.os.get(('list', name), 0)
@@ -335,6 +337,8 @@ class Machine:
             if t not in self.literals:
                 self.literals[t] = self.data_ptr
                 data = t.encode('ascii') + bytes(1)
+                if t.startswith('var') and len(t) == 4:   # Axe stores "varA" as an OS name
+                    data = bytes([0x00, ord(t[3])]) + bytes(7)
                 self.mem[self.data_ptr:self.data_ptr + len(data)] = data
                 self.data_ptr += len(data)
             return self.literals[t], i + 1
@@ -481,7 +485,7 @@ class Machine:
             v, j = self.expr(t, 0)
             j = self.expect(t, j, '→')
             k, x = t[j]
-            if k == 'VAR':
+            if k == 'VAR' or x in ('r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆'):
                 self.vars[x] = v; assert j + 1 == len(t)
             elif x == 'Ans':
                 self.ans = v; assert j + 1 == len(t)

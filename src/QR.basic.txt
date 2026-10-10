@@ -69,6 +69,7 @@ ClrHome
 Disp "Non-ASCII chars","Pos=
 Output(2,5,B
 Pause 
+ClrHome
 Goto Q
 Lbl N0
 Menu("No Files","Back",0,"Exit",X
@@ -126,11 +127,13 @@ Disp "Char: "+sub(Str1,K,1
 Disp "Pos=
 Output(2+(E=1),5,K
 Pause 
+ClrHome
 Goto 0
 Lbl G
 ClrHome
 Disp "ERR:TOO LONG","Max 16383 chars
 Pause 
+ClrHome
 Goto 0
 Lbl Y
 Menu("Error in Asm","Back",0,"Exit",X

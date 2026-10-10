@@ -64,8 +64,8 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 | --- | --- |
 | 1 | text in Str1 (tokens) |
 | 2 | bytes in list ʟBIN |
-| 3 | text of the Notefolio note named in Str5 (calculator character codes) |
-| 4 | list Notefolio notes: Ans = count; names in Str4, 8 chars each + 48 spaces padding |
+| 3 | text of the Notefolio note named in Str3 (calculator character codes) |
+| 4 | list Notefolio notes: Ans = count; names in Str2, 8 chars each + 48 spaces padding |
 
 For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
 ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for

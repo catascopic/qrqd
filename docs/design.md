@@ -52,7 +52,7 @@ scoring instead of fixed mask 0.
 
 1. Read `E`. E=4 → `LS` (list) and return.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
-3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str5 (E=3,
+3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str3 (E=3,
    `NF`), or Str1 (E=1; T counts tokens).
 4. Text only: read every character through `CH` (Str1 token → ASCII via GDB0, or note
    character → ASCII via `MA`; 0 if none) and `AV` (ASCII → alphanumeric value, 99 if none).
@@ -101,7 +101,7 @@ character just read, K/X first non-ASCII/non-alnum position while checking, Q th
 pointer/accumulator/bit count, A/Z value and bit count for AB. Subroutines: AB append bits, CH
 next character → ASCII A, AV ASCII A → alnum value J, RS EC for one block, RV reserve rectangle
 (r₁-r₄), FP finder, AP alignment, MA calculator char C → ASCII A, LS list notes, NC copy VAT
-name, NH is it a note (sets Q or opens Y₁), NF open note named in Str5, RB read byte r₁ of the
+name, NH is it a note (sets Q or opens Y₁), NF open note named in Str3, RB read byte r₁ of the
 open note.
 
 ## Notefolio format (NoteFolioEdit's source, confirmed by tests/data/TEST.8xv)
@@ -129,10 +129,10 @@ Text goes through a check call first (Lbl C: V=0); a bad character goes to Lbl F
 error (ERR:BAD CHAR, or ERR:NOT ALNUM when M=2; the character from Str1, and the position),
 Pause, then the main menu. Version selection lives in BASIC: capacity table (alnum when the
 check says so, else byte; EC L) into L₁; auto picks the smallest that fits; too
-long → Resize / Truncate / Abort. Notefolio picker: E=4 fills Str4, Menu( shows 5 names + More +
+long → Resize / Truncate / Abort. Notefolio picker: E=4 fills Str2, Menu( shows 5 names + More +
 Back (More wraps from the last page to the first; Back goes back a page, or to the main menu
-from the first), the pick goes into Str5, then the check and version flow with E=3. Scratch:
-U requested version, M mode, L length, A alnum flag, K, P, I, L₁, Str1, Str4, Str5.
+from the first), the pick goes into Str3, then the check and version flow with E=3. Scratch:
+U requested version, M mode, L length, A alnum flag, K, P, I, L₁, Str1, Str2, Str3.
 
 ## Risks: not verified on hardware
 

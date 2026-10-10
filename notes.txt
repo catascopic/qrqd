@@ -28,3 +28,6 @@ Would there be a good way to do the menu in assembly (maybe using the small font
 
 
 A way to do vectorized XOR?
+
+
+NoteFolio library

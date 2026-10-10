@@ -2,7 +2,7 @@
 
 tibasic can't run assembly, so `Asm(prgmQRENGINE` becomes `prgmQRENGINE` and a BASIC
 stand-in plays the engine:
-  E=4 (list notes)  copies Str9 to Str4 and returns Z, the note count the test set up
+  E=4 (list notes)  copies Str9 to Str2 and returns Z, the note count the test set up
   V=0 (check text)  returns W, set up by the test (2*length+alnum, or 32768+position)
   otherwise         returns G (0 = drawn)
 Each call is logged in L₆ as 10000N+100V+10M+E, so a test can check what the front end
@@ -22,7 +22,7 @@ If T>8
 Stop
 10000N+100V+10M+E→L₆(T
 If E=4
-Str9→Str4
+Str9→Str2
 G
 If not(V
 W
@@ -70,10 +70,10 @@ def run(choices, inputs, notes=(), check=0, encode=0, binary=None):
 
 
 def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_screen=(),
-         want_str5=None, **kw):
+         want_str3=None, **kw):
     """want_calls: (N, V, M, E) per engine call; want_menus: option lists after the first
     main menu (blank-padded options stripped); want_screen: text that must appear on a
-    home-screen frame captured at a Pause; want_str5: the note picked."""
+    home-screen frame captured at a Pause; want_str3: the note picked."""
     try:
         calls, menus, env = run(choices, inputs, **kw)
     except Exception as e:
@@ -81,11 +81,11 @@ def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_sc
         return
     got_menus = [[o.strip() for o in opts] for _, opts in menus[1:]]
     screens = '\n'.join(env.console.frames)
-    str5 = env.strings[4] and str(env.strings[4]).strip()
+    str3 = env.strings[2] and str(env.strings[2]).strip()
     ok = (calls == want_calls and got_menus == want_menus and
           all(t in screens for t in want_screen) and not any(t in screens for t in avoid_screen) and
-          (want_str5 is None or str5 == want_str5))
-    expect(name, ok, 'calls %r, menus %r, Str5 %r, screens:\n%s' % (calls, got_menus, str5, screens))
+          (want_str3 is None or str3 == want_str3))
+    expect(name, ok, 'calls %r, menus %r, Str3 %r, screens:\n%s' % (calls, got_menus, str3, screens))
 
 
 def main(mode='Auto'):
@@ -140,7 +140,7 @@ if __name__ == '__main__':
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
          LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0), page(1), page(2), page(1)],
-         notes=NOTES, check=2 * 12, want_str5='NOTE7')
+         notes=NOTES, check=2 * 12, want_str3='NOTE7')
     case('bad char in a note: position only', [NOTEFOLIO, 0, EXIT], [],
          LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Position: 40'], ['Char:'],
          notes=NOTES, check=BAD + 40)

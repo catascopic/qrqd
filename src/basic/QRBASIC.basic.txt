@@ -33,6 +33,7 @@ Lbl M
 Ans→E
 If E≠2
 Input "msg=",Str1
+startTmr→A
 If E
 Then
 {17,32,53,78,106,134,154,192,230,271,321→L₁
@@ -106,10 +107,8 @@ prgmθQRBIT
 11→S
 N→K
 For(X,1,K-1,2
-inString(Str2,sub(Str1,X,1
-Ans-1→C
-inString(Str2,sub(Str1,X+1,1
-45C+Ans-1→N
+inString(Str2,sub(Str1,X,1))-1→C
+45C+inString(Str2,sub(Str1,X+1,1))-1→N
 prgmθQRBIT
 End
 If fPart(.5K
@@ -126,19 +125,13 @@ Else
 8+8(V≥10→S
 prgmθQRBIT
 S/8→O
+For(X,1,N
 If E=1
-Then
-For(X,1,N
 31+inString(Str2,sub(Str1,X,1→C
-int(C/16)+ʟCW(O+X→ʟCW(O+X
-256fPart(C/16→ʟCW(O+X+1
-End
-Else
-For(X,1,N
+If E=2
 ʟBIN(X→C
 int(C/16)+ʟCW(O+X→ʟCW(O+X
 256fPart(C/16→ʟCW(O+X+1
-End
 End
 End
 For(X,1,M-dim(ʟCW
@@ -221,27 +214,25 @@ For(J,8,S-8)
 If not(fPart(J/2
 Pxl-On(6,J
 End
-8
-Pxl-On(Ans,8
-Pxl-On(Ans,7
-Pxl-On(Ans,5
-Pxl-On(Ans,4
-Pxl-On(Ans,2
-Pxl-On(Ans,1
-Pxl-On(Ans,0
-Pxl-On(Ans,S-3
-Pxl-On(Ans,S-7
-Pxl-On(Ans,S-8
-8
-Pxl-On(S-7,Ans
-Pxl-On(S-6,Ans
-Pxl-On(S-5,Ans
-Pxl-On(S-3,Ans
-Pxl-On(S-2,Ans
-Pxl-On(S-1,Ans
-Pxl-On(2,Ans
-Pxl-On(7,Ans
-Pxl-On(S-8,Ans
+Pxl-On(8,8
+Pxl-On(8,7
+Pxl-On(8,5
+Pxl-On(8,4
+Pxl-On(8,2
+Pxl-On(8,1
+Pxl-On(8,0
+Pxl-On(8,S-3
+Pxl-On(8,S-7
+Pxl-On(8,S-8
+Pxl-On(S-7,8
+Pxl-On(S-6,8
+Pxl-On(S-5,8
+Pxl-On(S-3,8
+Pxl-On(S-2,8
+Pxl-On(S-1,8
+Pxl-On(2,8
+Pxl-On(7,8
+Pxl-On(S-8,8
 If V>1
 Then
 If V≤6
@@ -328,6 +319,7 @@ Else
 D+I→I
 End
 End
+checkTmr(A→T
 If ʟQR(1
 StorePic 1
 "→r₁

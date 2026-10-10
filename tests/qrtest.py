@@ -63,10 +63,17 @@ AUTO, ASCII, ALNUM = 0, 1, 2                 # M
 BAD = 32768                                  # Ans = BAD + position of the first bad character
 
 
-def run_engine(source, version, count, mode, str1=None, lst=None, skip=0):
-    """Run the engine the way prgmQR calls it (version 0 = check text only)."""
+def run_engine(source, version, count, mode, str1=None, lst=None, skip=0, alnum=None):
+    """Run the engine the way prgmQR calls it (version 0 = check text only). An auto-mode
+    encode gets A (alphanumeric or not) from a check call first, as prgmQR does, unless
+    `alnum` is given."""
+    if alnum is None:
+        alnum = 0
+        if version and mode == AUTO and source == TEXT:
+            c = run_engine(source, 0, 0, mode, str1=str1)
+            alnum = c.ans & 1 if c.ans < BAD else 0
     m = Machine(SRC)
-    for name, v in zip('EVNMO', (source, version, count, mode, skip)):
+    for name, v in zip('EVNMOA', (source, version, count, mode, skip, alnum)):
         m.set_real(name, v)
     if source == BINARY:
         m.set_list('BIN', lst)

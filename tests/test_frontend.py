@@ -1,6 +1,6 @@
 """Menu-flow tests for the BASIC front end (src/QR.basic.txt), run in tibasic.
 
-tibasic can't run assembly, so `Asm(prgmQRENGINE` becomes `prgmQRENGINE` and a BASIC
+tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` and a BASIC
 stand-in plays the engine:
   E=4 (list notes)  copies Str9 to Str2 and returns Z, the note count the test set up
   V=0 (check text)  returns W, set up by the test (2*length+alnum, or 32768+position)
@@ -58,9 +58,9 @@ def tokens(text):
 def run(choices, inputs, notes=(), check=0, encode=0, binary=None, keys=()):
     env = Environment(console=MenuLog(inputs=inputs, choices=choices, keys=keys))
     front = tokens((ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n'))
-    assert front.count(b'\xbb\x6a\x5fQRENGINE') == 3
-    install(env, 'QR', front.replace(b'\xbb\x6a\x5fQRENGINE', b'\x5fQRENGINE'))
-    install(env, 'QRENGINE', tokens(STUB))
+    assert front.count(b'\xbb\x6a\x5f\x5bQR') == 3                  # Asm(prgmθQR
+    install(env, 'QR', front.replace(b'\xbb\x6a\x5f\x5bQR', b'\x5f\x5bQR'))
+    install(env, 'θQR', tokens(STUB))
     for v in 'TNVO':
         setattr(env.numerics, v, 0.0)
     env.numerics.Z = float(len(notes))

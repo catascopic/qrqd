@@ -55,6 +55,12 @@
    Truncate / Abort) was dropped: everything that doesn't fit is split, and a set version
    splits at that version. Even pieces vs. filling version 11 first: same number of codes;
    even was kept so every code is the same size (one line to switch, see the BASIC section).
+14. Encoding calls stopped rescanning the whole text: only the check call (V=0) looks for bad
+   characters and decides auto mode; prgmQR passes that decision back in A, and skipping to a
+   piece steps over Str1 tokens by length (GDB1) without looking them up, or sets a note's
+   position directly. So each code costs about the same however long the message is.
+15. The engine was renamed prgmθQR (θ marks helper programs, and sorts after Z); it was
+   prgmQRENGINE.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -66,15 +72,17 @@ scoring instead of fixed mask 0.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
 3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str3 (E=3,
    `NF`), or Str1 (E=1; T counts tokens).
-4. Text only: read every character through `CH` (Str1 token → ASCII via GDB0, or note
-   character → ASCII via `MA`; 0 if none) and `AV` (ASCII → alphanumeric value, 99 if none).
+4. Text, check call only (encoding trusts it): read every character through `CH` (Str1
+   token → ASCII via GDB0, or note character → ASCII via `MA`; 0 if none) and `AV` (ASCII → alphanumeric value, 99 if none).
    K = first non-ASCII position, X = first non-alphanumeric. Forced alnum uses X as K; auto
    becomes alnum if X=0. If K, return 32768+K. F is now 1 (byte) or 2 (alnum).
-5. V=0: return 2T+F-1 (T capped at 9999). Otherwise read `N`, and `O` into θ (count to skip).
+5. V=0: return 2T+F-1 (T capped at 9999). Otherwise read `N`, `O` into θ (count to skip),
+   and for auto mode `A` (F=A+1: the check's decision, from prgmQR).
 6. Size `S=4V+17`; offsets `G=31-S/2`, `H=47-S/2` (always centered). Look up M (data
    codewords), R (EC per block), B (blocks). Clamp N to T, and to 468 (only so a bad
    N can't write past L₁: keeping N within the version's capacity is prgmQR's job).
-7. Skip θ list elements (P+9θ) or characters (calling `CH` θ times; O counts them). Bit-pack
+7. Skip θ list elements (P+9θ), Str1 tokens (by length via GDB1, no lookup) or note
+   characters (O=θ). Bit-pack
    into L₁ via `AB`: mode indicator, count (alnum 9/11 bits, byte 8/16 bits for v<10/≥10),
    data (alnum pairs 11 bits, odd last 6 bits; bytes 8 bits; text re-read through `CH`),
    terminator ≤4 zero bits, byte align, pad bytes EC/11.

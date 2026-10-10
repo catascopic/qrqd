@@ -94,8 +94,12 @@ def edge_cases():
     expect('check: sin( bad in ASCII', check_text(ascii_tokens('ab') + [SIN], ASCII) == BAD + 3)
     expect('check: empty text', check_text([], AUTO) == 1)
     # encoding with a bad character fails before drawing
-    expect('encode: bad char -> BAD + position, nothing drawn',
-           drawn(alnum_tokens('AB') + [SIN], AUTO) == (BAD + 3, None))
+    # encoding trusts the check: it doesn't rescan the text, auto mode takes A from prgmQR
+    m = run_engine(TEXT, 1, 3, AUTO, str1=alnum_tokens('ABC'), alnum=0)
+    expect('encode: auto with A=0 uses byte mode, even for alnum text',
+           m.ans == 0 and check_symbol(m, 1, 'ABC', 'byte') is not None)
+    m = run_engine(TEXT, 1, 3, AUTO, str1=alnum_tokens('ABC'), alnum=1)
+    expect('encode: auto with A=1 uses alnum', m.ans == 0 and check_symbol(m, 1, 'ABC', 'alphanumeric') is not None)
     expect('encode: auto, lowercase -> byte mode', drawn(ascii_tokens('Hi there'), AUTO) == (0, b'Hi there'))
     expect('encode: forced ASCII on alnum text', drawn(alnum_tokens('ABC'), ASCII) == (0, b'ABC'))
     expect('encode: forced alnum', drawn(alnum_tokens('ABC 1'), ALNUM) == (0, b'ABC 1'))

@@ -6,7 +6,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 ## Where things stand
 
 - Delivered to the user and working in simulation: `build/QR.8xp` (BASIC) and `build/QRSRC.8xp`
-  (Axe source, compiled on-calc into prgmQRENGINE).
+  (Axe source, compiled on-calc into prgmθQR).
 - **The user has since edited prgmQR by hand on the calculator.** Their QR.8xp supersedes
   `src/QR.basic.txt`. First task: `python tools/build.py decompile <their QR.8xp> -o src/QR.basic.txt`,
   then `git diff` (the first commit is the version from the chat) and keep their changes.
@@ -52,7 +52,7 @@ for BASIC changes) → give the user `build/*.8xp`.
 ## How the user runs it
 
 TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Options → shell
-"No Shell" (the `.QRENGINE` header line names the output), run prgmQR. Running prgmQRENGINE
+"No Shell" (the `.θQR` header line names the output), run prgmQR. Running prgmθQR
 needs free RAM at least its compiled size (`Asm(` copies it to userMem each call), so engine
 size is RAM the user must keep free; static buffers inside the program cost it too. Old QRCW/QRBIT/QRECC/
 QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`) still
@@ -62,7 +62,7 @@ uses ʟGFL/ʟGFX/ʟCW, and its prgmQR has the same name as the front end's.
 need), so a string wanting single characters escapes them: `<\=>`, `[\\]`, `|~` (the tilde
 token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 can't tokenize.
 
-## Engine interface (BASIC sets OS variables, runs `Asm(prgmQRENGINE)`, reads Ans)
+## Engine interface (BASIC sets OS variables, runs `Asm(prgmθQR)`, reads Ans)
 
 | E | Source |
 | --- | --- |

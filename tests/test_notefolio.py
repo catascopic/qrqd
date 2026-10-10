@@ -69,7 +69,7 @@ def machine(notes, params, str3=None, extra=()):
     m.add_appvar('FAKE', b'\x00\x47\xbf\xaf' + bytes(40))   # wrong signature
     m.add_appvar('lower', notefolio('lower', b'hi'))        # name can't be opened by name
     m.build_vat()
-    for k, v in {'O': 0, **params}.items():
+    for k, v in {'O': 0, 'A': 0, **params}.items():
         m.set_real(k, v)
     if str3 is not None:
         m.set_str(3, str3.encode().ljust(8, b'\x29'))        # padded with space tokens
@@ -120,7 +120,7 @@ def synthetic():
         for v in range(1, 12):
             cap = (CAP_ALNUM if alnum else CAP_BYTE)[v - 1]
             for N in sorted({min(len(tb), cap), min(len(tb), cap) // 2}):
-                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO}, str3=name)
+                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO, 'A': int(alnum)}, str3=name)
                 try:
                     check_symbol(m, v, payload[:N].decode(), 'alphanumeric' if alnum else 'byte')
                 except AssertionError as e:
@@ -133,9 +133,11 @@ def synthetic():
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('skip 4 characters of a note', got == b'milk', got)
 
+    # only the check call looks for bad characters (prgmQR never encodes after a failed check);
+    # encoding doesn't rescan, so it just draws, with a 0 byte where the bad character was
     m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str3='ODD')
-    expect('encoding a note with a bad char fails at 10, nothing drawn',
-           m.ans == BAD + 10 and not m.displays, m.ans)
+    got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
+    expect('encoding trusts the check (ODD is drawn, bad chars as 0 bytes)', got == b'Line two \0 \0 \0 \0', got)
 
 
 def real_file():

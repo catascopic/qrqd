@@ -71,8 +71,9 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 
 For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
 ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
-ASCII. `V`=1-11 also reads `N` (count to encode; the engine clamps it to the input and the
-capacity), draws, and returns 0. Either call returns 32768+k if character k can't be encoded
+ASCII. `V`=1-11 also reads `N` (count to encode; the engine clamps it to the input length, but
+BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
+can't write past L₁), draws, and returns 0. Either call returns 32768+k if character k can't be encoded
 (non-ASCII, or not alphanumeric when M=2), and 65535 for bad parameters or a missing input.
 Auto picks alphanumeric when every character allows it. Always centered, EC level L, mask 0.
 The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks

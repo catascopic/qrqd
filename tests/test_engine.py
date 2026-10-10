@@ -9,6 +9,7 @@ import sys
 from qrtest import (Machine, SRC, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
                     ascii_tokens, check_symbol, decode, matrix_from, run_engine,
                     TEXT, BINARY, AUTO, ASCII, ALNUM, BAD)
+from axesim import L1                                          # noqa: E402
 
 failures = []
 
@@ -87,8 +88,15 @@ def edge_cases():
     expect('alnum: negative sign -> hyphen', check_text(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == 7
            and drawn(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == (0, b'A-1'))
     # count larger than the message or the capacity is clamped
-    m = run_engine(TEXT, 1, 500, AUTO, str1=alnum_tokens('1' * 30))
-    expect('clamp to capacity (v1 alnum = 25)', m.ans == 0 and decode(matrix_from(m, 1))[0].bytes == b'1' * 25)
+    # prgmQR keeps N within capacity; a bad N may give a wrong symbol but stays inside L1
+    m = Machine(SRC)
+    for name, val in zip('EVNM', (TEXT, 1, 9999, ASCII)):
+        m.set_real(name, val)
+    m.set_str(1, b''.join(ascii_tokens('x' * 800)))
+    beyond = bytes(m.mem[L1 + 714:L1 + 0x800])
+    m.run()
+    expect('N far over capacity writes nothing past L1', m.ans == 0 and m.displays and
+           bytes(m.mem[L1 + 714:L1 + 0x800]) == beyond)
     m = run_engine(BINARY, 2, 999, AUTO, lst=list(range(5)))
     expect('clamp to list length', m.ans == 0 and decode(matrix_from(m, 2))[0].bytes == bytes(range(5)))
     # bad parameters or missing variables -> 65535, nothing drawn

@@ -66,7 +66,8 @@ scoring instead of fixed mask 0.
    becomes alnum if X=0. If K, return 32768+K. F is now 1 (byte) or 2 (alnum).
 5. V=0: return 2T+F-1 (T capped at 9999). Otherwise read `N`.
 6. Size `S=4V+17`; offsets `G=31-S/2`, `H=47-S/2` (always centered). Look up M (data
-   codewords), R (EC per block), B (blocks). Clamp N to T and to the version's capacity.
+   codewords), R (EC per block), B (blocks). Clamp N to T, and to 468 (only so a bad
+   N can't write past L₁: keeping N within the version's capacity is prgmQR's job).
 7. Bit-pack into L₁ via `AB`: mode indicator, count (alnum 9/11 bits, byte 8/16 bits for v<10/≥10),
    data (alnum pairs 11 bits, odd last 6 bits; bytes 8 bits; text re-read through `CH`),
    terminator ≤4 zero bits, byte align, pad bytes EC/11.

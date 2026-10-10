@@ -60,18 +60,21 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 
 ## Engine interface (BASIC sets OS variables, runs `Asm(prgmQRENGINE)`, reads Ans)
 
-| E | Mode | Input | Ans |
-| --- | --- | --- | --- |
-| 0 | alphanumeric | Str1 tokens | 0 ok, k = first bad char (Safe on), 65535 error |
-| 1 | ASCII | Str1 tokens | same |
-| 2 | binary | list ʟBIN (bytes) | 0 / 65535 |
-| 3 | Notefolio as ASCII | note named in Str5 | 0, k = first non-ASCII char, 65535 |
-| 4 | list Notefolio notes | VAT scan | count; names in Str4, 8 chars each + 48 spaces padding |
-| 5 | measure note | Str5 | text length or 65535 |
+| E | Source |
+| --- | --- |
+| 1 | text in Str1 (tokens) |
+| 2 | bytes in list ʟBIN |
+| 3 | text of the Notefolio note named in Str5 (calculator character codes) |
+| 4 | list Notefolio notes: Ans = count; names in Str4, 8 chars each + 48 spaces padding |
 
-Encode modes also read `V` (version 1-11, chosen by BASIC), `N` (characters/bytes to encode;
-engine clamps to capacity and input length), `C` (center), `S` (safe mode). EC level L, mask 0.
-The engine draws into the graph buffer and calls DispGraph; BASIC handles display (always passes C=1, S=1).
+For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
+ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
+ASCII. `V`=1-11 also reads `N` (count to encode; the engine clamps it to the input and the
+capacity), draws, and returns 0. Either call returns 32768+k if character k can't be encoded
+(non-ASCII, or not alphanumeric when M=2), and 65535 for bad parameters or a missing input.
+Auto picks alphanumeric when every character allows it. Always centered, EC level L, mask 0.
+The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks
+first, picks the version from the length and mode, then encodes.
 
 ## Axe rules that bite (Axe 1.2.2)
 

@@ -76,6 +76,17 @@ def finish_8xp(path, comment):
     assert sum(data) & 0xFFFF == struct.unpack_from('<H', b, 55 + dlen)[0], 'checksum'
 
 
+def check_spaces(name, text, mode=None):
+    """tivars spells some commands with a trailing space ("Pause ", "FnOff "). Without it they
+    tokenize as letters, which can still be valid BASIC (F*n*O*f*f), so refuse to build."""
+    for k, line in enumerate(text.split('\n'), 1):
+        a, b = TIProgram(name='T'), TIProgram(name='T')
+        a.load_string(line, mode=mode)
+        b.load_string(line + ' ', mode=mode)
+        if len(b.data) < len(a.data):
+            raise SystemExit('%s line %d: %r needs a trailing space' % (name, k, line))
+
+
 def save_program(name, tokens, path, comment):
     prog = TIProgram(name=name)
     prog.data = tokens
@@ -99,6 +110,7 @@ def build():
 
     # BASIC front end
     text = (ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n')
+    check_spaces('QR.basic.txt', text)
     prog = TIProgram(name='QR')
     prog.load_string(text)
     save_program('QR', bytes(prog.data), ROOT / 'build' / 'QR.8xp', 'QR code menus (BASIC front end)')
@@ -111,7 +123,9 @@ def build():
     for src in sorted((ROOT / 'src' / 'basic').glob('*.basic.txt')):
         name = src.name.split('.')[0]
         prog = TIProgram(name=name)
-        prog.load_string(src.read_text(encoding='utf-8').rstrip('\n'), mode='max')
+        text = src.read_text(encoding='utf-8').rstrip('\n')
+        check_spaces(src.name, text, 'max')
+        prog.load_string(text, mode='max')
         save_program(name, bytes(prog.data), ROOT / 'build' / 'basic' / (name + '.8xp'),
                      'QR code generator, pure BASIC')
         print('build/basic/%-8s %5d token bytes' % (name + '.8xp', len(prog.data)))

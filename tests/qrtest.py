@@ -58,12 +58,17 @@ def alnum_tokens(s):
     return [ALNUM_TOK[ALNUM_CHARS.index(c)] for c in s]
 
 
-def run_engine(mode, version, count, center, safe, str1=None, lst=None):
-    """Run the engine the way prgmQR calls it. Str2/Str3 are deliberately absent."""
+TEXT, BINARY = 1, 2                          # E: Str1 text, list BIN
+AUTO, ASCII, ALNUM = 0, 1, 2                 # M
+BAD = 32768                                  # Ans = BAD + position of the first bad character
+
+
+def run_engine(source, version, count, mode, str1=None, lst=None):
+    """Run the engine the way prgmQR calls it (version 0 = check text only)."""
     m = Machine(SRC)
-    for name, v in zip('EVNCS', (mode, version, count, center, safe)):
+    for name, v in zip('EVNM', (source, version, count, mode)):
         m.set_real(name, v)
-    if mode == 2:
+    if source == BINARY:
         m.set_list('BIN', lst)
     else:
         m.set_str(1, b''.join(str1))
@@ -71,11 +76,10 @@ def run_engine(mode, version, count, center, safe, str1=None, lst=None):
     return m
 
 
-def matrix_from(m, version, center):
+def matrix_from(m, version):
     """Read the symbol back out of the graph buffer; fail on any stray pixel."""
     S = 17 + 4 * version
-    G = 31 - S // 2 if center else 0
-    H = 47 - S // 2 if center else 0
+    G, H = 31 - S // 2, 47 - S // 2      # always centered
     buf = m.displays[-1]
     mat = [[1 if buf[(G + y) * 12 + (H + x) // 8] & (0x80 >> ((H + x) % 8)) else 0
             for x in range(S)] for y in range(S)]
@@ -105,10 +109,10 @@ def reference(payload, version, mode):
     return [[int(c) for c in r] for r in q.get_matrix()]
 
 
-def check_symbol(m, version, center, payload, mode):
+def check_symbol(m, version, payload, mode):
     """Engine output must equal the reference symbol and decode to the payload."""
     assert m.ans == 0, 'engine returned %r' % m.ans
-    mat = matrix_from(m, version, center)
+    mat = matrix_from(m, version)
     assert mat == reference(payload, version, mode), 'differs from reference encoder'
     if len(payload):                       # decoders don't report empty content
         got = decode(mat)

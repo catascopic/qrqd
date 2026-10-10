@@ -1,11 +1,6 @@
 C and S are always 1, so just remove them from the logic!
 We might still want to provide an actual row/col offset, either a binary C (centered or not)
 
-If F
-!If T
-I+1→T
-End
-End
 
 {1,1,1,1,1,2,2,2,2,4,4 -> 1+(V>5)+2(V>9
 full inline version with θQRBIT
@@ -30,3 +25,6 @@ Auto-detect mode?
 
 Separate LOADNF program (Load NoteFolio)?
 Would there be a good way to do the menu in assembly (maybe using the small font) to avoid the kind of annoying paging menus?
+
+
+A way to do vectorized XOR?

@@ -139,14 +139,26 @@ def build():
                      'QR code generator, pure BASIC')
         print('build/basic/%-8s %5d token bytes' % (stem + '.8xp', len(prog.data)))
 
-    # ʟXOR for QRBASIC: XOR of two 4-bit values, entry 16a+b+1 = a xor b (sent once, like ʟGFL/ʟGFX)
-    lst = TIRealList(name='XOR')
-    lst.load_list([TIReal(a ^ b) for a in range(16) for b in range(16)])
-    lst.raw.name = b']XOR' + bytes(4)              # named list ʟXOR, as the calculator writes it
-    path = ROOT / 'build' / 'basic' / 'XOR.8xl'
+    # Lists QRBASIC expects on the calculator (sent once): the GF(256) tables (polynomial 11Dh)
+    # ʟGFL(n) = log n and ʟGFX(k) = 2^(k-1), and ʟXOR, entry 16a+b+1 = a xor b (4-bit a, b)
+    exp = [1]
+    for _ in range(254):
+        exp.append(exp[-1] * 2 ^ (0x11D if exp[-1] >= 128 else 0))
+    log = {x: k for k, x in enumerate(exp)}
+    save_list('GFL', [log[n] for n in range(1, 256)], 'GF(256) logs for QRBASIC')
+    save_list('GFX', exp, 'GF(256) powers of 2 for QRBASIC')
+    save_list('XOR', [a ^ b for a in range(16) for b in range(16)], 'XOR nibble table for QRBASIC')
+
+
+def save_list(name, values, comment):
+    """build/basic/NAME.8xl: the named real list ʟNAME, in the calculator's own format."""
+    lst = TIRealList(name=name)
+    lst.load_list([TIReal(v) for v in values])
+    lst.raw.name = bytes([0x5D]) + name.encode().ljust(7, bytes(1))   # 5Dh + name, as the calculator writes it
+    path = ROOT / 'build' / 'basic' / (name + '.8xl')
     lst.save(str(path))
-    finish_8xp(path, 'XOR nibble table for QRBASIC')
-    print('build/basic/XOR.8xl    256 entries')
+    finish_8xp(path, comment)
+    print('build/basic/%-8s %5d entries' % (name + '.8xl', len(values)))
 
 
 def decompile(path, out=None):

@@ -58,8 +58,9 @@ TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Opti
 needs free RAM at least its compiled size (`Asm(` copies it to userMem each call), so engine
 size is RAM the user must keep free; static buffers inside the program cost it too. Old QRCW/QRBIT/QRECC/
 QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`: prgmQRBASIC,
-prgmθQRBIT) still uses ʟGFL/ʟGFX/ʟCW, plus ʟXOR (nibble XOR table, `build/basic/XOR.8xl`)
-when the XOR table option is on, and ʟQR (4 options), and overwrites Str2/Str3.
+prgmθQRBIT) still uses ʟGFL/ʟGFX/ʟCW, plus ʟXOR (nibble XOR table) when the XOR table option
+is on; the build generates GFL.8xl, GFX.8xl and XOR.8xl in `build/basic/` (GFL/GFX are byte-identical
+to the user's, `tests/data/basic/`, apart from the comment), and ʟQR (4 options), and overwrites Str2/Str3.
 
 File names spell θ as `_theta_` (TI Connect's convention; it rejects a real θ in a file name):
 `src/basic/_theta_QRBIT.basic.txt` builds `build/basic/_theta_QRBIT.8xp`, program θQRBIT.

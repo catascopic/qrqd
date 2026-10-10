@@ -65,9 +65,8 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None):
     """Run prgmQRBASIC (or the original prgmQR). `patch` maps program name ->
     function(text) -> text for variants. `center` only exists in the originals."""
     env = Environment(console=TokenConsole(inputs=inputs, choices=choices))
-    tifile.load_environment(env, DATA)
-    if not ORIGINALS:                     # ʟXOR, the nibble XOR table, as built for sending
-        tifile._READERS['.8xl'].load(PROGRAMS / 'XOR.8xl').store_to(env)
+    # ʟGFL, ʟGFX (and ʟXOR) as built for sending; the originals use the calculator's copies
+    tifile.load_environment(env, DATA if ORIGINALS else PROGRAMS)
     for f in PROGRAMS.glob('*.8xp'):
         data = bytes(TIProgram.open(str(f)).data)
         name = f.stem.replace('_theta_', 'θ')   # the file name spells θ as _theta_
@@ -205,6 +204,15 @@ def edge_cases():
     expect('ASCII: π encodes as "', check('pi quote', env, 1, 0, 'say "hi"', 'byte'))
 
 
+def gf_tables():
+    """build/basic/GFL.8xl and GFX.8xl must equal the lists saved from the user's calculator
+    (tests/data/basic), apart from the header comment."""
+    for name in ('GFL', 'GFX'):
+        built, saved = (PROGRAMS / (name + '.8xl')).read_bytes(), (DATA / (name + '.8xl')).read_bytes()
+        expect("%s.8xl matches the calculator's ʟ%s" % (name, name),
+               built[:11] + built[53:] == saved[:11] + saved[53:])
+
+
 def xor_table():
     """build/basic/XOR.8xl: the named list ʟXOR, entry 16a+b+1 = a xor b, in the calculator's
     own list format (same header layout as ʟGFL/ʟGFX saved from the calculator). With the
@@ -215,7 +223,7 @@ def xor_table():
     values = [int(float(x)) for x in TIRealList.open(str(path)).list()]
     b, g = path.read_bytes(), (DATA / 'GFL.8xl').read_bytes()
     expect('XOR.8xl is ʟXOR with the 256 nibble XORs',
-           values == [a ^ c for a in range(16) for c in range(16)] and b[59:64] == b']XOR' and
+           values == [a ^ c for a in range(16) for c in range(16)] and b[59:64] == bytes([1, 0x5D]) + b'XOR' and
            b[:11] == g[:11] and b[68:70] == g[68:70], (b[55:74].hex(' '), values[:20]))
     for v, mode in ((1, ALNUM), (7, ASCII), (10, BINARY)):
         cap = (CAP_ALNUM if mode == ALNUM else CAP_BYTE)[v - 1]
@@ -233,6 +241,7 @@ if __name__ == '__main__':
     sweep([1, 6, 10] if quick else range(1, 12))
     if not ORIGINALS:
         edge_cases()
+        gf_tables()
         xor_table()
     print('\nALL PASSED' if not failures else '\n%d FAILED' % len(failures))
     sys.exit(1 if failures else 0)

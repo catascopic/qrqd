@@ -98,7 +98,7 @@ scoring instead of fixed mask 0.
 
 Static data: GDB1 two-byte token prefixes (5C 5D 5E 60 61 62 63 7E AA BB EF, for inData);
 GDB2 OS name of ʟBIN; GDB3 data codewords per version (words); GDB4 EC per block; GDB5 block
-counts; GDB6 version info for v7-v11; GDB7 dark format modules (9 x,y pairs near the top left,
+counts, then count-field widths at +11 (byte v1-9, v10+, alnum v1-9, v10+: 8 16 9 11); GDB6 version info for v7-v11; GDB7 dark format modules (9 x,y pairs near the top left,
 then 3 k for (S-k,8) and 7 k for (8,S-k), the last being the dark module); GDB8 Notefolio
 signature; GDB9 alphanumeric punctuation (space $%*+-./:, values 36-44); GDB0 ASCII token keys (95 words, ASCII 32-126). A key is the token's bytes as a
 little-endian word (1-byte token t → t; 2-byte p,s → s*256+p).

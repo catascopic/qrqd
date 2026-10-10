@@ -15,10 +15,10 @@ import sys
 from pathlib import Path
 
 import tivars.models
-from tivars import TIProgram
+from tivars import TIProgram, TIRealList
+from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.stdout.reconfigure(errors='replace')   # "θQRBIT" on a non-UTF-8 console prints as "?QRBIT"
 
 # tivars 1.1.1 decompiles the π token (ACh) as "π" but only accepts "pi" when tokenizing,
 # and "pi" inside a string becomes two lowercase letters. Teach every model's trie "π".
@@ -126,17 +126,27 @@ def build():
     # "max" mode keeps tokens inside strings (the r₁ expressions in QRDRAW need them);
     # write \= etc. where a string needs single characters ("<\=>" is <,=,> not ≤,>).
     (ROOT / 'build' / 'basic').mkdir(exist_ok=True)
-    for old in (ROOT / 'build' / 'basic').glob('*.8xp'):   # programs since merged or renamed
+    for old in [*(ROOT / 'build' / 'basic').glob('*.8x?')]:   # files since merged or renamed
         old.unlink()
     for src in sorted((ROOT / 'src' / 'basic').glob('*.basic.txt')):
-        name = src.name.split('.')[0]
+        stem = src.name.split('.')[0]               # TI Connect spells θ as _theta_ in file names
+        name = stem.replace('_theta_', 'θ')
         prog = TIProgram(name=name)
         text = src.read_text(encoding='utf-8').rstrip('\n')
         check_spaces(src.name, text, 'max')
         prog.load_string(text, mode='max')
-        save_program(name, bytes(prog.data), ROOT / 'build' / 'basic' / (name + '.8xp'),
+        save_program(name, bytes(prog.data), ROOT / 'build' / 'basic' / (stem + '.8xp'),
                      'QR code generator, pure BASIC')
-        print('build/basic/%-8s %5d token bytes' % (name + '.8xp', len(prog.data)))
+        print('build/basic/%-8s %5d token bytes' % (stem + '.8xp', len(prog.data)))
+
+    # ʟXOR for QRBASIC: XOR of two 4-bit values, entry 16a+b+1 = a xor b (sent once, like ʟGFL/ʟGFX)
+    lst = TIRealList(name='XOR')
+    lst.load_list([TIReal(a ^ b) for a in range(16) for b in range(16)])
+    lst.raw.name = b']XOR' + bytes(4)              # named list ʟXOR, as the calculator writes it
+    path = ROOT / 'build' / 'basic' / 'XOR.8xl'
+    lst.save(str(path))
+    finish_8xp(path, 'XOR nibble table for QRBASIC')
+    print('build/basic/XOR.8xl    256 entries')
 
 
 def decompile(path, out=None):

@@ -93,6 +93,23 @@
    generator tables were deleted. The ASCII table is copied into Str2 so one check loop and
    lookup serve both text modes. Known: with ASCII fix on and no Str3, `length(Str3` is
    ERR:UNDEFINED (BASIC can't test whether a variable exists).
+21. QRBASIC stopwatch: `startTmr→A` right after the input, `checkTmr(A→T` right after the
+   drawing (before StorePic), whole seconds, nothing shown; TI-84+ only (the timer tokens
+   don't exist on a plain 83+). A holds the start because T is busy until the end (θQRBIT's
+   bit count, the r₁ alignment test). Variables in use: Str1 input, Str2 working table, Str3
+   ASCII table; L₁ capacities → RS remainder → alignment rows, L₂ generator → alignment
+   columns, L₃ powers of 2, L₄ EC tail, L₅ ʟGFX indices → generator terms (L₆ unused); free reals G, H, θ.
+22. QRBASIC XOR: three methods were tried, timed by the user (v1, 45 alphanumeric chars, T in
+   seconds, drawing ~13 of it): Each, the original bitwise complex XOR per element (QRECC's
+   trick) 45; Pass, the same over the whole list in 8 bit passes 45; nibble table 33. Pass
+   was dropped (same arithmetic as Each, ~300 bytes bigger). The table is an option
+   ("XOR table", ʟQR(4), default off) because ʟXOR takes ~2.3 KB: ʟXOR (256 entries,
+   16a+b+1 = a xor b) is assumed present like ʟGFL/ʟGFX when it's on; the build writes
+   build/basic/XOR.8xl to send once. On: the feedback XOR (→F) and the remainder update (one
+   `seq(` over J, ʟGFX(L₄(J)) inline) use ʟXOR. Off: both use the bit trick with the powers
+   of 2 in L₅ (last, so with the table on L₁-L₄ are used with no gap). Lists: L₁ capacities →
+   RS remainder → alignment rows, L₂ generator → alignment columns, L₃ EC tail, L₄ ʟGFX
+   indices, L₅ powers of 2 (table off only).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty

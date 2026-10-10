@@ -14,6 +14,7 @@ Timing means nothing here: the interpreter is not a calculator.
 """
 import io
 import os
+from datetime import datetime, timedelta
 import random
 import sys
 from pathlib import Path
@@ -34,7 +35,7 @@ from build import TIProgram                       # noqa: E402  (with the π fix
 PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build/basic')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
 ALNUM, ASCII, BINARY, SET_VERSION, OPTIONS, EXIT = range(6)   # main menu choices
-STOREPIC, ALT_PUNCT, ASCII_FIX, BACK = range(4)                 # options menu
+STOREPIC, ALT_PUNCT, ASCII_FIX, XOR_TABLE, BACK = range(5)      # options menu
 SKIPPED = {5: 6, 9: 10}                           # versions bumped to the next one (faster)
 ORIGINALS = '--originals' in sys.argv
 
@@ -65,14 +66,17 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None):
     function(text) -> text for variants. `center` only exists in the originals."""
     env = Environment(console=TokenConsole(inputs=inputs, choices=choices))
     tifile.load_environment(env, DATA)
+    if not ORIGINALS:                     # ʟXOR, the nibble XOR table, as built for sending
+        tifile._READERS['.8xl'].load(PROGRAMS / 'XOR.8xl').store_to(env)
     for f in PROGRAMS.glob('*.8xp'):
         data = bytes(TIProgram.open(str(f)).data)
-        if patch and f.stem in patch:   # from the source: decompiled text loses its escapes
+        name = f.stem.replace('_theta_', 'θ')   # the file name spells θ as _theta_
+        if patch and name in patch:     # from the source: decompiled text loses its escapes
             src = (ROOT / 'src' / 'basic' / (f.stem + '.basic.txt')).read_text(encoding='utf-8')
-            p = TIProgram(name=f.stem)
-            p.load_string(patch[f.stem](src).rstrip('\n'), mode='max')
+            p = TIProgram(name=name)
+            p.load_string(patch[name](src).rstrip('\n'), mode='max')
             data = bytes(p.data)
-        install(env, f.stem, data)
+        install(env, name, data)
     if ORIGINALS:
         env.user_lists['QR'] = TiList([float(center), 1.0, 0.0, 0.0, 0.0])
     if binary is not None:
@@ -177,6 +181,20 @@ def edge_cases():
     # alt punct: ? ; ' , - . ! : type in place of $ % * + - . / :
     env = run_qr([OPTIONS, ALT_PUNCT, BACK, ALNUM], ["HI?;'!"])
     expect("alt punct: HI?;'! scans as HI$%*/", check('alt punct', env, 1, 0, 'HI$%*/', 'alphanumeric'))
+    # stopwatch: T = seconds from startTmr (after the input) to checkTmr( (after drawing);
+    # the clock here jumps 123 s between the two readings
+    real_now, readings = Environment.now, []
+    base = datetime(2026, 1, 1)                  # a fixed clock, so no real second ticks over
+    def fake_now(self):
+        readings.append(1)
+        return base + timedelta(seconds=123 * (len(readings) - 1))
+    Environment.now = fake_now
+    try:
+        env = run_qr([ALNUM], ['HELLO'])
+    finally:
+        Environment.now = real_now
+    expect('stopwatch: T = 123 after drawing', env.numerics.T == 123 and len(readings) == 2,
+           (env.numerics.T, len(readings)))
     # ASCII: π stands in for the quote
     # ASCII fix: a 95-character Str3 of your own (here with a real quote) is used as the table
     table = [CHAR_TABLE[chr(c)] for c in range(32, 127)]
@@ -187,10 +205,34 @@ def edge_cases():
     expect('ASCII: π encodes as "', check('pi quote', env, 1, 0, 'say "hi"', 'byte'))
 
 
+def xor_table():
+    """build/basic/XOR.8xl: the named list ʟXOR, entry 16a+b+1 = a xor b, in the calculator's
+    own list format (same header layout as ʟGFL/ʟGFX saved from the calculator). With the
+    "XOR table" option on, both XORs in the ECC use it; versions 1, 7 and 10 cover 1, 2 and 4
+    blocks (v10 has long blocks too). The sweep covers the option off (the default)."""
+    from tivars import TIRealList
+    path = PROGRAMS / 'XOR.8xl'
+    values = [int(float(x)) for x in TIRealList.open(str(path)).list()]
+    b, g = path.read_bytes(), (DATA / 'GFL.8xl').read_bytes()
+    expect('XOR.8xl is ʟXOR with the 256 nibble XORs',
+           values == [a ^ c for a in range(16) for c in range(16)] and b[59:64] == b']XOR' and
+           b[:11] == g[:11] and b[68:70] == g[68:70], (b[55:74].hex(' '), values[:20]))
+    for v, mode in ((1, ALNUM), (7, ASCII), (10, BINARY)):
+        cap = (CAP_ALNUM if mode == ALNUM else CAP_BYTE)[v - 1]
+        payload = next(p for p in payloads(mode, cap) if len(p) == cap)
+        inputs = [str(v)] + ([] if mode == BINARY else [payload])
+        env = run_qr([OPTIONS, XOR_TABLE, BACK, SET_VERSION, mode], inputs,
+                     binary=payload if mode == BINARY else None)
+        if not check('XOR table v%d' % v, env, v, 0, payload, 'alphanumeric' if mode == ALNUM else 'byte'):
+            return
+    expect('XOR table on: v1, v7, v10 match the reference and decode', True)
+
+
 if __name__ == '__main__':
     quick = '--quick' in sys.argv
     sweep([1, 6, 10] if quick else range(1, 12))
     if not ORIGINALS:
         edge_cases()
+        xor_table()
     print('\nALL PASSED' if not failures else '\n%d FAILED' % len(failures))
     sys.exit(1 if failures else 0)

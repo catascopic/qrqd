@@ -31,3 +31,9 @@ A way to do vectorized XOR?
 
 
 NoteFolio library
+
+
+I want to compare the speed of this new version to my previous version. So I'm going to add in the old versions again. I'd like you to rename them so that the top level program is called QROLD. The code word and draw programs can keep their names, but let's change references to the bit program to use the theta QR bit, since the code, I believe, is exactly the same or close enough. The only change I want to make other than that is to add the stopwatch feature in So the total processing time is stored to the variable T at the end.
+
+
+We're currently calling setup editor on CW, bin, and QR. I think like the assembly program, we should cut setting up bin. I think it's fine if we get an undefined error. What's the argument for setting up CW? I think originally it was so that you could regenerate the QR code from old data, but I don't think there's a way to do that. QR might be the only one it makes sense to do. What do you think? 

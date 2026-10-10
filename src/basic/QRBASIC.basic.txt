@@ -1,6 +1,6 @@
 SetUpEditor CW,BIN,QR
-If 3≠dim(ʟQR
-{0,0,0→QR
+If 4≠dim(ʟQR
+{0,0,0,0→QR
 0→V
 Lbl 0
 Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary",C,"Set version",S,"Options",O,"Exit",X
@@ -12,10 +12,11 @@ Goto S
 Goto 0
 Lbl O
 "NY
-Menu("OPTIONS","StorePic 1:"+sub(Ans,1+ʟQR(1),1),1,"Alt punct: "+sub(Ans,1+ʟQR(2),1),2,"ASCII fix: "+sub(Ans,1+ʟQR(3),1),3,"Back",0
+Menu("OPTIONS","StorePic 1:"+sub(Ans,1+ʟQR(1),1),1,"Alt punct: "+sub(Ans,1+ʟQR(2),1),2,"ASCII fix: "+sub(Ans,1+ʟQR(3),1),3,"XOR table: "+sub(Ans,1+ʟQR(4),1),4,"Back",0
 Lbl 1:1:Goto F
 Lbl 2:2:Goto F
-Lbl 3:3
+Lbl 3:3:Goto F
+Lbl 4:4
 Lbl F
 1-ʟQR(Ans→ʟQR(Ans
 Goto O
@@ -141,10 +142,11 @@ End
 int(M/Z→Q
 M-ZQ→Y
 dim(L₂→R
-DelVar L₄Y+ZR+1→dim(L₄
+DelVar L₃Y+ZR+1→dim(L₃
 Disp "ECC Block  /
 Output(3,13,Z
-seq(2^N,N,8,1,⁻1→L₃
+If not(ʟQR(4
+seq(2^N,N,8,1,⁻1→L₅
 0→P
 For(K,1,Z
 P+1→O
@@ -154,30 +156,39 @@ Output(4,1,0
 DelVar L₁R→dim(L₁
 For(I,O,P
 ʟCW(I→B
-.5sum(L₃*(1=abs(int(2fPart((L₁(1)+B𝑖)/L₃→F
+If ʟQR(4
+Then
+16ʟXOR(16int(L₁(1)/16)+int(B/16)+1)+ʟXOR(256fPart(L₁(1)/16)+16fPart(B/16)+1→F
+Else
+.5sum(L₅*(1=abs(int(2fPart((L₁(1)+B𝑖)/L₅→F
+End
 ΔList(cumSum(L₁→L₁
 0→L₁(R
-ʟGFL(F+not(F))+L₂
-Ans-255(Ans>255→L₅
-For(J,1,(F≠0)R
-.5sum(L₃*(1=abs(int(2fPart((L₁(J)+ʟGFX(L₅(J))𝑖)/L₃→L₁(J
+If F
+Then
+ʟGFL(F)+L₂
+Ans-255(Ans>255→L₄
+If ʟQR(4
+seq(16ʟXOR(16int(L₁(J)/16)+int(ʟGFX(L₄(J))/16)+1)+ʟXOR(256fPart(L₁(J)/16)+16fPart(ʟGFX(L₄(J))/16)+1),J,1,R→L₁
+If not(ʟQR(4
+seq(.5sum(L₅*(1=abs(int(2fPart((L₁(J)+ʟGFX(L₄(J))𝑖)/L₅))))),J,1,R→L₁
 End
 Output(4,1,"     
 Output(4,1,round(100I/M,2
 End
 For(J,1,R
-L₁(J→L₄(Y+K+Z(J-1
+L₁(J→L₃(Y+K+Z(J-1
 End
 If K>Z-Y
-ʟCW(P→L₄(K-Z+Y
+ʟCW(P→L₃(K-Z+Y
 End
 If Z>1
 Then
 Disp "Interleaving
 seq(ʟCW(int(N)+QZfPart(N)+max(0,ZfPart(N)-Z+Y)),N,1,Q+1-1/Z,1/Z→CW
 End
-For(J,1,dim(L₄
-L₄(J→ʟCW(QZ+J
+For(J,1,dim(L₃
+L₃(J→ʟCW(QZ+J
 End
 FnOff 
 AxesOff

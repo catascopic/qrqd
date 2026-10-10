@@ -100,7 +100,8 @@ def build():
 
     # Axe sources: the engine, and LOREMSRC (a test tool that writes a long Notefolio note)
     comments = {'QRSRC': 'QR engine source - compile with Axe',
-                'LOREMSRC': 'Lorem ipsum note maker - compile with Axe'}
+                'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
+                'SPEEDSRC': '15 MHz speed test - compile with Axe'}
     for path in sorted((ROOT / 'src').glob('*.axe.txt')):
         name = path.name.split('.')[0]
         src = path.read_text(encoding='utf-8').rstrip('\n')

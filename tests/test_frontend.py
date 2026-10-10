@@ -3,7 +3,9 @@
 tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` and a BASIC
 stand-in plays the engine:
   E=4 (list notes)  copies Str9 to Str2 and returns Z, the note count the test set up
-  V=0 (check text)  returns W, set up by the test (2*length+alnum, or 32768+position)
+  V=0 (check text)  returns W, set up by the test (2*length+alnum, or 32768+position),
+                    and sets B to X if X isn't 0 (a note's first non-ASCII position;
+                    like the engine, it leaves B alone otherwise)
   otherwise         returns G (0 = drawn)
 Each call is logged in L₆ as 10000N+100V+10M+E (and O, the count to skip, in L₅), so a
 test can check what the front end asked for, in order. Key presses (getKey) are scripted too;
@@ -25,6 +27,9 @@ Stop
 O→L₅(T
 If E=4
 Str9→Str2
+If not(V
+If X
+X→B
 G
 If not(V
 W
@@ -55,7 +60,7 @@ def tokens(text):
     return bytes(p.data)
 
 
-def run(choices, inputs, notes=(), check=0, encode=0, binary=None, keys=()):
+def run(choices, inputs, notes=(), check=0, encode=0, binary=None, keys=(), warn=0):
     env = Environment(console=MenuLog(inputs=inputs, choices=choices, keys=keys))
     front = tokens((ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n'))
     assert front.count(b'\xbb\x6a\x5f\x5bQR') == 3                  # Asm(prgmθQR
@@ -66,6 +71,8 @@ def run(choices, inputs, notes=(), check=0, encode=0, binary=None, keys=()):
     env.numerics.Z = float(len(notes))
     env.numerics.W = float(check)
     env.numerics.G = float(encode)
+    env.numerics.X = float(warn)
+    env.numerics.B = 7.0                                        # prgmQR must reset it
     env.strings[8] = TiString.from_str(''.join(n.ljust(8) for n in notes) + ' ' * 48)
     if binary is not None:
         env.user_lists['BIN'] = TiList([float(b) for b in binary])
@@ -145,14 +152,20 @@ if __name__ == '__main__':
          LISTED, [page(0), main()], notes=NOTES)
     case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(0), main()], notes=NOTES)
-    case('More wraps from the last page to the first', [NOTEFOLIO, 5, 5, 5, 6, EXIT], [],
-         LISTED, [page(0), page(1), page(2), page(0), main()], notes=NOTES)
+    case('More does nothing on the last page', [NOTEFOLIO, 5, 5, 5, 6, 6, 6, EXIT], [],
+         LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('a blank slot on the last page stays there', [NOTEFOLIO, 5, 5, 3, 6, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
          LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0), page(1), page(2), page(1)],
          notes=NOTES, check=2 * 12, want_str3='NOTE7')
-    case('bad char in a note: position only', [NOTEFOLIO, 0, EXIT], [],
+    case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
+         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], ['NON-ASCII CHARS', 'Position: 40'],
+         notes=NOTES, check=2 * 12, warn=40)
+    case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO, 0], [],
+         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], [], ['NON-ASCII'],
+         notes=NOTES, check=2 * 12)
+    case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
          LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Position: 40'], ['Char:'],
          notes=NOTES, check=BAD + 40)
     case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()])
@@ -189,13 +202,15 @@ if __name__ == '__main__':
                         keys=[NEXT] * (page - 1) + [CLEAR])
         lit = {(r, c) for r in range(64) for c in range(96) if env.graph.get(r, c)}
         dj, dp = len(str(pages)), len(str(page))
-        bar = {(31, c) for c in range(0, 4 * dj - 1)}
+        # right-aligned: ink ends at x=93 (94 is the last digit's blank column, 95 is reserved)
+        bar = {(31, c) for c in range(95 - 4 * dj, 94)}
         top = {c for r, c in lit if r < 31}
-        ok = (bar <= lit and all(25 <= r <= 37 and c <= 4 * dj - 2 for r, c in lit) and
-              min(c for r, c in lit if r > 31) == 0 and
-              top <= set(range(4 * (dj - dp), 4 * dj - 1)) and min(top) < 4 * (dj - dp) + 2 and
+        bottom = {c for r, c in lit if r > 31}
+        ok = (bar <= lit and all(25 <= r <= 37 and 95 - 4 * dj <= c <= 93 for r, c in lit) and
+              min(bottom) < 95 - 4 * dj + 2 and max(bottom) == 93 and
+              top <= set(range(95 - 4 * dp, 94)) and min(top) < 95 - 4 * dp + 2 and
               not {r for r, c in lit} & {30, 32})
-        expect('counter %d/%d: at the left edge, digits lined up, bar under it' % (page, pages),
+        expect('counter %d/%d: at the right edge, digits lined up, bar under it' % (page, pages),
                ok, sorted(lit))
     counter(1, 3)
     counter(3, 12)

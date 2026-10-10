@@ -13,7 +13,7 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
-    'ClrDraw', 'DispGraph', 'Disp ', 'Ans', ' and ', ' or ', ' xor ',
+    'ClrDraw', 'DispGraph', 'Disp ', 'Full', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
     '→', 'ʳ', '≠', '≤', '≥', '·', '+', '-', '*', '/', '^', '=', '<', '>',
     '(', ')', '{', '}', ',',
@@ -116,6 +116,10 @@ class Machine:
 
     def set_real(self, name, v):
         self.os[('real', name)] = self._alloc(self.tifloat(v))
+
+    def get_real(self, name):
+        p = self.os[('real', name)]
+        return self.untifloat(self.mem[p:p + 9])
 
     def set_str(self, n, toks):
         data = bytes(toks)
@@ -441,6 +445,9 @@ class Machine:
                 assert j == len(t), self.lines[pc]
                 self.shown.append(bytes(self.mem[p:self.mem.index(0, p)]).decode('latin-1'))
                 pc += 1; continue
+            if h == ('T', 'Full'):           # CPU speed only; nothing to simulate
+                assert len(t) == 1, self.lines[pc]
+                self.full = True; pc += 1; continue
             if h == ('T', 'DispGraph'):
                 self.displays.append(bytes(self.mem[L6:L6 + 768])); pc += 1; continue
             if h == ('T', 'Copy('):
@@ -471,6 +478,12 @@ class Machine:
                 self.vars[x] = v; assert j + 1 == len(t)
             elif x == 'Ans':
                 self.ans = v; assert j + 1 == len(t)
+            elif x == 'float{':
+                p, j2 = self.expr(t, j + 1)
+                assert t[j2] == ('T', '}') and j2 + 1 == len(t), self.lines[pc]
+                if p == 0: raise AxeError('→float{0}')
+                for n, b in enumerate(self.tifloat(v)):
+                    self.wr(p + n, b)
             elif x == '{':
                 p, j2 = self.expr(t, j + 1)
                 j2 = self.expect(t, j2, '}')

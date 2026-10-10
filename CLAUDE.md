@@ -30,6 +30,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `tests/test_basic.py` | runs `build/basic` in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
 | `tests/test_frontend.py` | menu flows of `src/QR.basic.txt` in tibasic, with a BASIC stand-in for the engine |
 | `src/LOREMSRC.axe.txt` | test tool (Axe, compiles to prgmLOREM): writes note LOREM, lorem ipsum ×N (OS var N, ≤100); `tests/test_lorem.py` |
+| `src/SPEEDSRC.axe.txt` | test tool (Axe, compiles to prgmSPEED): bar sweep + FPS (84+ clock port 45h), MODE toggles Full/Normal, shows port 20h speed at start; leaves the speed set. Hardware-only (Asm( port reads), not simulated |
 
 ## Commands
 
@@ -75,8 +76,10 @@ For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; i
 ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
 ASCII. `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
-can't write past L₁), draws, and returns 0. Either call returns 32768+k if character k can't be encoded
-(non-ASCII, or not alphanumeric when M=2), 65532 from the check call if the text is longer
+can't write past L₁), draws, and returns 0. The check returns 32768+k if character k can't be encoded
+(a Str1 token with no ASCII equivalent, or not alphanumeric when M=2). A note in byte mode never
+fails: its bytes go out as calculator codes (θ/⁴/Enter swapped with `[`/`$`/newline), and the
+check stores the first non-ASCII position in OS var B, which prgmQR zeroes first. 65532 from the check call if the text is longer
 than 16383 (2·16383+1 is the most Ans can carry), and 65535 for bad parameters or a missing input.
 Auto picks alphanumeric when every character allows it. Always centered, EC level L, mask 0.
 The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks

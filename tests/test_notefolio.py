@@ -36,18 +36,19 @@ def ti_text(s, wrap_every=0):
     return bytes(out)
 
 
-def expected_ascii(tb):
-    """What the engine reads a note as; None for a character it can't encode."""
-    out = []
-    for c in tb:
-        if c == 0xD6: out.append(10)               # Enter -> newline
-        elif c == 0xF1: out.append(32)             # wrap marker -> space
-        elif c == 0xC1: out.append(91)             # calculator [ -> [
-        elif c == 0xF2: out.append(36)             # calculator $ -> $
-        elif c in (0xD2, 0x1A): out.append(45)     # hyphen, negative sign -> -
-        elif 32 <= c <= 126 and c not in (0x24, 0x5B): out.append(c)
-        else: out.append(None)                     # θ, ⁴, accents, ...
-    return out
+# calculator [ $ Enter swap with θ ⁴ and the calculator's 0Ah; wrap space -> space;
+# hyphen and negative sign -> -; every other byte goes through unchanged
+SWAP = {0xC1: 91, 0x5B: 0xC1, 0xF2: 36, 0x24: 0xF2, 0xD6: 10, 0x0A: 0xD6,
+        0xF1: 32, 0xD2: 45, 0x1A: 45}
+
+
+def expected_bytes(tb):
+    """The bytes the engine encodes for a note."""
+    return bytes(SWAP.get(c, c) for c in tb)
+
+
+def first_non_ascii(tb):
+    return next((k + 1 for k, c in enumerate(expected_bytes(tb)) if not (32 <= c <= 126 or c == 10)), 0)
 
 
 def notefolio(title, tb):
@@ -69,7 +70,7 @@ def machine(notes, params, str3=None, extra=()):
     m.add_appvar('FAKE', b'\x00\x47\xbf\xaf' + bytes(40))   # wrong signature
     m.add_appvar('lower', notefolio('lower', b'hi'))        # name can't be opened by name
     m.build_vat()
-    for k, v in {'O': 0, 'A': 0, **params}.items():
+    for k, v in {'O': 0, 'A': 0, 'B': 0, **params}.items():
         m.set_real(k, v)
     if str3 is not None:
         m.set_str(3, str3.encode().ljust(8, b'\x29'))        # padded with space tokens
@@ -94,18 +95,30 @@ def synthetic():
     expect('list mode finds only the %d real notes (RAM + archived)' % len(texts),
            m.ans == len(texts) and s2b == want, (m.ans, s2b[:40]))
 
-    # checking (V=0): 2*length + 1 if alphanumeric, or BAD + position of the first bad char
+    # checking (V=0): 2*length + 1 if alphanumeric; a note never fails in byte mode,
+    # B = position of the first non-ASCII character (left alone if none)
     for name, tb, _ in texts:
-        chars = expected_ascii(tb)
-        alnum = all(c is not None and chr(c) in ALNUM_SET for c in chars)
-        first_bad = next((k + 1 for k, c in enumerate(chars) if c is None), 0)
-        want = BAD + first_bad if first_bad else 2 * len(tb) + alnum
+        alnum = all(chr(c) in ALNUM_SET for c in expected_bytes(tb))
+        want = (2 * len(tb) + alnum, first_non_ascii(tb))
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str3=name)
-        expect('check %s = %d' % (name, want), m.ans == want, m.ans)
+        got = (m.ans, m.get_real('B'))
+        expect('check %s = %d, B=%d' % ((name,) + want), got == want, got)
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ALNUM}, str3='NOTES')
     expect('check NOTES forced alnum: lowercase at 2', m.ans == BAD + 2, m.ans)
+    up = [('UP', notefolio('UP', ti_text('AB θ')), False)]
+    m = machine(up, {'E': NOTE, 'V': 0, 'M': ALNUM}, str3='UP')
+    expect('check θ forced alnum fails at 4, B untouched', (m.ans, m.get_real('B')) == (BAD + 4, 0),
+           (m.ans, m.get_real('B')))
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str3='SHOUT')
     expect('check SHOUT forced ASCII', m.ans == 2 * len(texts[3][1]), m.ans)
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str3='ODD')
+    expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (2 * len(texts[4][1]), 10),
+           (m.ans, m.get_real('B')))
+    every = bytes(range(1, 256))
+    allnote = [('ALL', notefolio('ALL', every), False)]
+    m = machine(allnote, {'E': NOTE, 'V': 0, 'M': AUTO}, str3='ALL')
+    expect('check every byte 1-255: length 255, first non-ASCII at 1',
+           (m.ans, m.get_real('B')) == (2 * 255, 1), (m.ans, m.get_real('B')))
     # 2*16383+1 is the most Ans can carry; longer is "too long", even with a bad char past it
     for n, extra, want in ((16383, b'', 2 * 16383 + 1), (16384, b'', 65532), (16384, b'\x96', 65532)):
         big = [('BIG', notefolio('BIG', b'A' * n + extra), True)]
@@ -117,17 +130,14 @@ def synthetic():
 
     count = 0
     for name, tb, _ in texts:
-        chars = expected_ascii(tb)
-        if None in chars:
-            continue
-        payload = bytes(chars)
-        alnum = all(chr(c) in ALNUM_SET for c in chars)
+        payload = expected_bytes(tb)
+        alnum = all(chr(c) in ALNUM_SET for c in payload)
         for v in range(1, 12):
             cap = (CAP_ALNUM if alnum else CAP_BYTE)[v - 1]
             for N in sorted({min(len(tb), cap), min(len(tb), cap) // 2}):
                 m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO, 'A': int(alnum)}, str3=name)
                 try:
-                    check_symbol(m, v, payload[:N].decode(), 'alphanumeric' if alnum else 'byte')
+                    check_symbol(m, v, payload[:N], 'alphanumeric' if alnum else 'byte')
                 except AssertionError as e:
                     expect('encode %s v%d N=%d' % (name, v, N), False, e)
                     return
@@ -138,11 +148,16 @@ def synthetic():
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('skip 4 characters of a note', got == b'milk', got)
 
-    # only the check call looks for bad characters (prgmQR never encodes after a failed check);
-    # encoding doesn't rescan, so it just draws, with a 0 byte where the bad character was
+    # non-ASCII characters keep their calculator codes, with the swaps (θ -> C1h, ⁴ -> F2h)
     m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str3='ODD')
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
-    expect('encoding trusts the check (ODD is drawn, bad chars as 0 bytes)', got == b'Line two \0 \0 \0 \0', got)
+    expect('ODD encodes θ ⁴ é ñ as C1 F2 96 B5', got == b'Line two \xc1 \xf2 \x96 \xb5', got)
+    m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO, 'A': 0}, str3='ALL')
+    got = decode(matrix_from(m, 11))[0].bytes if m.ans == 0 else m.ans
+    expect('every byte 1-255 encodes as mapped', got == expected_bytes(every), got)
+    # one-to-one except the deliberate merges: wrap space with space, hyphen and negative with -
+    expect('only wrap space, hyphen and negative share a byte with another character',
+           len(set(expected_bytes(every))) == 255 - 3)
 
 
 def real_file():

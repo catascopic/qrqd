@@ -30,9 +30,8 @@ Goto N0
 Lbl P
 Menu("NoteFolio Files",sub(Str2,8P+1,8),N1,sub(Str2,8P+9,8),N2,sub(Str2,8P+17,8),N3,sub(Str2,8P+25,8),N4,sub(Str2,8P+33,8),N5,"More",PM,"Back",PB
 Lbl PM
+If P+5<K
 P+5→P
-If P≥K
-0→P
 Goto P
 Lbl PB
 If not(P
@@ -52,6 +51,7 @@ sub(Str2,8I-7,8→Str3
 3→E
 Lbl C
 0→V
+0→B
 65534
 Asm(prgmθQR
 Ans→K
@@ -63,6 +63,13 @@ If K≥32768
 Goto F
 int(K/2→L
 K-2L→A
+If not(B
+Goto Q
+ClrHome
+Output(1,1,"NON-ASCII CHARS
+Output(2,1,"Position:
+Output(2,11,B
+Pause 
 Goto Q
 Lbl N0
 Menu("No Files","Back",0,"Exit",X
@@ -71,9 +78,12 @@ Lbl B
 dim(ʟBIN→L
 0→A
 Lbl Q
-{17,32,53,78,106,134,154,192,230,271,321
 If A
+Then
 {25,47,77,114,154,195,224,279,335,395,468
+Else
+{17,32,53,78,106,134,154,192,230,271,321
+End
 Ans→L₁
 L₁(11
 If U
@@ -125,18 +135,19 @@ Output(2,1,"Max 16383 chars
 Pause 
 Goto 0
 Lbl Y
-Menu("ERR:θQR","Back",0,"Exit",X
+Menu("Error in Asm","Back",0,"Exit",X
 Lbl Z
 DispGraph
 If J=1
 Goto X
-Text(24,4(int(log(J))-int(log(P))),P
-Text(32,0,J
-For(I,0,4int(log(J))+2
+Text(24,91-4int(log(P)),P
+91-4int(log(J→I
+Text(32,I,J
+For(I,I,93
 Pxl-On(31,I
 End
 Lbl K
-Repeat K=105 or K=26 or K=24 or K=45
+Repeat max(K={105,24,26,45
 getKey→K
 End
 If K=45

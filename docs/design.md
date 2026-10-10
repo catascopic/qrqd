@@ -61,6 +61,16 @@
    position directly. So each code costs about the same however long the message is.
 15. The engine was renamed prgmθQR (θ marks helper programs, and sorts after Z); it was
    prgmQRENGINE.
+16. The engine starts with `Full` (15 MHz on the 84+ and Silver Editions, nothing on a plain
+   83+). The user's TI-84 Plus test (prgmSPEED, `src/SPEEDSRC.axe.txt`) showed the OS
+   goes back to 6 MHz when an assembly program ends, so there is no `Normal` before returning.
+17. Notes no longer fail on non-ASCII characters in byte mode (a real note, XLIB, had two λ
+   where a PC converter meant `]`). Each calculator character goes out as its own code, so a
+   scanner shows Latin-1 look-alikes (λ C2h → Â) that a reader can tell are wrong and could
+   map back; a `?` replacement would look like a real `?`. The calculator's swaps are undone so
+   nothing poses as ASCII: θ ↔ `[`, ⁴ ↔ `$`, its 0Ah ↔ Enter. The check stores the first
+   non-ASCII position in B, and prgmQR shows a warning, Pause (ON quits), then encodes.
+   Alphanumeric mode and messages (Str1) still fail.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -68,14 +78,16 @@ scoring instead of fixed mask 0.
 
 ## Engine phases (src/QRSRC.axe.txt)
 
-1. Read `E`. E=4 → `LS` (list) and return.
+1. `Full` (15 MHz where supported). Read `E`. E=4 → `LS` (list) and return.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
 3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str3 (E=3,
    `NF`), or Str1 (E=1; T counts tokens).
 4. Text, check call only (encoding trusts it): read every character through `CH` (Str1
-   token → ASCII via GDB0, or note character → ASCII via `MA`; 0 if none) and `AV` (ASCII → alphanumeric value, 99 if none).
-   K = first non-ASCII position, X = first non-alphanumeric. Forced alnum uses X as K; auto
-   becomes alnum if X=0. If K, return 32768+K. F is now 1 (byte) or 2 (alnum).
+   token → ASCII via GDB0, 0 if none; or note character → byte via `MA`) and `AV` (ASCII →
+   alphanumeric value, 99 if none). K = first position outside printable ASCII and newline,
+   X = first non-alphanumeric. Forced alnum uses X as K; auto becomes alnum if X=0. If K: a
+   note in byte mode stores K in OS var B (if B exists) and carries on; otherwise return
+   32768+K. F is now 1 (byte) or 2 (alnum).
 5. V=0: return 2T+F-1, or 65532 if T>16383 (checked before the scan, so 2T+1 and
    32768+position always fit in Ans). Otherwise read `N`, `O` into θ (count to skip),
    and for auto mode `A` (F=A+1: the check's decision, from prgmQR).
@@ -125,7 +137,7 @@ character just read, K/X first non-ASCII/non-alnum position while checking, Q th
 (RAM address, or 0 for an archived note read through Y₁), D/W/K bit writer
 pointer/accumulator/bit count, A/Z value and bit count for AB. Subroutines: AB append bits, CH
 next character → ASCII A, AV ASCII A → alnum value J, RS EC for one block, RV reserve rectangle
-(r₁-r₄), FP finder, AP alignment, MA calculator char C → ASCII A, LS list notes, NC copy VAT
+(r₁-r₄), FP finder, AP alignment, MA calculator char C → output byte A, LS list notes, NC copy VAT
 name, NH is it a note (sets Q or opens Y₁), NF open note named in Str3, RB read byte r₁ of the
 open note.
 
@@ -139,8 +151,10 @@ textlen+27. The engine finds the text length by scanning for the 00h, bounded by
 Text uses the calculator's character codes (`ti83plus.inc`, `L...` equates), not tokens:
 20h-7Eh match ASCII except 24h (superscript 4) and 5Bh (θ); `[` is C1h, `$` is F2h; accented
 letters are 8Ah-B5h, Greek BBh-CAh; D6h is Enter (newline); F1h is a space where a line wrapped.
-Engine mapping: D6h → 0Ah, F1h → space, C1h → `[`, F2h → `$`, D2h/1Ah (hyphen/negative) → `-`,
-everything else outside printable ASCII is a bad character.
+Engine mapping (`MA`, table at GDB9+10/+20): C1h ↔ 5Bh (`[` ↔ θ), F2h ↔ 24h (`$` ↔ ⁴),
+D6h ↔ 0Ah (Enter ↔ the calculator's 0Ah character), F1h → space, D2h/1Ah (hyphen/negative) →
+`-`; every other byte goes out unchanged (so in byte mode a scanner shows its Latin-1 meaning).
+Anything outside printable ASCII and newline sets B (the warning), never fails.
 
 VAT scan (list mode): entries from `progPtr` (word at 9830h) down to `pTemp` (982Eh). Type in the
 low 5 bits at P (15h = appvar), name length at P-6, name bytes from P-7 downward, next entry at
@@ -150,26 +164,28 @@ P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opene
 
 Main menu: Message (Lbl M), NoteFolio (N), Binary (ʟBIN) (B), Set version (S),
 Mode:Auto/ASCII/Alnum (T; cycles M 0→1→2→0, label via `sub("Auto ASCIIAlnum",5M+1,5`), Exit (X).
-Text goes through a check call first (Lbl C: V=0); a bad character goes to Lbl F, a home-screen
+Text goes through a check call first (Lbl C: V=0, B=0); a bad character goes to Lbl F, a home-screen
 error (ERR:BAD CHAR, or ERR:NOT ALNUM when M=2; the character from Str1, and the position),
-Pause, then the main menu. Version selection and splitting live in BASIC (Lbl Q): capacity
+Pause, then the main menu. A note with non-ASCII characters (B≠0 after the check) shows
+NON-ASCII CHARS and the position, Pause, then goes on to encode. Version selection and splitting live in BASIC (Lbl Q): capacity
 table (alnum when the check says so, else byte; EC L) into L₁; C = capacity per code (the set
 version's, else version 11's); J = max(1,⌈L/C⌉) codes; W = ⌈L/J⌉ per code (even pieces;
 `⁻int(⁻x` rounds up; for full codes first, that line becomes `min(L,C→W`); the version is the
 set one, else the smallest that holds W, the same for every code. A message that fits one
 code is just J=1. There is no "too long" menu any more: a set version means "codes this
 size", so it splits at that version. Lbl H shows code P: O=(P-1)W, N=min(W,L-O), then the
-usual encode. After it (Lbl Z, J>1): a fraction at the left edge of the screen: the total J at x=0,
-the code number right-aligned over it so ones (and tens) line up, at x=4(int(log(J))-int(log(P)))
-(small-font digits are 4 px including the gap), bar Pxl-On row 31 as wide as J; Text( rows 24
-and 32 (ink rows 25-29 and 33-37, centered on the bar). Up to 3 digits stay clear of the code's 4-module quiet zone
-(v11 starts at x=17). The check call allows 16383 characters (51 version 11 codes), so 3-digit
+usual encode. After it (Lbl Z, J>1): a fraction at the right edge of the screen, both numbers
+right-aligned so ones (and tens) line up: a number starts at x=91-4int(log(n)) (small-font digits
+are 4 px, the last being a blank column; column 95 is reserved), so ink ends at x=93. Bar
+Pxl-On row 31 under J's digits, x up to 93; Text( rows 24 and 32 (ink rows 25-29 and 33-37,
+centered on the bar). Up to 3 digits (from x=83) stay clear of the code's 4-module quiet zone
+(v11 ends at x=77). (It was at the left edge, x=0, before.) The check call allows 16383 characters (51 version 11 codes), so 3-digit
 counts only happen with a small set version. Longer: ERR:TOO LONG (Lbl G), Pause, main menu.
 Keys (Lbl K): Enter/→ next, ← back, Clear stops; ← on the first and → on the last do nothing;
 Enter on the last ends. Notefolio picker: E=4 fills Str2, Menu( shows 5 names + More +
-Back (More wraps from the last page to the first; Back goes back a page, or to the main menu
+Back (More does nothing on the last page; Back goes back a page, or to the main menu
 from the first), the pick goes into Str3, then the check and version flow with E=3. Scratch:
-U requested version, M mode, L length, A alnum flag, K, P, I, L₁, Str1, Str2, Str3; split: J
+U requested version, M mode, L length, A alnum flag, B first non-ASCII, K, P, I, L₁, Str1, Str2, Str3; split: J
 codes, C capacity per code, W per code, P current, O skip.
 
 ## Risks: not verified on hardware

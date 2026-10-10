@@ -123,6 +123,7 @@ def edge_cases():
            bytes(m.mem[L1 + 714:L1 + 0x800]) == beyond)
     m = run_engine(BINARY, 2, 999, AUTO, lst=list(range(5)))
     expect('clamp to list length', m.ans == 0 and decode(matrix_from(m, 2))[0].bytes == bytes(range(5)))
+    expect('runs at full speed (15 MHz)', getattr(m, 'full', False))
     # bad parameters or missing variables -> 65535, nothing drawn
     for e, v, mode in ((0, 1, 0), (5, 1, 0), (1, 12, 0), (1, 1, 3)):
         m = Machine(SRC)

@@ -43,6 +43,12 @@
    replacements are gone. Reasoning: bad characters should be rare, and 2nd RCL Str1 at the
    msg= prompt brings the message back to fix. The engine got a check-only call (V=0) so BASIC
    can pick the version for the chosen mode. `$` in notes (F2h) now encodes.
+12. Memory: `Asm(` copies the whole engine to userMem to run it, so it needs free RAM equal to
+   its size on top of the stored copy (archived programs can't be run by `Asm(`). The user hit
+   ERR:MEMORY with 7000 bytes free. So the 406-byte interleave buffer (Buff(406), stored inside
+   the program) was replaced by reading codewords in place. An engine-side NoteFolio picker
+   was built (kept on the `filepicker` branch) but left out for its size; BASIC menus run in
+   place and cost no extra RAM.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -67,11 +73,13 @@ scoring instead of fixed mask 0.
 8. GF(256) tables (poly 11Dh) in L₃: exp doubled at L₃+0..509, log at L₃+512..767. Generator
    polynomial built and converted to logs (all coefficients nonzero for n ≤ 30). `RS` does the
    LFSR division per block. Blocks: short length M/B; the last M mod B blocks get one extra byte.
-9. Interleave data, then EC, into GDB7, followed by one zero byte for remainder bits.
+9. No interleave buffer: the zigzag asks `CW` for codeword Q in interleaved order, which finds
+   it in place: data byte Q/B of block Q mod B, then the long blocks' last bytes, then EC byte
+   of each block in turn at L₁+330, then 0 (remainder bits).
 10. Draw. Back buffer = reserved-module map in module coordinates (rectangles via `RV`:
    finders+separators+format areas, timing row/column, alignment 5×5s, version blocks for v≥7).
-   Main buffer gets finders (`FP`), timing, alignment (`AP`), format bits 30660 (77C4h = EC L,
-   mask 0), dark module, version info (v≥7), then data in the standard zigzag, skipping reserved
+   Main buffer gets finders (`FP`), timing, alignment (`AP`), format bits (always 77C4h = EC L,
+   mask 0, so the 18 dark modules plus the dark module come from the GDB7 table), version info (v≥7), then data in the standard zigzag, skipping reserved
    modules. Mask 0: a data module is dark iff its bit equals (x+y) mod 2. DispGraph, Ans=0.
 
 ## Memory map
@@ -86,12 +94,12 @@ scoring instead of fixed mask 0.
 | L₁+700..709 | OP1-style appvar name: 15h, name, 0 |
 | L₃ | GF tables during ECC; then the reserved-module map |
 | L₆ | graph buffer (the drawing) |
-| GDB7 | Buff(406): interleaved codewords |
 
 Static data: GDB1 two-byte token prefixes (5C 5D 5E 60 61 62 63 7E AA BB EF, for inData);
 GDB2 OS name of ʟBIN; GDB3 data codewords per version (words); GDB4 EC per block; GDB5 block
-counts; GDB6 version info for v7-v11; GDB8 Notefolio signature; GDB9 alphanumeric punctuation (space $%*+-./:, values
-36-44); GDB0 ASCII token keys (95 words, ASCII 32-126). A key is the token's bytes as a
+counts; GDB6 version info for v7-v11; GDB7 dark format modules (9 x,y pairs near the top left,
+then 3 k for (S-k,8) and 7 k for (8,S-k), the last being the dark module); GDB8 Notefolio
+signature; GDB9 alphanumeric punctuation (space $%*+-./:, values 36-44); GDB0 ASCII token keys (95 words, ASCII 32-126). A key is the token's bytes as a
 little-endian word (1-byte token t → t; 2-byte p,s → s*256+p).
 
 Variables: E source, V version, N count, F mode (then 1 byte / 2 alnum), S size, G/H offsets,

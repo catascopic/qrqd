@@ -50,7 +50,9 @@ for BASIC changes) → give the user `build/*.8xp`.
 ## How the user runs it
 
 TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Options → shell
-"No Shell" (the `.QRENGINE` header line names the output), run prgmQR. Old QRCW/QRBIT/QRECC/
+"No Shell" (the `.QRENGINE` header line names the output), run prgmQR. Running prgmQRENGINE
+needs free RAM at least its compiled size (`Asm(` copies it to userMem each call), so engine
+size is RAM the user must keep free; static buffers inside the program cost it too. Old QRCW/QRBIT/QRECC/
 QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`) still
 uses ʟGFL/ʟGFX/ʟCW, and its prgmQR has the same name as the front end's.
 

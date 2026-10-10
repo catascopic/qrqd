@@ -25,8 +25,11 @@
 [0101010101020202020404]→GDB5
 .VERSION INFO FOR V7-V11
 [947CBC85999AD3A4F6BB]→GDB6
-.INTERLEAVED CODEWORDS
-Buff(406)→GDB7
+.DARK FORMAT MODULES (EC L, MASK 0):
+.9 X,Y NEAR THE TOP LEFT, THEN K FOR
+.S-K,8 (3) AND 8,S-K (7, WITH THE
+.ALWAYS-DARK MODULE)
+[08020807080807080508040802080108000803070807060503020108]→GDB7
 .NOTEFOLIO SIGNATURE
 [F347BFAF]→GDB8
 .ALNUM PUNCTUATION, VALUES 36-44
@@ -267,27 +270,6 @@ A+L→A
 Z+R→Z
 End
 .
-.INTERLEAVE INTO GDB7
-GDB7→X
-For(I,0,Y)
-L₁→A
-For(K,1,B)
-Y+(K>(B-U))→L
-If I<L
-{A+I}→{X}
-X+1→X
-End
-A+L→A
-End
-End
-For(I,0,R-1)
-For(K,0,B-1)
-{K*R+I+L₁+330}→{X}
-X+1→X
-End
-End
-0→{X}
-.
 .RESERVED MODULES IN BACK BUFFER
 ClrDraw
 ClrDrawʳ
@@ -339,34 +321,16 @@ End
 End
 End
 End
-.FORMAT BITS (EC L, MASK 0)
-30660→A
-For(I,0,14)
-If A^2
-If I<6
-Pxl-On(8+H,I+G)
+.FORMAT BITS (EC L, MASK 0), DARK MODULE
+For(I,0,8)
+Pxl-On({I*2+GDB7}+H,{I*2+GDB7+1}+G)
 End
-If I=6
-Pxl-On(8+H,7+G)
+For(I,18,20)
+Pxl-On(S-{I+GDB7}+H,8+G)
 End
-If I=7
-Pxl-On(8+H,8+G)
+For(I,21,27)
+Pxl-On(8+H,S-{I+GDB7}+G)
 End
-If I=8
-Pxl-On(7+H,8+G)
-End
-If I>8
-Pxl-On(14-I+H,8+G)
-End
-If I<8
-Pxl-On(S-1-I+H,8+G)
-Else
-Pxl-On(8+H,S-15+I+G)
-End
-End
-A/2→A
-End
-Pxl-On(8+H,S-8+G)
 .VERSION INFO (V7+)
 If V≥7
 {V*2+GDB6-14}ʳ→A
@@ -382,7 +346,8 @@ End
 End
 .
 .DATA MODULES, ZIGZAG
-GDB7→P
+0→Q
+sub(CW)
 128→Z
 0→K
 While K<(S/2)
@@ -399,13 +364,14 @@ End
 For(J,0,1)
 X-J→C
 !If pxl-Test(C,Y)ʳ
-If {P} and Z≠0=(C+Y^2)
+If D and Z≠0=(C+Y^2)
 Pxl-On(C+H,Y+G)
 End
 Z/2→Z
 !If Z
 128→Z
-P+1→P
+Q+1→Q
+sub(CW)
 End
 End
 End
@@ -414,6 +380,34 @@ K+1→K
 End
 DispGraph
 0→Ans
+Return
+.
+.CODEWORD Q IN INTERLEAVED ORDER TO D:
+.DATA BYTE I OF EACH BLOCK IN TURN, THE
+.LONG BLOCKS' LAST BYTES, EC BYTE I OF
+.EACH BLOCK IN TURN, THEN 0
+Lbl CW
+M/B→T
+B-(M^B)→U
+0→D
+If Q<M
+If Q<(T*B)
+Q^B→L
+Q/B→O
+Else
+Q-(T*B)+U→L
+T→O
+End
+.BLOCK L STARTS AT L*T, +1 PER LONG
+.BLOCK BEFORE IT (BLOCKS U AND UP)
+L>U*(L-U)+(L*T)+O+L₁→O
+{O}→D
+Return
+End
+Q-M→O
+If O<(R*B)
+{O^B*R+(O/B)+L₁+330}→D
+End
 Return
 .
 .APPEND LOW Z BITS OF A

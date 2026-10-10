@@ -1,0 +1,334 @@
+SetUpEditor CW,BIN,QR
+If 3≠dim(ʟQR
+{0,0,0→QR
+0→V
+Lbl 0
+Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary",C,"Set version",S,"Options",O,"Exit",X
+Lbl S
+Input "ver=",V
+int(V→V
+If V<0 or V>11
+Goto S
+Goto 0
+Lbl O
+"NY
+Menu("OPTIONS","StorePic 1:"+sub(Ans,1+ʟQR(1),1),1,"Alt punct: "+sub(Ans,1+ʟQR(2),1),2,"ASCII fix: "+sub(Ans,1+ʟQR(3),1),3,"Back",0
+Lbl 1:1:Goto F
+Lbl 2:2:Goto F
+Lbl 3:3
+Lbl F
+1-ʟQR(Ans→ʟQR(Ans
+Goto O
+Lbl BC
+ClrHome
+Disp "ERR:BAD CHAR","Char: "+sub(Str1,K,1),"Pos=
+Output(3,5,K
+Pause 
+ClrHome
+Goto 0
+Lbl A:0:Goto M
+Lbl B:1:Goto M
+Lbl C:2
+Lbl M
+Ans→E
+If E≠2
+Input "msg=",Str1
+If E
+Then
+{17,32,53,78,106,134,154,192,230,271,321→L₁
+Else
+{25,47,77,114,154,195,224,279,335,395,468→L₁
+End
+If E=2
+Then
+dim(ʟBIN→L
+Else
+length(Str1→L
+End
+If not(V
+min(11,1+sum(L₁<L→V
+V+(V=5 or V=9→V
+min(L₁(V),L→N
+0→K
+If E≠2
+Then
+If E
+Then
+ʟQR(3
+If Ans
+95=length(Str3
+If not(Ans
+" !π#$%&\'()*+,-./0123456789:;<\=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}|~→Str3
+Str3→Str2
+Else
+"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ "+sub("$%*+-./:?;\',-.!:",1+8ʟQR(2),8→Str2
+End
+For(X,1,N
+If not(inString(Str2,sub(Str1,X,1
+Then
+X→K
+N→X
+End
+End
+End
+If K
+Goto BC
+ClrHome
+Disp "ver=","Encoding
+Output(1,5,V
+If N<L
+Then
+Output(7,1,N
+Output(7,2+int(log(N))," of
+Output(7,6+int(log(N)),L
+Output(8,1,sub("charsbytes",1+5(E=2),5)+" encoded
+End
+If V=1
+{88,230,147,150,239,103,22→L₂
+If V=2
+{252,68,47,62,119,71,65,95,33,46→L₂
+If V=3
+{9,184,62,92,203,38,52,59,59,238,141,125,6,100,106→L₂
+If V=4 or V=7 or V=11
+{18,61,80,51,62,164,27,188,203,181,222,226,84,240,157,165,213,213,189,191→L₂
+If V=6 or V=10
+{216,235,159,95,185,98,119,171,80,188,153,149,253,180,6,99,97,154→L₂
+If V=8
+{230,122,136,49,212,118,252,127,160,181,170,153,193,227,229,219,112,1,118,233,88,97,228,22→L₂
+{19,34,55,80,108,136,156,194,232,274,324
+Ans(V→M
+4→L
+If not(E
+Then
+{32→CW
+9+2(V≥10→S
+prgmθQRBIT
+11→S
+N→K
+For(X,1,K-1,2
+inString(Str2,sub(Str1,X,1
+Ans-1→C
+inString(Str2,sub(Str1,X+1,1
+45C+Ans-1→N
+prgmθQRBIT
+End
+If fPart(.5K
+Then
+6→S
+inString(Str2,sub(Str1,K,1))-1→N
+prgmθQRBIT
+End
+min(4,8M-L→S
+0→N
+prgmθQRBIT
+Else
+{64→CW
+8+8(V≥10→S
+prgmθQRBIT
+S/8→O
+If E=1
+Then
+For(X,1,N
+31+inString(Str2,sub(Str1,X,1→C
+int(C/16)+ʟCW(O+X→ʟCW(O+X
+256fPart(C/16→ʟCW(O+X+1
+End
+Else
+For(X,1,N
+ʟBIN(X→C
+int(C/16)+ʟCW(O+X→ʟCW(O+X
+256fPart(C/16→ʟCW(O+X+1
+End
+End
+End
+For(X,1,M-dim(ʟCW
+236-219not(fPart(X/2→ʟCW(1+dim(ʟCW
+End
+1+(V>5)+2(V>9→Z
+int(M/Z→Q
+M-ZQ→Y
+dim(L₂→R
+DelVar L₄Y+ZR+1→dim(L₄
+Disp "ECC Block  /
+Output(3,13,Z
+seq(2^N,N,8,1,⁻1→L₃
+0→P
+For(K,1,Z
+P+1→O
+P+Q+(K>Z-Y→P
+Output(3,11,K
+Output(4,1,0
+DelVar L₁R→dim(L₁
+For(I,O,P
+ʟCW(I→B
+.5sum(L₃*(1=abs(int(2fPart((L₁(1)+B𝑖)/L₃→F
+ΔList(cumSum(L₁→L₁
+0→L₁(R
+ʟGFL(F+not(F))+L₂
+Ans-255(Ans>255→L₅
+For(J,1,(F≠0)R
+.5sum(L₃*(1=abs(int(2fPart((L₁(J)+ʟGFX(L₅(J))𝑖)/L₃→L₁(J
+End
+Output(4,1,"     
+Output(4,1,round(100I/M,2
+End
+For(J,1,R
+L₁(J→L₄(Y+K+Z(J-1
+End
+If K>Z-Y
+ʟCW(P→L₄(K-Z+Y
+End
+If Z>1
+Then
+Disp "Interleaving
+seq(ʟCW(int(N)+QZfPart(N)+max(0,ZfPart(N)-Z+Y)),N,1,Q+1-1/Z,1/Z→CW
+End
+For(J,1,dim(L₄
+L₄(J→ʟCW(QZ+J
+End
+FnOff 
+AxesOff
+GridOff
+PlotsOff 
+ClrDraw
+17+4V→S
+For(X,1,3
+(S-7)(X=3→K
+(S-7)(X=2→L
+For(J,L,L+5
+Pxl-On(K,J
+End
+For(I,K,K+5
+Pxl-On(I,L+6
+End
+For(J,L+6,L+1,⁻1
+Pxl-On(K+6,J
+End
+For(I,K+6,K+1,⁻1
+Pxl-On(I,L
+End
+For(I,K+2,K+4
+For(J,L+2,L+4
+Pxl-On(I,J
+End
+End
+End
+For(I,8,S-8)
+If not(fPart(I/2
+Pxl-On(I,6
+End
+For(J,8,S-8)
+If not(fPart(J/2
+Pxl-On(6,J
+End
+8
+Pxl-On(Ans,8
+Pxl-On(Ans,7
+Pxl-On(Ans,5
+Pxl-On(Ans,4
+Pxl-On(Ans,2
+Pxl-On(Ans,1
+Pxl-On(Ans,0
+Pxl-On(Ans,S-3
+Pxl-On(Ans,S-7
+Pxl-On(Ans,S-8
+8
+Pxl-On(S-7,Ans
+Pxl-On(S-6,Ans
+Pxl-On(S-5,Ans
+Pxl-On(S-3,Ans
+Pxl-On(S-2,Ans
+Pxl-On(S-1,Ans
+Pxl-On(2,Ans
+Pxl-On(7,Ans
+Pxl-On(S-8,Ans
+If V>1
+Then
+If V≤6
+Then
+{S-7→L₁
+{S-7→L₂
+"I=6 or abs(S-7-I)≤2 and abs(S-7-J)≤2→r₁
+Else
+{31892,34236,39577,42195,48118
+Ans(V-6→B
+For(I,0,5
+For(J,S-11,S-9
+If fPart(B/2
+Then
+Pxl-On(I,J
+Pxl-On(J,I
+End
+int(B/2→B
+End
+End
+6+.5(S-13→M
+{6,M,M,M,S-7,S-7→L₁
+{M,6,M,S-7,M,S-7→L₂
+2V+2→T
+"I=6 or abs(TfPart(I/T)-6)≤2.1 and abs(TfPart(J/T)-6)≤2.1 and abs(I-J)≤S/2-2 or J≥S-11 and I≤5→r₁
+End
+For(X,1,dim(L₁
+L₁(X→K
+L₂(X→L
+For(J,L-2,L+1
+Pxl-On(K-2,J
+End
+For(I,K-2,K+1
+Pxl-On(I,L+2
+End
+For(J,L+2,L-1,⁻1
+Pxl-On(K+2,J
+End
+For(I,K+2,K-1,⁻1
+Pxl-On(I,L-2
+End
+Pxl-On(K,L
+End
+Else
+"I=6→r₁
+End
+S-1→I
+I→C
+⁻1→D
+9→E
+1→X
+ʟCW(1→W
+128→P
+While C>0
+For(J,C,C-1,⁻1
+If not(r₁
+Then
+W≥P→B
+W-BP→W
+P/2→P
+If P<1
+Then
+128→P
+X+1→X
+ʟCW(X→W
+End
+If B xor not(fPart((I+J)/2
+Pxl-On(I,J
+End
+End
+If I=E
+Then
+⁻D→D
+C-2-(C=8→C
+9(C<9 or C>(S-9→I
+S-1-8(C<9)-3(C≤5 and V≥7→E
+If D=⁻1
+Then
+I→U
+E→I
+U→E
+End
+Else
+D+I→I
+End
+End
+If ʟQR(1
+StorePic 1
+"→r₁
+Lbl X

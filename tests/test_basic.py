@@ -2,8 +2,9 @@
 
 The programs run in tibasic, the user's TI-BASIC emulator (expected in ../tibasic; set
 TIBASIC to its path otherwise).
-prgmQR is driven through its menus with scripted choices and Input text, and the
+prgmQRBASIC is driven through its menus with scripted choices and Input text, and the
 graph screen is compared with the `qrcode` reference and decoded, as in qrtest.py.
+(--originals runs the original prgmQR/QRCW/QRBIT/QRECC/QRDRAW, which center by default.)
 
   python tools/build.py && python tests/test_basic.py           all versions
   python tools/build.py && python tests/test_basic.py --quick   versions 1, 6, 10
@@ -25,14 +26,17 @@ from core import TiList                           # noqa: E402
 from environment import Environment               # noqa: E402
 from terminal import ScriptedConsole              # noqa: E402
 from catalog import get_token, CHAR_TABLE         # noqa: E402
+from core import TiString                         # noqa: E402
 
 sys.path.insert(0, str(ROOT / 'tools'))
 from build import TIProgram                       # noqa: E402  (with the π fix)
 
 PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build/basic')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
-ALNUM, ASCII, BINARY, SET_VERSION = 0, 1, 2, 3    # main menu choices
-SKIPPED = {5: 6, 9: 10}                           # versions QRCW bumps to the next one
+ALNUM, ASCII, BINARY, SET_VERSION, OPTIONS, EXIT = range(6)   # main menu choices
+STOREPIC, ALT_PUNCT, ASCII_FIX, BACK = range(4)                 # options menu
+SKIPPED = {5: 6, 9: 10}                           # versions bumped to the next one (faster)
+ORIGINALS = '--originals' in sys.argv
 
 failures = []
 
@@ -48,9 +52,18 @@ def install(env, name, tokens_bytes):
     tifile.ProgramFile(name, tifile._read_token_stream(stream)).store_to(env)
 
 
-def run_qr(choices, inputs, center=1, binary=None, patch=None):
-    """Run prgmQR. `patch` maps program name -> function(text) -> text for variants."""
-    env = Environment(console=ScriptedConsole(inputs=inputs, choices=choices))
+class TokenConsole(ScriptedConsole):
+    """Also takes an input as a list of tokens (for π, which is a key, not a character)."""
+    def _input(self, prompt):
+        if self.inputs and isinstance(self.inputs[0], list):
+            return self.inputs.pop(0)
+        return super()._input(prompt)
+
+
+def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None):
+    """Run prgmQRBASIC (or the original prgmQR). `patch` maps program name ->
+    function(text) -> text for variants. `center` only exists in the originals."""
+    env = Environment(console=TokenConsole(inputs=inputs, choices=choices))
     tifile.load_environment(env, DATA)
     for f in PROGRAMS.glob('*.8xp'):
         data = bytes(TIProgram.open(str(f)).data)
@@ -60,15 +73,19 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None):
             p.load_string(patch[f.stem](src).rstrip('\n'), mode='max')
             data = bytes(p.data)
         install(env, f.stem, data)
-    env.user_lists['QR'] = TiList([float(center), 1.0, 0.0, 0.0, 0.0])
+    if ORIGINALS:
+        env.user_lists['QR'] = TiList([float(center), 1.0, 0.0, 0.0, 0.0])
     if binary is not None:
         env.user_lists['BIN'] = TiList([float(b) for b in binary])
-    env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in 'QR')])
+    if str3 is not None:
+        env.strings[2] = TiString(str3)
+    env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in ('QR' if ORIGINALS else 'QRBASIC'))])
     return env
 
 
 def symbol(env, version, center):
     S = 17 + 4 * version
+    center = center and ORIGINALS            # QRBASIC always draws at the top left
     G = 31 - S // 2 if center else 0
     H = 47 - S // 2 if center else 0
     mat = [[int(env.graph.get(G + y, H + x)) for x in range(S)] for y in range(S)]
@@ -115,7 +132,7 @@ def sweep(versions, patch=None, label=''):
         for mode in (ALNUM, ASCII, BINARY):
             cap = (CAP_ALNUM if mode == ALNUM else CAP_BYTE)[v - 1]
             for p in payloads(mode, cap):
-                for center in ((0, 1) if len(p) == cap else (1,)):
+                for center in ((0, 1) if len(p) == cap and ORIGINALS else (1,)):
                     name = '%sv%d mode %d length %d center %d' % (label, v, mode, len(p), center)
                     env = encode(mode, v, p, center, patch)
                     if not check(name, env, drawn, center, p, 'alphanumeric' if mode == ALNUM else 'byte'):
@@ -125,28 +142,55 @@ def sweep(versions, patch=None, label=''):
     return n
 
 
+def screens(env):
+    return '\n'.join(env.console.frames) + '\n' + str(env.home)
+
+
 def edge_cases():
-    # Too long for version 1 -> "Continue" truncates to 25 characters (odd, so the last
-    # character is encoded alone in 6 bits; the original used the untruncated string's)
+    # too long for the set version: truncated, with a note on the Encoding screen
+    # (25 is odd, so the last character goes alone in 6 bits)
     msg = 'HELLO WORLD 0123456789 ABCDEFGH'
-    env = run_qr([SET_VERSION, ALNUM, 1], ['1', msg])
-    expect('truncate to an odd length', check('truncate', env, 1, 1, msg[:25], 'alphanumeric'))
-    # "Abort" must end cleanly without drawing (the original did Goto 0 -> ERR:LABEL)
-    try:
-        env = run_qr([SET_VERSION, ALNUM, 2], ['1', msg])
-        lit = sum(env.graph.get(r, c) for r in range(64) for c in range(96))
-        expect('abort draws nothing', lit == 0, '%d pixels lit' % lit)
-    except Exception as e:
-        expect('abort draws nothing', False, repr(e))
+    env = run_qr([SET_VERSION, ALNUM], ['1', msg])
+    expect('truncate to an odd length', check('truncate', env, 1, 0, msg[:25], 'alphanumeric'))
+    expect('truncation note: 25 of 31 chars encoded',
+           '25 of 31' in screens(env) and 'chars encoded' in screens(env), screens(env))
+    env = run_qr([SET_VERSION, BINARY], ['1'], binary=list(range(20)))
+    expect('truncated ʟBIN: 17 of 20 bytes encoded',
+           check('truncate list', env, 1, 0, bytes(range(17)), 'byte') and
+           '17 of 20' in screens(env) and 'bytes encoded' in screens(env), screens(env))
+    env = run_qr([ALNUM], ['HELLO'])
+    expect('no note when it fits', 'encoded' not in screens(env), screens(env))
+    # auto version: the smallest that fits, skipping 5 and 9
+    env = run_qr([ALNUM], ['A' * 120])
+    expect('120 alphanumeric chars: version 6 (not 5)', check('auto v6', env, 6, 0, 'A' * 120, 'alphanumeric'))
+    # a bad character: error with the character and position, back to the menu, nothing drawn
+    for mode, text, pos, ch in ((ALNUM, 'ABcD', 3, 'c'), (ASCII, 'ab' + 'θ' + 'c', 3, 'θ')):
+        try:
+            env = run_qr([mode, EXIT], [text])
+            lit = sum(env.graph.get(r, c) for r in range(64) for c in range(96))
+            sc = screens(env)
+            ok = 'ERR:BAD CHAR' in sc and 'Pos=%d' % pos in sc and lit == 0
+            ok = ok and (ch is None or 'Char: ' + ch in sc)
+            expect('bad char in mode %d at %d: error, nothing drawn' % (mode, pos), ok, (lit, sc))
+        except Exception as e:
+            expect('bad char in mode %d' % mode, False, repr(e))
+    # alt punct: ? ; ' , - . ! : type in place of $ % * + - . / :
+    env = run_qr([OPTIONS, ALT_PUNCT, BACK, ALNUM], ["HI?;'!"])
+    expect("alt punct: HI?;'! scans as HI$%*/", check('alt punct', env, 1, 0, 'HI$%*/', 'alphanumeric'))
+    # ASCII: π stands in for the quote
+    # ASCII fix: a 95-character Str3 of your own (here with a real quote) is used as the table
+    table = [CHAR_TABLE[chr(c)] for c in range(32, 127)]
+    env = run_qr([OPTIONS, ASCII_FIX, BACK, ASCII], ['say "hi"'], str3=table)
+    expect('ASCII fix: a real " through a custom Str3', check('ascii fix', env, 1, 0, 'say "hi"', 'byte'))
+    pi = get_token(0xAC)
+    env = run_qr([ASCII], [[*(CHAR_TABLE[c] for c in 'say '), pi, CHAR_TABLE['h'], CHAR_TABLE['i'], pi]])
+    expect('ASCII: π encodes as "', check('pi quote', env, 1, 0, 'say "hi"', 'byte'))
 
 
 if __name__ == '__main__':
     quick = '--quick' in sys.argv
     sweep([1, 6, 10] if quick else range(1, 12))
-    if '--originals' not in sys.argv:
-        # versions 5 and 9 work once QRCW stops skipping them
-        sweep([5, 9], patch={'QRCW': lambda t: t.replace('V+(V=5 or V=9→V\n', '')},
-              label='unskipped ')
+    if not ORIGINALS:
         edge_cases()
     print('\nALL PASSED' if not failures else '\n%d FAILED' % len(failures))
     sys.exit(1 if failures else 0)

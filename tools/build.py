@@ -18,6 +18,7 @@ import tivars.models
 from tivars import TIProgram
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.stdout.reconfigure(errors='replace')   # "θQRBIT" on a non-UTF-8 console prints as "?QRBIT"
 
 # tivars 1.1.1 decompiles the π token (ACh) as "π" but only accepts "pi" when tokenizing,
 # and "pi" inside a string becomes two lowercase letters. Teach every model's trie "π".
@@ -125,6 +126,8 @@ def build():
     # "max" mode keeps tokens inside strings (the r₁ expressions in QRDRAW need them);
     # write \= etc. where a string needs single characters ("<\=>" is <,=,> not ≤,>).
     (ROOT / 'build' / 'basic').mkdir(exist_ok=True)
+    for old in (ROOT / 'build' / 'basic').glob('*.8xp'):   # programs since merged or renamed
+        old.unlink()
     for src in sorted((ROOT / 'src' / 'basic').glob('*.basic.txt')):
         name = src.name.split('.')[0]
         prog = TIProgram(name=name)

@@ -4,7 +4,7 @@ If 4≠dim(ʟQROPT
 {0,0,0,0→QROPT
 0→V
 Lbl 0
-Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary (ʟBIN)",C,"Set version",S,"Options",O,"R\edraw",R,"Exit",X
+Menu("QR CODE","ASCII",A,"Alphanumeric",C,"Binary (ʟBIN)",B,"Set version",S,"Options",O,"R\edraw",R,"Exit",X
 Lbl S
 Input "ver=",V
 int(V→V
@@ -32,9 +32,9 @@ Lbl R
 int(.2dim(ʟCW)^.68→V
 startTmr→A
 Goto D
-Lbl A:0:Goto M
-Lbl B:1:Goto M
-Lbl C:2
+Lbl C:0:Goto M
+Lbl A:1:Goto M
+Lbl B:2
 Lbl M
 Ans→E
 If E≠2

@@ -271,12 +271,18 @@ codes, C capacity per code, W per code, P current, O skip.
 
 ## Note picker (prgmθNOTES, src/NOTESSRC.axe.txt)
 
-`LS` walks the VAT (below) and keeps appvars that pass `NC` (name only A-Z, 0-9, θ, copied
+It starts with `Asm(EF7045)` (bcall _RunIndicOff, 4570h): the run indicator, drawn by the OS
+interrupt into the LCD's top right corner, showed over the title bar. (Axe's `DiagnosticOff`
+would also stop the OS printing "Done" after the calling program.) `LS` walks the VAT (below) and keeps appvars that pass `NC` (name only A-Z, 0-9, θ, copied
 to L₁+700 as an OP1 name) and `NH` (signature, size ≥ 27): names at L₁+8k, 0-padded, at
 most 80 (L₁+0..639). Selection sort with `LT`; L₁+690..698 is the swap buffer and the
 0-terminated name for `Text(`. Small font with `Fix 5` (draw to the buffer; `Fix 4` again
-before every return, or the OS keeps drawing text to the buffer). Title "CHOOSE A NOTE" at
-y=0 in an inverted bar (`RectI(0,0,96,7)`, rows 0-6, like the OS's menu titles), then
+before every return, or the OS keeps drawing text to the buffer). Title "Choose a NoteFolio
+file:" (GDB1, ASCII bytes so the lowercase is exact) at (10,0), centered: 75 px of ink in the
+small font by tibasic's `fonts.py` widths, so margins 10 and 11 (a test checks this when
+../tibasic is present). In an inverted bar (`RectI(0,0,96,7)`, rows 0-6, like the OS's menu
+titles). A large-font title was considered: 7-row text + 1 px padding each side = 9 rows,
+and 9+1+8·7 = 66 > 64, so it would cost a name per column; kept small. Then
 columns of 8 names 7 rows apart (two blank rows between names; it was 9 names 6 apart, which
 the user found cramped; 9 at 7 don't fit under a title), 2 columns shown: name k (counting
 from the left column shown, T·8) at x=(k/8)·48+2, y=(k mod 8)·7+8. The selection S is

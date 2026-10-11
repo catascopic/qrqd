@@ -185,7 +185,21 @@ def picker(texts, notes):
     names = sorted(n for n, _, _ in texts)
     m = machine(notes, {}, str2='OLD', keys=[CLEAR], src=PICKER)
     expect('picker lists the %d real notes (RAM + archived), sorted, first highlighted' % len(names),
-           shown(m.frames[0]) == (names, 0) and m.frames[0][0][0][2] == 'CHOOSE A NOTE', m.frames[0])
+           shown(m.frames[0]) == (names, 0), m.frames[0])
+    x, y, title = m.frames[0][0][0]
+    expect('title "Choose a NoteFolio file:" at the top', (y, title) == (0, 'Choose a NoteFolio file:'),
+           (x, y, title))
+    try:                                      # the small font's widths, from tibasic (if present)
+        sys.path.append(str(ROOT.parent / 'tibasic'))
+        from fonts import SMALL_FONT
+    except ImportError:
+        print('skip  title centering (no ../tibasic for the small font)')
+    else:
+        glyphs = [SMALL_FONT[ord(c)] for c in title]
+        ink = sum(map(len, glyphs)) - (glyphs[-1][-1] == 0)   # minus the blank column after ':'
+        expect('title centered: %d px wide at x=%d (margins %d, %d)' % (ink, x, x, 96 - x - ink),
+               0 <= (96 - x - ink) - x <= 1)
+    expect('the run indicator is turned off', not m.run_indicator)
     expect('Clear cancels, Str2 unchanged',
            m.ans == CANCELLED and str2(m).startswith('OLD') and m.fix == 4, (m.ans, str2(m)))
 

@@ -137,4 +137,6 @@ If Ans≠1:Stop
 
 It changes only Str2 and Ans. It uses L₁ for scratch and draws on the graph buffer, which
 it leaves clear. When it returns, the screen shows the home screen as it was (redrawn from
-the OS's copy of the home-screen text, with the cursor where it was).
+the OS's copy of the home-screen text, with the cursor where it was). It turns off the run
+indicator (the moving dashes at the top right) so it doesn't draw over the menu; when called
+from a BASIC program, the indicator may stay off for the rest of that program.

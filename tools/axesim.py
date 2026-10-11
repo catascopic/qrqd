@@ -11,6 +11,7 @@ returns scripted keys (running out raises, so a stuck loop can't hang a test),
 and returning with Fix 5 or Fix 7 still on is an error. The home screen is a
 16x8 grid of character codes (`home`): Output( moves the cursor (curCol 844Ch,
 curRow 844Bh), Disp X►Char writes one cell and advances, DispGraph wipes it.
+Asm( runs only the OS calls listed in ASM (anything else raises).
 """
 import re
 
@@ -19,7 +20,7 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
-    'Text(', 'RectI(', 'Fix ', 'getKey', 'Output(', '►Char',
+    'Text(', 'RectI(', 'Fix ', 'getKey', 'Output(', '►Char', 'Asm(',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
     'ClrDraw', 'DispGraph', 'Disp ', 'Full', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
@@ -28,6 +29,9 @@ TOKENS = [  # longest first matters
 ]
 BINOPS = {'+', '-', '*', '/', '^', '=', '≠', '<', '>', '≤', '≥',
           ' and ', ' or ', ' xor ', '·'}
+
+
+ASM = {'EF7045': 'RunIndicOff'}   # bcall _RunIndicOff
 
 
 class AxeError(Exception):
@@ -92,6 +96,7 @@ class Machine:
         self.fix = 4          # 4 text to the screen, 5 to the buffer
         self.scroll = 6       # 6 scroll at the last line, 7 don't
         self.home = {}        # (col, row) -> character code on the home screen
+        self.run_indicator = True
         self.lines = []
         for raw in src.split('\n'):
             s = raw.rstrip('\n')
@@ -486,6 +491,12 @@ class Machine:
                         if self.scroll == 6: raise AxeError('Disp scrolled the home screen')
                         row = 7
                 self.mem[0x844C], self.mem[0x844B] = col, row
+                pc += 1; continue
+            if h == ('T', 'Asm('):
+                code = ''.join(str(x[1]) if x[0] in ('NUM', 'VAR') else '' for x in t[1:-1])
+                assert t[-1] == ('T', ')') and all(x[0] in ('NUM', 'VAR') for x in t[1:-1]), self.lines[pc]
+                if ASM.get(code) != 'RunIndicOff': raise AxeError('unmodelled Asm(%s)' % code)
+                self.run_indicator = False
                 pc += 1; continue
             if h == ('T', 'Output('):
                 x, j = self.expr(t, 1); j = self.expect(t, j, ',')

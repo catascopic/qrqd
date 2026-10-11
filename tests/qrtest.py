@@ -18,7 +18,7 @@ from PIL import Image                           # noqa: E402
 from qrcode.util import QRData, MODE_ALPHA_NUM, MODE_8BIT_BYTE  # noqa: E402
 from axesim import Machine, AxeError            # noqa: E402,F401
 
-SRC_DIR = ROOT / 'standalone' / 'src' if '--standalone' in sys.argv else ROOT / 'src'
+SRC_DIR = ROOT / 'src' / 'standalone' if '--standalone' in sys.argv else ROOT / 'src'
 SRC = (SRC_DIR / 'QRSRC.axe.txt').read_text(encoding='utf-8')
 TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 

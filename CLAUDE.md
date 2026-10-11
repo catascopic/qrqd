@@ -22,7 +22,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `docs/API.md` | how other programs call prgmθQR and prgmθNOTES (variables, return values, capacity, a tested example) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
 | `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |
-| `standalone/` | the QR-only release the user plans to publish (no encryption): `src/QR.basic.txt` + `src/QRSRC.axe.txt` as of commit 14b59a2 (= branch `basic_notefolio`: engine E=4 lists notes, BASIC 5-per-page Menu( pager), except the list of names is in Str3 and the chosen name in Str2. Same file and program names as the main set (prgmQR, prgmθQR), so only one set can be on the calculator at a time. Built to `build/standalone/`; `standalone/API.md`; tests in `standalone/tests/` |
+| `src/standalone/` | the QR-only release the user plans to publish (no encryption): `src/QR.basic.txt` + `src/QRSRC.axe.txt` as of commit 14b59a2 (= branch `basic_notefolio`: engine E=4 lists notes, BASIC 5-per-page Menu( pager), except the list of names is in Str3 and the chosen name in Str2. Same file and program names as the main set (prgmQR, prgmθQR), so only one set can be on the calculator at a time. Built to `build/standalone/`; interface in `docs/standalone/API.md`; tests `tests/test_standalone_*.py` and `test_engine.py --standalone` |
 | `tools/build.py` | builds both `.8xp`; `decompile` turns any `.8xp` back into text |
 | `tools/axe_tokens.json` | Axe 1.2.1 token table (from TokenIDE's AxeTokens.xml by Runer112; reuse permitted) |
 | `tools/axesim.py` | interpreter for the Axe subset the engine uses; the tests run the engine in it |
@@ -46,8 +46,8 @@ python tests/test_frontend.py            # front-end menus; needs ../tibasic and
 python tests/test_basic.py --quick       # pure-BASIC set; same needs
 python tests/test_lorem.py               # the LOREM note maker
 python tests/test_engine.py --quick --standalone   # the standalone engine (modes 0-2)
-python standalone/tests/test_notefolio.py          # its notes, E=4 list
-python standalone/tests/test_frontend.py           # its menus (PYTHONUTF8=1)
+python tests/test_standalone_notefolio.py          # its notes, E=4 list
+python tests/test_standalone_frontend.py           # its menus (PYTHONUTF8=1)
 python tools/build.py decompile build/QRSRC.8xp
 ```
 
@@ -113,6 +113,9 @@ first, picks the version from the length and mode, then encodes.
 - Comments start with `.`; a line starting with `...` opens a multi-line comment.
 - Write names as their tokens: `GDB1`, `Str1`, `L₁`, `"varE"` (`var` is the u token). The
   tokenizer does this from the spellings; plain letters in code would be variables.
+- Comments too (the user's preference): `Str1`, `ʟBIN`, `L₁`, `r₁`, `Y₁`, `Ans`, `prgmQR`, `→`,
+  `⁻` rather than spelling them out (STR1, L1, R1). Keep comments short: details belong in
+  docs/design.md.
 - OS names for GetCalc are OP1 bytes: type, name, 0 (e.g. `[015D42494E00]` = list BIN).
   `GetCalc` returns 0 for archived vars; archived data is read via `GetCalc(name,Y₁)` and `{Y₁+k}`.
 - Free RAM: L₁ 714 bytes, L₃ 768 (back buffer), L₆ = graph buffer. See design.md for the map.

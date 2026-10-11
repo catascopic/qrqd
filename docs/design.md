@@ -145,7 +145,7 @@
    `Asm(` needs room for the running program only, so a separate picker adds its stored size
    but not to the peak. Still duplicated in both programs: `NH` and `RB` (is it a note, read
    a byte) and the GDB8 signature.
-29. The QR-only release (no encryption) lives in `standalone/` on master, so it can be
+29. The QR-only release (no encryption) lives in `src/standalone/` on master, so it can be
    built and tested without switching branches: the previous prgmQR and engine (commit
    14b59a2, branch `basic_notefolio`; the user likes its BASIC pager) with one change, the
    list of names (E=4) now in Str3 and the chosen name in Str2, matching the main set's Str2.

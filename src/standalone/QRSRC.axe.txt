@@ -1,0 +1,692 @@
+.θQR
+.QR ENGINE FOR prgmQR: V1-11, EC L, MASK 0
+.E=1 Str1, 2 ʟBIN, 3 NOTE NAMED IN Str2,
+.  4 LIST NOTES INTO Str3 (Ans=COUNT)
+.V=VERSION, 0 TO CHECK ONLY
+.M=0 AUTO, 1 ASCII, 2 ALNUM
+.N=COUNT, O=COUNT TO SKIP FIRST
+.A=1 IF THE CHECK SAID ALNUM (M=0)
+.Ans: CHECK 2*LENGTH+1 ALNUM, +0 ASCII
+.  (NOTE IN BYTE MODE: B=FIRST NON-ASCII)
+.  0 DRAWN, 32768+K BAD CHAR AT K,
+.  65532 TOO LONG, 65535 BAD INPUT
+.
+.TWO-BYTE TOKEN PREFIXES
+[5C5D5E606162637EAABBEF00]→GDB1
+.OS NAME OF ʟBIN
+[015D42494E00]→GDB2
+.DATA CODEWORDS PER VERSION
+[13002200370050006C0088009C00C200E80012014401]→GDB3
+.EC CODEWORDS PER BLOCK
+[070A0F141A1214181E1214]→GDB4
+.BLOCKS; AT +11 COUNT BITS: BYTE V1-9,
+.V10+, ALNUM V1-9, V10+
+[01010101010202020204040810090B]→GDB5
+.VERSION INFO, V7-11
+[947CBC85999AD3A4F6BB]→GDB6
+.DARK FORMAT MODULES: 9 X,Y, THEN K
+.FOR (S-K,8) (3) AND (8,S-K) (7)
+[08020807080807080508040802080108000803070807060503020108]→GDB7
+.NOTEFOLIO SIGNATURE
+[F347BFAF]→GDB8
+.ALNUM PUNCTUATION (36-44); AT +10 NOTE
+.CHARACTERS THAT CHANGE, AT +20 TO WHAT
+[2024252A2B2D2E2F3A00C15BF224D60AF1D21A005BC124F20AD6202D2D]→GDB9
+.TOKENS FOR ASCII 32-126: FIRST BYTES,
+.THEN SECOND BYTES (0 IF ONE BYTE)
+[292D2ABBBBBBBBAE101182702B713A83303132333435363738393EBB6B6A6CAFBB4142434445464748494A4B4C4D4E4F505152535455565758595A06BB07F0BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB08BB09BB000000D2D3DAD40000000000000000000000000000000000000000D600000000D1000000000000000000000000000000000000000000000000000000D70000D9D5B0B1B2B3B4B5B6B7B8B9BABCBDBEBFC0C1C2C3C4C5C6C7C8C9CA00D800CF]→GDB0
+.
+.15 MHZ (84+, SE); THE OS RESETS IT
+Full
+.
+.PARAMETERS (MISSING = 0)
+sub(GV,"varE")
+r₁→E
+If E=4
+sub(LS)
+Return
+End
+sub(GV,"varV")
+r₁→V
+sub(GV,"varM")
+r₁→F
+If V>11 or (E-1>2) or (F>2)
+65535→Ans
+Return
+End
+.
+.FIND THE INPUT, LENGTH T
+If E=2
+GetCalc(GDB2)→P
+!If P
+65535→Ans
+Return
+End
+{P-2}ʳ→T
+1→F
+End
+If E=3
+sub(NF)
+!If X
+65535→Ans
+Return
+End
+End
+If E=1
+GetCalc("Str1")→P
+!If P
+65535→Ans
+Return
+End
+{P-2}ʳ+P→X
+P→Z
+0→T
+While Z<X
+If inData({Z},GDB1)
+Z+1→Z
+End
+Z+1→Z
+T+1→T
+End
+End
+.
+.2*16383+1 IS THE MOST Ans CAN HOLD
+If V=0 and (T>16383)
+65532→Ans
+Return
+End
+.CHECK (V=0 ONLY): K FIRST NON-ASCII,
+.X FIRST NON-ALNUM POSITION
+If E≠2 and (V=0)
+0→O
+0→K
+0→X
+While O<T
+sub(CH)
+If A-32>94 and (A≠10) and (K=0)
+O→K
+End
+.STOP TESTING ALNUM AFTER A FAILURE
+!If X
+sub(AV)
+If J=99
+O→X
+End
+End
+End
+If F=2
+X→K
+End
+!If F
+X=0+1→F
+End
+.A NOTE IN BYTE MODE ONLY WARNS (B)
+If K
+If E=3 and (F=1)
+GetCalc("varB")→Z
+If Z
+K→float{Z}
+End
+Else
+K+32768→Ans
+Return
+End
+End
+End
+!If V
+T*2+F-1→Ans
+Return
+End
+sub(GV,"varN")
+r₁→N
+sub(GV,"varO")
+r₁→θ
+!If F
+sub(GV,"varA")
+r₁+1→F
+End
+.F: 1 BYTE, 2 ALNUM
+V*4+17→S
+31-(S/2)→G
+47-(S/2)→H
+{V*2+GDB3-2}ʳ→M
+{V+GDB4-1}→R
+{V+GDB5-1}→B
+.
+.CLAMP θ AND N TO THE LENGTH; 468 KEEPS
+.A BAD N FROM WRITING PAST L₁
+If θ>T
+T→θ
+End
+If N>(T-θ)
+T-θ→N
+End
+If N>468
+468→N
+End
+.
+.DATA CODEWORDS AT L₁
+0→O
+L₁→D
+0→W
+0→K
+.MODE INDICATOR 4 BYTE, 2 ALNUM; COUNT
+6-(F*2)→A
+4→Z
+sub(AB)
+N→A
+{F*2+(V≥10)+GDB5+9}→Z
+sub(AB)
+If E=1
+GetCalc("Str1")→P
+End
+.SKIP θ BYTES OR CHARACTERS
+If E=2
+P+(θ*9)→P
+1→I
+While I≤N
+float{P}→A
+P+9→P
+8→Z
+sub(AB)
+I+1→I
+End
+Else
+.STEP OVER TOKENS BY LENGTH; A NOTE
+.STARTS AT θ
+If E=1
+While O<θ
+If inData({P},GDB1)
+P+1→P
+End
+P+1→P
+O+1→O
+End
+Else
+θ→O
+End
+If F=1
+1→I
+While I≤N
+sub(CH)
+8→Z
+sub(AB)
+I+1→I
+End
+Else
+1→I
+While I≤(N/2)
+sub(CH)
+sub(AV)
+J*45→L
+sub(CH)
+sub(AV)
+L+J→A
+11→Z
+sub(AB)
+I+1→I
+End
+If N^2
+sub(CH)
+sub(AV)
+J→A
+6→Z
+sub(AB)
+End
+End
+End
+.TERMINATOR, BYTE ALIGN, PAD BYTES
+M*8-(D-L₁*8+K)→Z
+If Z>4
+4→Z
+End
+If Z
+0→A
+sub(AB)
+End
+If K
+0→A
+8-K→Z
+sub(AB)
+End
+236→A
+While D<(L₁+M)
+A→{D}
+D+1→D
+A xor 253→A
+End
+.
+.GF(256) EXP AT L₃, LOG AT L₃+512
+1→X
+For(I,0,254)
+X→{I+L₃}
+X→{I+L₃+255}
+I→{X+L₃+512}
+X*2→X
+If X>255
+X-256 xor 29→X
+End
+End
+.GENERATOR POLY AT L₁+420 AS LOGS
+1→{L₁+420}
+For(J,1,R)
+0→{J+L₁+420}
+End
+For(I,0,R-1)
+I+1→J
+While J
+{J+L₁+419}→C
+If C
+{J+L₁+420} xor {{C+L₃+512}+I+L₃}→{J+L₁+420}
+End
+J-1→J
+End
+End
+For(J,1,R)
+{{J+L₁+420}+L₃+512}→{J+L₁+420}
+End
+.EC BYTES FOR EACH BLOCK AT L₁+330
+M/B→Y
+M^B→U
+L₁→A
+L₁+330→Z
+For(K,1,B)
+Y+(K>(B-U))→L
+sub(RS)
+A+L→A
+Z+R→Z
+End
+.
+.RESERVED MODULES IN BACK BUFFER
+ClrDraw
+ClrDrawʳ
+sub(RV,0,0,9,9)
+sub(RV,S-8,0,8,9)
+sub(RV,0,S-8,9,8)
+sub(RV,0,6,S,1)
+sub(RV,6,0,1,S)
+If V≥7
+sub(RV,S-11,0,3,6)
+sub(RV,0,S-11,6,3)
+End
+.FINDER PATTERNS
+0→X
+0→Y
+sub(FP)
+S-7→X
+sub(FP)
+0→X
+S-7→Y
+sub(FP)
+.TIMING PATTERNS
+For(K,8,S-9)
+!If K^2
+Pxl-On(K+H,6+G)
+Pxl-On(6+H,K+G)
+End
+End
+.ALIGNMENT PATTERNS
+If V≥2
+6→{L₁+500}
+If V≥7
+S-1/2→W
+W→{L₁+501}
+S-7→{L₁+502}
+3→A
+Else
+0→W
+S-7→{L₁+501}
+2→A
+End
+For(U,0,A-1)
+For(Z,0,A-1)
+{U+L₁+500}→X
+{Z+L₁+500}→Y
+!If X=6 and (Y≠W) or (Y=6 and (X≠W))
+sub(AP)
+End
+End
+End
+End
+.FORMAT BITS (EC L, MASK 0), DARK MODULE
+For(I,0,8)
+Pxl-On({I*2+GDB7}+H,{I*2+GDB7+1}+G)
+End
+For(I,18,20)
+Pxl-On(S-{I+GDB7}+H,8+G)
+End
+For(I,21,27)
+Pxl-On(8+H,S-{I+GDB7}+G)
+End
+.VERSION INFO (V7+)
+If V≥7
+{V*2+GDB6-14}ʳ→A
+For(I,0,17)
+If A^2
+I^3+S-11→X
+I/3→Y
+Pxl-On(X+H,Y+G)
+Pxl-On(Y+H,X+G)
+End
+A/2→A
+End
+End
+.
+.DATA MODULES, ZIGZAG
+0→Q
+sub(CW)
+128→Z
+0→K
+While K<(S/2)
+S-1-(K*2)→X
+If X≤6
+X-1→X
+End
+For(I,0,S-1)
+If K^2
+I→Y
+Else
+S-1-I→Y
+End
+For(J,0,1)
+X-J→C
+!If pxl-Test(C,Y)ʳ
+If D and Z≠0=(C+Y^2)
+Pxl-On(C+H,Y+G)
+End
+Z/2→Z
+!If Z
+128→Z
+Q+1→Q
+sub(CW)
+End
+End
+End
+End
+K+1→K
+End
+DispGraph
+0→Ans
+Return
+.
+.CODEWORD Q IN INTERLEAVED ORDER→D:
+.DATA, LONG BLOCKS' LAST BYTES, EC, 0
+Lbl CW
+M/B→T
+B-(M^B)→U
+0→D
+If Q<M
+If Q<(T*B)
+Q^B→L
+Q/B→O
+Else
+Q-(T*B)+U→L
+T→O
+End
+.BLOCK L AT L*T, +1 PER LONG ONE BEFORE
+L>U*(L-U)+(L*T)+O+L₁→O
+{O}→D
+Return
+End
+Q-M→O
+If O<(R*B)
+{O^B*R+(O/B)+L₁+330}→D
+End
+Return
+.
+.APPEND LOW Z BITS OF A
+Lbl AB
+1→X
+While Z>1
+X*2→X
+Z-1→Z
+End
+While X
+W*2+(A·X≠0)→W
+K+1→K
+If K=8
+W→{D}
+D+1→D
+0→W
+0→K
+End
+X/2→X
+End
+Return
+.
+.NEXT CHARACTER→ASCII A (0 IF NONE)
+Lbl CH
+O+1→O
+If E=3
+sub(RB,O+23)
+sub(MA)
+Return
+End
+{P}→Y
+P+1→P
+0→A
+If inData(Y,GDB1)
+.TWO-BYTE TOKEN: ONLY BB ONES ARE ASCII
+If Y=187 and ({P}≠0)
+inData({P},GDB0+95,95)→A
+End
+P+1→P
+Else
+.⁻ AS MINUS
+If Y=176
+113→Y
+End
+inData(Y,GDB0,95)→A
+End
+.TABLE POSITION→ASCII
+If A
+A+31→A
+End
+Return
+.
+.ASCII A→ALNUM VALUE J (99 IF NONE)
+Lbl AV
+99→J
+If A-48<10
+A-48→J
+End
+If A-65<26
+A-55→J
+End
+If inData(A,GDB9)
+inData(A,GDB9)+35→J
+End
+Return
+.
+.EC BYTES: DATA A, LENGTH L, OUT Z
+Lbl RS
+For(J,0,R)
+0→{J+L₁+460}
+End
+For(I,0,L-1)
+{A+I} xor {L₁+460}→C
+Copy(L₁+461,L₁+460,R)
+If C
+{C+L₃+512}→C
+For(J,0,R-1)
+{J+L₁+460} xor {{J+L₁+421}+C+L₃}→{J+L₁+460}
+End
+End
+End
+Copy(L₁+460,Z,R)
+Return
+.
+.RESERVE RECT r₁,r₂ SIZE r₃ BY r₄
+Lbl RV
+For(I,0,r₄-1)
+For(J,0,r₃-1)
+Pxl-On(r₁+J,r₂+I)ʳ
+End
+End
+Return
+.
+.FINDER PATTERN AT X,Y
+Lbl FP
+For(K,0,6)
+Pxl-On(X+K+H,Y+G)
+Pxl-On(X+K+H,Y+6+G)
+Pxl-On(X+H,Y+K+G)
+Pxl-On(X+6+H,Y+K+G)
+End
+For(K,2,4)
+For(J,2,4)
+Pxl-On(X+K+H,Y+J+G)
+End
+End
+Return
+.
+.ALIGNMENT PATTERN AT X,Y
+Lbl AP
+sub(RV,X-2,Y-2,5,5)
+For(K,0,4)
+Pxl-On(X-2+K+H,Y-2+G)
+Pxl-On(X-2+K+H,Y+2+G)
+Pxl-On(X-2+H,Y-2+K+G)
+Pxl-On(X+2+H,Y-2+K+G)
+End
+Pxl-On(X+H,Y+G)
+Return
+.
+.CALC CHARACTER C→BYTE A (GDB9+10 MAP)
+Lbl MA
+C→A
+inData(C,GDB9+10)→U
+If U
+{U+GDB9+19}→A
+End
+Return
+.
+.LIST NOTES INTO Str3
+Lbl LS
+{ᴇ9830}ʳ→P
+0→K
+While P>{ᴇ982E}ʳ
+{P-6}→L
+If {P} and 31=21 and (L-1<8)
+sub(NC)
+If X and (K<80)
+sub(NH)
+If X
+For(I,0,7)
+41→{K*8+L₁+I}
+End
+Copy(L₁+701,K*8+L₁,L)
+K+1→K
+End
+End
+End
+P-7-L→P
+End
+GetCalc("Str3",K*8+48)→W
+!If W
+65535→Ans
+Return
+End
+If K
+Copy(L₁,W,K*8)
+End
+For(I,0,47)
+41→{K*8+W+I}
+End
+K→Ans
+Return
+.
+.VAT NAME AT P, LENGTH L→L₁+700
+Lbl NC
+21→{L₁+700}
+1→X
+For(I,0,L-1)
+{P-7-I}→C
+C→{I+L₁+701}
+!If C-48<10 or (C-65<27)
+0→X
+End
+End
+0→{L+L₁+701}
+Return
+.
+.IS L₁+700 A NOTEFOLIO? X=1 IF SO;
+.DATA AT Q, OR Q=0 AND FILE Y₁
+Lbl NH
+0→X
+GetCalc(L₁+700)→Q
+If Q
+{Q-2}ʳ→U
+Else
+!If GetCalc(L₁+700,Y₁)
+Return
+End
+{Y₁-2}ʳ→U
+End
+If U<27
+Return
+End
+For(J,0,3)
+sub(RB,J)
+If C≠{J+GDB8}
+Return
+End
+End
+1→X
+Return
+.
+.OPEN THE NOTE NAMED IN Str2:
+.X=1 IF FOUND, T=TEXT LENGTH
+Lbl NF
+0→X
+GetCalc("Str2")→Z
+!If Z
+Return
+End
+{Z-2}ʳ→U
+0→L
+While L<U
+If {Z+L}=41
+L→U
+Else
+{Z+L}→{L+L₁+701}
+L+1→L
+End
+End
+If L-1>7
+Return
+End
+21→{L₁+700}
+0→{L+L₁+701}
+sub(NH)
+!If X
+Return
+End
+0→T
+U-24→U
+While T<U
+sub(RB,T+24)
+If C
+T+1→T
+Else
+T→U
+End
+End
+Return
+.
+.OS REAL NAMED r₁ ("VARN")→r₁, 0 IF NONE
+Lbl GV
+GetCalc(r₁)→r₁
+If r₁
+float{r₁}→r₁
+End
+Return
+.
+.BYTE r₁ OF THE NOTE→C
+Lbl RB
+If Q
+{Q+r₁}→C
+Return
+End
+{Y₁+r₁}→C
+Return

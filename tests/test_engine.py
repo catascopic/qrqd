@@ -2,7 +2,7 @@
 
   python tests/test_engine.py           full sweep (all versions; takes a few minutes)
   python tests/test_engine.py --quick   versions 1, 5, 10 only
-  add --standalone to test standalone/src/QRSRC.axe.txt (the QR-only release) instead
+  add --standalone to test src/standalone/QRSRC.axe.txt (the QR-only release) instead
 """
 import random
 import sys

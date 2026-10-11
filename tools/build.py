@@ -2,7 +2,7 @@
 
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
                                            and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
-                                           standalone/src/ (the QR-only release, same program
+                                           src/standalone/ (the QR-only release, same program
                                            names) goes to build/standalone/
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
   python tools/build.py decompile F.8xp -o out.txt
@@ -116,7 +116,7 @@ def build():
     build_programs(ROOT / 'src', ROOT / 'build')
     # the QR-only release (old engine with E=4 listing, BASIC note pager): same program names
     (ROOT / 'build' / 'standalone').mkdir(exist_ok=True)
-    build_programs(ROOT / 'standalone' / 'src', ROOT / 'build' / 'standalone')
+    build_programs(ROOT / 'src' / 'standalone', ROOT / 'build' / 'standalone')
     build_lists()
 
 

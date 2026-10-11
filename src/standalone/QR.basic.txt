@@ -1,0 +1,161 @@
+0→U
+0→M
+Lbl 0
+Menu("QR CODE","Message",M,"NoteFolio",N,"Binary (ʟBIN)",B,"Set version",S,"Mode:"+sub("Auto ASCIIAlnum",5M+1,5),T,"Exit",X
+Lbl T
+M+1-3(M=2→M
+Goto 0
+Lbl S
+ClrHome
+Disp "0=auto, 1-11
+Input "ver=",U
+int(U→U
+If U<0 or U>11
+Goto S
+Goto 0
+Lbl M
+Input "msg=",Str1
+1→E
+Goto C
+Lbl N
+4→E
+65534
+Asm(prgmθQR
+Ans→K
+If K≥65534
+Goto Y
+If not(K
+Goto N0
+0→P
+Lbl P
+Menu("NoteFolio Files",sub(Str3,8P+1,8),N1,sub(Str3,8P+9,8),N2,sub(Str3,8P+17,8),N3,sub(Str3,8P+25,8),N4,sub(Str3,8P+33,8),N5,"More",PM,"Back",PB
+Lbl PM
+If P+5<K
+P+5→P
+Goto P
+Lbl PB
+If not(P
+Goto 0
+P-5→P
+Goto P
+Lbl N1:1:Goto L
+Lbl N2:2:Goto L
+Lbl N3:3:Goto L
+Lbl N4:4:Goto L
+Lbl N5:5
+Lbl L
+P+Ans→I
+If I>K
+Goto P
+sub(Str3,8I-7,8→Str2
+3→E
+Lbl C
+0→V
+0→B
+65534
+Asm(prgmθQR
+Ans→K
+If K≥65534
+Goto Y
+If K=65532
+Goto G
+If K≥32768
+Goto F
+int(K/2→L
+K-2L→A
+If not(B
+Goto Q
+ClrHome
+Disp "Non-ASCII chars","Pos=
+Output(2,5,B
+Pause 
+ClrHome
+Goto Q
+Lbl N0
+Menu("No Files","Back",0,"Exit",X
+Lbl B
+2→E
+dim(ʟBIN→L
+0→A
+Lbl Q
+If A
+Then
+{25,47,77,114,154,195,224,279,335,395,468
+Else
+{17,32,53,78,106,134,154,192,230,271,321
+End
+Ans→L₁
+L₁(11
+If U
+L₁(U
+Ans→C
+max(1,⁻int(⁻L/C→J
+⁻int(⁻L/J→W
+U→V
+If not(V
+min(11,1+sum(L₁<W→V
+1→P
+Lbl H
+(P-1)W→O
+min(W,L-O→N
+Lbl E
+FnOff 
+AxesOff
+GridOff
+PlotsOff 
+ClrDraw
+DispGraph
+65534
+Asm(prgmθQR
+Ans→K
+If not(K
+Goto Z
+If K≥65534
+Goto Y
+Lbl F
+K-32768→K
+ClrHome
+If M=2
+Then
+"NOT ALNUM
+Else
+"BAD CHAR
+End
+Disp "ERR:"+Ans
+If E=1
+Disp "Char: "+sub(Str1,K,1
+Disp "Pos=
+Output(2+(E=1),5,K
+Pause 
+ClrHome
+Goto 0
+Lbl G
+ClrHome
+Disp "ERR:TOO LONG","Max 16383 chars
+Pause 
+ClrHome
+Goto 0
+Lbl Y
+Menu("Error in Asm","Back",0,"Exit",X
+Lbl Z
+DispGraph
+If J=1
+Goto X
+Text(24,91-4int(log(P)),P
+91-4int(log(J→I
+Text(32,I,J
+For(I,I,93
+Pxl-On(31,I
+End
+Lbl K
+Repeat max(K={105,24,26,45
+getKey→K
+End
+If K=45
+Goto X
+If K=24 and P=1 or K=26 and P=J
+Goto K
+P+(K≠24)-(K=24→P
+If P≤J
+Goto H
+Lbl X

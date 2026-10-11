@@ -1,0 +1,222 @@
+.θNOTES
+.NOTEFOLIO PICKER, FOR PRGMQR OR ANY
+.PROGRAM. A MENU OF THE NOTES, SORTED, IN
+.COLUMNS OF 8 (SMALL FONT). ARROWS MOVE,
+.ENTER PICKS, CLEAR CANCELS. ON EXIT THE
+.HOME SCREEN IS REDRAWN AS IT WAS
+.OUT ANS=1 PICKED: ITS NAME IN STR2
+.    ANS=0 CANCELLED (STR2 UNCHANGED)
+.    ANS=2 NO NOTES (AFTER A MESSAGE)
+.    ANS=65535 NO RAM FOR STR2
+.USES L1 (NAMES) AND THE GRAPH BUFFER
+.
+.NOTEFOLIO SIGNATURE
+[F347BFAF]→GDB8
+.
+sub(LS)
+Fix 5
+!If K
+ClrDraw
+Text(0,0,"NO NOTEFOLIO FILES")
+DispGraph
+0→Z
+While Z=0
+getKey→Z
+End
+sub(EX)
+2→Ans
+Return
+End
+.SORT THE NAMES (SELECTION SORT)
+If K>1
+For(I,0,K-2)
+I→S
+For(J,I+1,K-1)
+sub(LT,J,S)
+If X
+J→S
+End
+End
+If S≠I
+Copy(I*8+L₁,L₁+690,8)
+Copy(S*8+L₁,I*8+L₁,8)
+Copy(L₁+690,S*8+L₁,8)
+End
+End
+End
+.MENU: TITLE BAR, COLUMNS OF 8 NAMES 7
+.PIXELS APART, 2 SHOWN. S CHOSEN, T LEFT
+.COLUMN
+0→S
+0→T
+While 1
+ClrDraw
+Text(0,0,"CHOOSE A NOTE")
+RectI(0,0,96,7)
+For(I,0,15)
+T*8+I→J
+If J<K
+Copy(J*8+L₁,L₁+690,8)
+0→{L₁+698}
+Text(I/8*48+2,I^8*7+8,L₁+690)
+End
+End
+S-(T*8)→J
+RectI(J/8*48,J^8*7+8,47,7)
+DispGraph
+0→Z
+While Z=0
+getKey→Z
+End
+If Z=15
+sub(EX)
+0→Ans
+Return
+End
+If Z=9
+sub(EX)
+8→L
+While {S*8+L₁+L-1}=0
+L-1→L
+End
+GetCalc("Str2",L)→W
+!If W
+65535→Ans
+Return
+End
+Copy(S*8+L₁,W,L)
+1→Ans
+Return
+End
+If Z=1 and (S+1<K)
+S+1→S
+End
+If Z=4 and (S>0)
+S-1→S
+End
+.RIGHT INTO A SHORT LAST COLUMN: ITS END
+If Z=3
+If S+8<K
+S+8→S
+Else
+If S/8<(K-1/8)
+K-1→S
+End
+End
+End
+If Z=2 and (S>7)
+S-8→S
+End
+If S/8<T
+S/8→T
+End
+If S/8>(T+1)
+S/8-1→T
+End
+End
+.
+.ERASE THE MENU (CLEAR THE BUFFER, SHOW
+.IT) AND REDRAW THE HOME SCREEN FROM THE
+.OS COPY OF ITS TEXT (TEXTSHADOW, 8508H,
+.16X8). CURROW/CURCOL (844BH) PUT BACK.
+.FIX 7 SO THE LAST CELL CAN'T SCROLL
+Lbl EX
+ClrDraw
+DispGraph
+Fix 4
+Fix 7
+{ᴇ844B}ʳ→Z
+For(I,0,127)
+Output(I^16,I/16)
+Disp {I+ᴇ8508}►Char
+End
+Z→{ᴇ844B}ʳ
+Fix 6
+Return
+.
+.X=1 IF NAME R1 SORTS BEFORE NAME R2
+Lbl LT
+0→X
+For(U,0,7)
+{r₁*8+L₁+U}→A
+{r₂*8+L₁+U}→C
+If A≠C
+A<C→X
+Return
+End
+End
+Return
+.
+.COLLECT NOTEFOLIO NAMES AT L1, 8 BYTES
+.EACH, 0-PADDED (AT MOST 80). COUNT IN K
+Lbl LS
+{ᴇ9830}ʳ→P
+0→K
+While P>{ᴇ982E}ʳ
+{P-6}→L
+If {P} and 31=21 and (L-1<8)
+sub(NC)
+If X and (K<80)
+sub(NH)
+If X
+For(I,0,7)
+0→{K*8+L₁+I}
+End
+Copy(L₁+701,K*8+L₁,L)
+K+1→K
+End
+End
+End
+P-7-L→P
+End
+Return
+.
+.VAT NAME AT P, LENGTH L, TO L1+700.
+.X=1 IF IT'S ONLY A-Z, 0-9, θ (OTHERS
+.CAN'T BE TYPED INTO STR2)
+Lbl NC
+21→{L₁+700}
+1→X
+For(I,0,L-1)
+{P-7-I}→C
+C→{I+L₁+701}
+!If C-48<10 or (C-65<27)
+0→X
+End
+End
+0→{L+L₁+701}
+Return
+.
+.IS L1+700 A NOTEFOLIO? X=1 IF SO
+.RAM DATA AT Q, OR Q=0 AND FILE Y1
+Lbl NH
+0→X
+GetCalc(L₁+700)→Q
+If Q
+{Q-2}ʳ→U
+Else
+!If GetCalc(L₁+700,Y₁)
+Return
+End
+{Y₁-2}ʳ→U
+End
+If U<27
+Return
+End
+For(J,0,3)
+sub(RB,J)
+If C≠{J+GDB8}
+Return
+End
+End
+1→X
+Return
+.
+.BYTE AT OFFSET R1 OF NOTE TO C
+Lbl RB
+If Q
+{Q+r₁}→C
+Return
+End
+{Y₁+r₁}→C
+Return

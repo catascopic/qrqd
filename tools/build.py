@@ -1,7 +1,7 @@
 """Build and decompile TI-83+ programs for this project.
 
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
-                                           and the pure-BASIC set src/basic/ -> build/basic/
+                                           and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR)
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
   python tools/build.py decompile F.8xp -o out.txt
 
@@ -10,6 +10,7 @@ Axe 1.2.1 token table in tools/axe_tokens.json, because Axe renames many TI
 tokens (conj( shows as Copy(, fPart( as float{, the u token as "var", ...).
 """
 import json
+import shutil
 import struct
 import sys
 from pathlib import Path
@@ -19,6 +20,10 @@ from tivars import TIProgram, TIRealList
 from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
+MAX_MODE = {'QRBASIC', 'θQRBIT'}               # BASIC programs tokenized in tivars "max" mode
+BASIC_COMMENTS = {'QR': 'QR code menus (BASIC front end)',
+                  'QRBASIC': 'QR code generator, pure BASIC',
+                  'θQRBIT': 'QR code generator, pure BASIC'}
 
 # tivars 1.1.1 decompiles the π token (ACh) as "π" but only accepts "pi" when tokenizing,
 # and "pi" inside a string becomes two lowercase letters. Teach every model's trie "π".
@@ -114,30 +119,21 @@ def build():
         save_program(name, tokens, ROOT / 'build' / (name + '.8xp'), comments.get(name, 'Axe source'))
         print('build/%-11s %5d token bytes' % (name + '.8xp', len(tokens)))
 
-    # BASIC front end
-    text = (ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n')
-    check_spaces('QR.basic.txt', text)
-    prog = TIProgram(name='QR')
-    prog.load_string(text)
-    save_program('QR', bytes(prog.data), ROOT / 'build' / 'QR.8xp', 'QR code menus (BASIC front end)')
-    print('build/QR.8xp     %5d token bytes' % len(prog.data))
-
-    # Pure-BASIC generator (the original, cleaned up); its prgmQR collides with the one above.
-    # "max" mode keeps tokens inside strings (the r₁ expressions in QRDRAW need them);
-    # write \= etc. where a string needs single characters ("<\=>" is <,=,> not ≤,>).
-    (ROOT / 'build' / 'basic').mkdir(exist_ok=True)
-    for old in [*(ROOT / 'build' / 'basic').glob('*.8x?')]:   # files since merged or renamed
-        old.unlink()
-    for src in sorted((ROOT / 'src' / 'basic').glob('*.basic.txt')):
-        stem = src.name.split('.')[0]               # TI Connect spells θ as _theta_ in file names
+    # BASIC programs: the hybrid's front end (prgmQR) and the pure-BASIC generator (prgmQRBASIC
+    # + prgmθQRBIT). The pure-BASIC ones use "max" mode, which keeps tokens inside strings (the
+    # r₁ expressions in the drawing need them); they write \= etc. where a string needs single
+    # characters ("<\=>" is <,=,> not ≤,>). File names spell θ as _theta_ (TI Connect's way).
+    shutil.rmtree(ROOT / 'build' / 'basic', ignore_errors=True)   # where the pure-BASIC set used to go
+    for src in sorted((ROOT / 'src').glob('*.basic.txt')):
+        stem = src.name.split('.')[0]
         name = stem.replace('_theta_', 'θ')
-        prog = TIProgram(name=name)
+        mode = 'max' if name in MAX_MODE else None
         text = src.read_text(encoding='utf-8').rstrip('\n')
-        check_spaces(src.name, text, 'max')
-        prog.load_string(text, mode='max')
-        save_program(name, bytes(prog.data), ROOT / 'build' / 'basic' / (stem + '.8xp'),
-                     'QR code generator, pure BASIC')
-        print('build/basic/%-8s %5d token bytes' % (stem + '.8xp', len(prog.data)))
+        check_spaces(src.name, text, mode)
+        prog = TIProgram(name=name)
+        prog.load_string(text, mode=mode)
+        save_program(name, bytes(prog.data), ROOT / 'build' / (stem + '.8xp'), BASIC_COMMENTS[name])
+        print('build/%-16s %5d token bytes' % (stem + '.8xp', len(prog.data)))
 
     # Lists QRBASIC expects on the calculator (sent once): the GF(256) tables (polynomial 11Dh)
     # ʟGFL(n) = log n and ʟGFX(k) = 2^(k-1), and ʟXOR, entry 16a+b+1 = a xor b (4-bit a, b)
@@ -151,14 +147,14 @@ def build():
 
 
 def save_list(name, values, comment):
-    """build/basic/NAME.8xl: the named real list ʟNAME, in the calculator's own format."""
+    """build/NAME.8xl: the named real list ʟNAME, in the calculator's own format."""
     lst = TIRealList(name=name)
     lst.load_list([TIReal(v) for v in values])
     lst.raw.name = bytes([0x5D]) + name.encode().ljust(7, bytes(1))   # 5Dh + name, as the calculator writes it
-    path = ROOT / 'build' / 'basic' / (name + '.8xl')
+    path = ROOT / 'build' / (name + '.8xl')
     lst.save(str(path))
     finish_8xp(path, comment)
-    print('build/basic/%-8s %5d entries' % (name + '.8xl', len(values)))
+    print('build/%-16s %5d entries' % (name + '.8xl', len(values)))
 
 
 def decompile(path, out=None):

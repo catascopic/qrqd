@@ -24,7 +24,7 @@
    always on; its warning gained "Use ASCII" for alphanumeric input. The engine still takes C
    and S, so this needed no recompile.
 8. Main menu reordered: ASCII, Notefolio, Alphanumeric, Binary.
-9. The pure-BASIC generator was cleaned up separately in `src/basic/` (`originals/` untouched).
+9. The pure-BASIC generator was cleaned up separately (then in `src/basic/`; `originals/` untouched).
    QRCW's three hard-coded ECC/interleave branches became one loop over blocks: Z blocks,
    short length Q=int(M/Z), the last Y=M-ZQ blocks one byte longer (only v10). Each block's
    EC goes straight to its interleaved slot in L₄ = [long blocks' extra bytes][EC][0]; data is
@@ -103,15 +103,24 @@
    seconds, drawing ~13 of it): Each, the original bitwise complex XOR per element (QRECC's
    trick) 45; Pass, the same over the whole list in 8 bit passes 45; nibble table 33. Pass
    was dropped (same arithmetic as Each, ~300 bytes bigger). The table is an option
-   ("XOR table", ʟQR(4), default off) because ʟXOR takes ~2.3 KB: ʟXOR (256 entries,
+   ("XOR table", ʟQROPT(4), default off) because ʟXOR takes ~2.3 KB: ʟXOR (256 entries,
    16a+b+1 = a xor b) is assumed present like ʟGFL/ʟGFX when it's on; the build writes
-   build/basic/XOR.8xl to send once. On: the feedback XOR (→F) and the remainder update (one
+   build/XOR.8xl to send once. On: the feedback XOR (→F) and the remainder update (one
    `seq(` over J, ʟGFX(L₄(J)) inline) use ʟXOR. Off: both use the bit trick with the powers
    of 2 in L₅ (last, so with the table on L₁-L₄ are used with no gap). Lists: L₁ capacities →
    RS remainder → alignment rows, L₂ generator → alignment columns, L₃ EC tail, L₄ ʟGFX
    indices, L₅ powers of 2 (table off only).
-
-Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
+23. QRBASIC setup: only `SetUpEditor QROPT` (ʟQR renamed ʟQROPT so it doesn't look like code
+   data). ʟCW is created by `{32→CW` / `{64→CW` before any read; a missing ʟBIN is
+   ERR:UNDEFINED, as in the hybrid. A bare `SetUpEditor` right after restores the STAT list
+   editor to L1-L6 (SetUpEditor also sets the editor's columns).
+24. The pure-BASIC sources moved from src/basic/ to src/, and their output from build/basic/ to
+   build/, next to the hybrid's (the names no longer collide: QRBASIC vs QR). A temporary
+   stopwatch split (G after the codewords, H after the ECC, θ after interleaving) settled an
+   odd v11 result (table slower than the bit trick): measured properly, v11 ECC took 459 s
+   with the table and 1087 s with the bit trick (2.4x, like v1); codewords ~15 s and
+   interleaving ~10 s either way. The earlier runs' settings must have differed. Split removed.
+: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
 

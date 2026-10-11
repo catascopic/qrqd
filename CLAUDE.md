@@ -27,8 +27,8 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (modes 3-5), `qrtest.py` helpers |
 | `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
 | `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
-| `src/basic/` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/basic/` |
-| `tests/test_basic.py` | runs `build/basic` in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
+| `src/QRBASIC.basic.txt`, `src/_theta_QRBIT.basic.txt` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/` with everything else |
+| `tests/test_basic.py` | runs build/QRBASIC.8xp and _theta_QRBIT.8xp in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
 | `tests/test_frontend.py` | menu flows of `src/QR.basic.txt` in tibasic, with a BASIC stand-in for the engine |
 | `src/LOREMSRC.axe.txt` | test tool (Axe, compiles to prgmLOREM): writes note LOREM, lorem ipsum ×N (OS var N, ≤100); `tests/test_lorem.py` |
 | `src/SPEEDSRC.axe.txt` | test tool (Axe, compiles to prgmSPEED): bar sweep + FPS (84+ clock port 45h), MODE toggles Full/Normal, shows port 20h speed at start; leaves the speed set. Hardware-only (Asm( port reads), not simulated |
@@ -57,15 +57,16 @@ TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Opti
 "No Shell" (the `.θQR` header line names the output), run prgmQR. Running prgmθQR
 needs free RAM at least its compiled size (`Asm(` copies it to userMem each call), so engine
 size is RAM the user must keep free; static buffers inside the program cost it too. Old QRCW/QRBIT/QRECC/
-QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/basic/`: prgmQRBASIC,
+QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/`: prgmQRBASIC,
 prgmθQRBIT) still uses ʟGFL/ʟGFX/ʟCW, plus ʟXOR (nibble XOR table) when the XOR table option
-is on; the build generates GFL.8xl, GFX.8xl and XOR.8xl in `build/basic/` (GFL/GFX are byte-identical
-to the user's, `tests/data/basic/`, apart from the comment), and ʟQR (4 options), and overwrites Str2/Str3.
+is on; the build generates GFL.8xl, GFX.8xl and XOR.8xl in `build/` (GFL/GFX are byte-identical
+to the user's, `tests/data/basic/`, apart from the comment), and ʟQROPT (4 options; `SetUpEditor QROPT` creates it, a bare
+`SetUpEditor` then restores the list editor to L1-L6), and overwrites Str2/Str3.
 
 File names spell θ as `_theta_` (TI Connect's convention; it rejects a real θ in a file name):
-`src/basic/_theta_QRBIT.basic.txt` builds `build/basic/_theta_QRBIT.8xp`, program θQRBIT.
+`src/_theta_QRBIT.basic.txt` builds `build/_theta_QRBIT.8xp`, program θQRBIT.
 
-`src/basic/` is tokenized in tivars "max" mode (tokens inside strings, as the drawing's r₁ strings
+QRBASIC and θQRBIT are tokenized in tivars "max" mode (`MAX_MODE` in build.py; QR uses the default) (tokens inside strings, as the drawing's r₁ strings
 need), so a string wanting single characters escapes them: `<\=>`, `[\\]`, `|~` (the tilde
 token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 can't tokenize.
 

@@ -1,4 +1,5 @@
-"""Tests for the pure-BASIC generator (src/basic, built into build/basic).
+"""Tests for the pure-BASIC generator (src/QRBASIC.basic.txt and src/_theta_QRBIT.basic.txt,
+built into build/ next to the hybrid's files).
 
 The programs run in tibasic, the user's TI-BASIC emulator (expected in ../tibasic; set
 TIBASIC to its path otherwise).
@@ -32,7 +33,7 @@ from core import TiString                         # noqa: E402
 sys.path.insert(0, str(ROOT / 'tools'))
 from build import TIProgram                       # noqa: E402  (with the π fix)
 
-PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build/basic')
+PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
 ALNUM, ASCII, BINARY, SET_VERSION, OPTIONS, EXIT = range(6)   # main menu choices
 STOREPIC, ALT_PUNCT, ASCII_FIX, XOR_TABLE, BACK = range(5)      # options menu
@@ -66,12 +67,18 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None):
     function(text) -> text for variants. `center` only exists in the originals."""
     env = Environment(console=TokenConsole(inputs=inputs, choices=choices))
     # ʟGFL, ʟGFX (and ʟXOR) as built for sending; the originals use the calculator's copies
-    tifile.load_environment(env, DATA if ORIGINALS else PROGRAMS)
-    for f in PROGRAMS.glob('*.8xp'):
+    if ORIGINALS:
+        tifile.load_environment(env, DATA)
+        files = list(PROGRAMS.glob('*.8xp'))
+    else:                                 # build/ also holds the hybrid's files
+        for name in ('GFL', 'GFX', 'XOR'):
+            tifile._READERS['.8xl'].load(PROGRAMS / (name + '.8xl')).store_to(env)
+        files = [PROGRAMS / 'QRBASIC.8xp', PROGRAMS / '_theta_QRBIT.8xp']
+    for f in files:
         data = bytes(TIProgram.open(str(f)).data)
         name = f.stem.replace('_theta_', 'θ')   # the file name spells θ as _theta_
         if patch and name in patch:     # from the source: decompiled text loses its escapes
-            src = (ROOT / 'src' / 'basic' / (f.stem + '.basic.txt')).read_text(encoding='utf-8')
+            src = (ROOT / 'src' / (f.stem + '.basic.txt')).read_text(encoding='utf-8')
             p = TIProgram(name=name)
             p.load_string(patch[name](src).rstrip('\n'), mode='max')
             data = bytes(p.data)
@@ -205,7 +212,7 @@ def edge_cases():
 
 
 def gf_tables():
-    """build/basic/GFL.8xl and GFX.8xl must equal the lists saved from the user's calculator
+    """build/GFL.8xl and GFX.8xl must equal the lists saved from the user's calculator
     (tests/data/basic), apart from the header comment."""
     for name in ('GFL', 'GFX'):
         built, saved = (PROGRAMS / (name + '.8xl')).read_bytes(), (DATA / (name + '.8xl')).read_bytes()
@@ -214,7 +221,7 @@ def gf_tables():
 
 
 def xor_table():
-    """build/basic/XOR.8xl: the named list ʟXOR, entry 16a+b+1 = a xor b, in the calculator's
+    """build/XOR.8xl: the named list ʟXOR, entry 16a+b+1 = a xor b, in the calculator's
     own list format (same header layout as ʟGFL/ʟGFX saved from the calculator). With the
     "XOR table" option on, both XORs in the ECC use it; versions 1, 7 and 10 cover 1, 2 and 4
     blocks (v10 has long blocks too). The sweep covers the option off (the default)."""

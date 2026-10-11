@@ -120,6 +120,10 @@
    odd v11 result (table slower than the bit trick): measured properly, v11 ECC took 459 s
    with the table and 1087 s with the bit trick (2.4x, like v1); codewords ~15 s and
    interleaving ~10 s either way. The earlier runs' settings must have differed. Split removed.
+25. QRBASIC versions 5 and 9: drawn when set explicitly (a set version means that size, as in
+   the hybrid); the automatic pick still bumps 5→6 and 9→10, which stay a little faster even
+   with the XOR table (more XORs per byte in 5 and 9 outweigh the smaller drawing). Their
+   generator tables are back (from git, as before).
 26. QRBASIC drawing: row flags. TI-BASIC's and/or never short-circuit, so the zigzag paid
    for the whole r₁ test (fixed-pattern module?) on every module; at v7+ that test is long.
    Each version branch now also builds L₃ (free by then: the EC tail is already in ʟCW) by
@@ -279,8 +283,8 @@ most 80 (L₁+0..639). Selection sort with `LT`; L₁+690..698 is the swap buffe
 0-terminated name for `Text(`. Small font with `Fix 5` (draw to the buffer; `Fix 4` again
 before every return, or the OS keeps drawing text to the buffer). Title "Choose a NoteFolio
 file:" (GDB1, ASCII bytes so the lowercase is exact) at (10,0), centered: 75 px of ink in the
-small font by tibasic's `fonts.py` widths, so margins 10 and 11 (a test checks this when
-../tibasic is present). In an inverted bar (`RectI(0,0,96,7)`, rows 0-6, like the OS's menu
+small font by tibasic's `fonts.py` widths, centered in x=0-94 with margins of 10 (a test checks this when
+../tibasic is present). In an inverted bar (`RectI(0,0,95,7)`: x=0-94, rows 0-6; column 95 is reserved, as in prgmQR; like the OS's menu
 titles). A large-font title was considered: 7-row text + 1 px padding each side = 9 rows,
 and 9+1+8·7 = 66 > 64, so it would cost a name per column; kept small. Then
 columns of 8 names 7 rows apart (two blank rows between names; it was 9 names 6 apart, which

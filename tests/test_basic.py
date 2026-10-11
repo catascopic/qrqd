@@ -35,10 +35,12 @@ from build import TIProgram                       # noqa: E402  (with the π fix
 
 PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
-ALNUM, ASCII, BINARY, SET_VERSION, OPTIONS, REDRAW, EXIT = range(7)   # main menu choices
+ASCII, ALNUM, BINARY, SET_VERSION, OPTIONS, REDRAW, EXIT = range(7)   # main menu choices
 STOREPIC, ALT_PUNCT, ASCII_FIX, XOR_TABLE, BACK = range(5)      # options menu
-SKIPPED = {5: 6, 9: 10}                           # versions bumped to the next one (faster)
+SKIPPED = {5: 6, 9: 10}   # an automatic pick bumps these to the next (faster) one; set ones are kept
 ORIGINALS = '--originals' in sys.argv
+if ORIGINALS:
+    ALNUM, ASCII = 0, 1                           # the originals' menu lists Alphanumeric first
 
 failures = []
 
@@ -140,7 +142,7 @@ def payloads(mode, cap):
 def sweep(versions, patch=None, label=''):
     n = 0
     for v in versions:
-        drawn = v if patch else SKIPPED.get(v, v)
+        drawn = v if patch or not ORIGINALS else SKIPPED.get(v, v)   # the sweep sets the version
         for mode in (ALNUM, ASCII, BINARY):
             cap = (CAP_ALNUM if mode == ALNUM else CAP_BYTE)[v - 1]
             for p in payloads(mode, cap):
@@ -175,6 +177,12 @@ def edge_cases():
     # auto version: the smallest that fits, skipping 5 and 9
     env = run_qr([ALNUM], ['A' * 120])
     expect('120 alphanumeric chars: version 6 (not 5)', check('auto v6', env, 6, 0, 'A' * 120, 'alphanumeric'))
+    # versions 5 and 9: skipped by the automatic pick (above: 120 chars -> 6), drawn when set
+    for v in (5, 9):
+        env = run_qr([SET_VERSION, ALNUM], [str(v), 'HELLO 5 AND 9'])
+        expect('set version %d is drawn as %d' % (v, v), check('set v%d' % v, env, v, 0, 'HELLO 5 AND 9', 'alphanumeric'))
+    env = run_qr([ALNUM], ['A' * 300])
+    expect('300 alphanumeric chars: version 10 (not 9)', check('auto v10', env, 10, 0, 'A' * 300, 'alphanumeric'))
     # Redraw: draws whatever ʟCW holds (the version from its length), timing only the drawing
     for v in (2, 7):
         msg = 'REDRAW TEST %d' % v

@@ -4,7 +4,7 @@ If 4≠dim(ʟQROPT
 {0,0,0,0→QROPT
 0→V
 Lbl 0
-Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary (ʟBIN)",C,"Set version",S,"Options",O,"Exit",X
+Menu("QR CODE","Alphanumeric",A,"ASCII",B,"Binary (ʟBIN)",C,"Set version",S,"Options",O,"R\edraw",R,"Exit",X
 Lbl S
 Input "ver=",V
 int(V→V
@@ -28,6 +28,10 @@ Output(3,5,K
 Pause 
 ClrHome
 Goto 0
+Lbl R
+int(.2dim(ʟCW)^.68→V
+startTmr→A
+Goto D
 Lbl A:0:Goto M
 Lbl B:1:Goto M
 Lbl C:2
@@ -191,6 +195,7 @@ End
 For(J,1,dim(L₃
 L₃(J→ʟCW(QZ+J
 End
+Lbl D
 FnOff 
 AxesOff
 GridOff
@@ -252,6 +257,7 @@ Then
 {S-7→L₁
 {S-7→L₂
 "I=6 or abs(S-7-I)≤2 and abs(S-7-J)≤2→r₁
+seq(N=6 or abs(S-7-N)≤2,N,0,S-1→L₃
 Else
 {31892,34236,39577,42195,48118
 Ans(V-6→B
@@ -270,6 +276,7 @@ End
 {M,6,M,S-7,M,S-7→L₂
 2V+2→T
 "I=6 or abs(TfPart(I/T)-6)≤2.1 and abs(TfPart(J/T)-6)≤2.1 and abs(I-J)≤S/2-2 or J≥S-11 and I≤5→r₁
+seq(N≤6 or abs(TfPart(N/T)-6)≤2.1,N,0,S-1→L₃
 End
 For(X,1,dim(L₁
 L₁(X→K
@@ -290,6 +297,7 @@ Pxl-On(K,L
 End
 Else
 "I=6→r₁
+seq(N=6,N,0,S-1→L₃
 End
 S-1→I
 I→C
@@ -300,7 +308,10 @@ I→C
 128→P
 While C>0
 For(J,C,C-1,⁻1
-If not(r₁
+0
+If L₃(I+1
+r₁
+If not(Ans
 Then
 W≥P→B
 W-BP→W

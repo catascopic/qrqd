@@ -35,7 +35,7 @@ from build import TIProgram                       # noqa: E402  (with the π fix
 
 PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
-ALNUM, ASCII, BINARY, SET_VERSION, OPTIONS, EXIT = range(6)   # main menu choices
+ALNUM, ASCII, BINARY, SET_VERSION, OPTIONS, REDRAW, EXIT = range(7)   # main menu choices
 STOREPIC, ALT_PUNCT, ASCII_FIX, XOR_TABLE, BACK = range(5)      # options menu
 SKIPPED = {5: 6, 9: 10}                           # versions bumped to the next one (faster)
 ORIGINALS = '--originals' in sys.argv
@@ -62,7 +62,7 @@ class TokenConsole(ScriptedConsole):
         return super()._input(prompt)
 
 
-def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None):
+def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None, cw=None):
     """Run prgmQRBASIC (or the original prgmQR). `patch` maps program name ->
     function(text) -> text for variants. `center` only exists in the originals."""
     env = Environment(console=TokenConsole(inputs=inputs, choices=choices))
@@ -89,6 +89,8 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None):
         env.user_lists['BIN'] = TiList([float(b) for b in binary])
     if str3 is not None:
         env.strings[2] = TiString(str3)
+    if cw is not None:
+        env.user_lists['CW'] = TiList([float(x) for x in cw])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in ('QR' if ORIGINALS else 'QRBASIC'))])
     return env
 
@@ -173,6 +175,24 @@ def edge_cases():
     # auto version: the smallest that fits, skipping 5 and 9
     env = run_qr([ALNUM], ['A' * 120])
     expect('120 alphanumeric chars: version 6 (not 5)', check('auto v6', env, 6, 0, 'A' * 120, 'alphanumeric'))
+    # Redraw: draws whatever ʟCW holds (the version from its length), timing only the drawing
+    for v in (2, 7):
+        msg = 'REDRAW TEST %d' % v
+        first = run_qr([SET_VERSION, ALNUM], [str(v), msg])
+        cw = [x for x in first.user_lists['CW'].data]
+        real_now, readings = Environment.now, []
+        def fake_now(self):
+            readings.append(1)
+            return datetime(2026, 1, 1) + timedelta(seconds=7 * (len(readings) - 1))
+        Environment.now = fake_now
+        try:
+            env = run_qr([REDRAW], [], cw=cw)
+        finally:
+            Environment.now = real_now
+        same = all(env.graph.get(r, c) == first.graph.get(r, c) for r in range(64) for c in range(96))
+        expect('Redraw v%d from ʟCW (%d elements): same code, T = drawing only' % (v, len(cw)),
+               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric') and env.numerics.T == 7,
+               (same, env.numerics.T))
     # a bad character: error with the character and position, back to the menu, nothing drawn
     for mode, text, pos, ch in ((ALNUM, 'ABcD', 3, 'c'), (ASCII, 'ab' + 'θ' + 'c', 3, 'θ')):
         try:

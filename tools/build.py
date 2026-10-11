@@ -20,6 +20,7 @@ from tivars import TIProgram, TIRealList
 from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
+MONOCHROME = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE', 'TI-84+', 'TI-84+SE'}   # BASIC tokens must exist here
 MAX_MODE = {'QRBASIC', 'θQRBIT'}               # BASIC programs tokenized in tivars "max" mode
 BASIC_COMMENTS = {'QR': 'QR code menus (BASIC front end)',
                   'QRBASIC': 'QR code generator, pure BASIC',
@@ -132,6 +133,10 @@ def build():
         check_spaces(src.name, text, mode)
         prog = TIProgram(name=name)
         prog.load_string(text, mode=mode)
+        # max munch can pick a token the user's TI-84+ lacks ("Redraw" -> the CE color Red)
+        if prog.get_min_os().model not in MONOCHROME:
+            raise SystemExit('%s needs a %s token; escape it with \\ (like R\\edraw)'
+                             % (src.name, prog.get_min_os().model))
         save_program(name, bytes(prog.data), ROOT / 'build' / (stem + '.8xp'), BASIC_COMMENTS[name])
         print('build/%-16s %5d token bytes' % (stem + '.8xp', len(prog.data)))
 

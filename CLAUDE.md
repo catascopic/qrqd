@@ -66,6 +66,8 @@ to the user's, `tests/data/basic/`, apart from the comment), and ʟQROPT (4 opti
 File names spell θ as `_theta_` (TI Connect's convention; it rejects a real θ in a file name):
 `src/_theta_QRBIT.basic.txt` builds `build/_theta_QRBIT.8xp`, program θQRBIT.
 
+build.py refuses BASIC tokens that need a color calculator (max munch turned "Redraw" into the
+CE token Red; write `R\edraw`).
 QRBASIC and θQRBIT are tokenized in tivars "max" mode (`MAX_MODE` in build.py; QR uses the default) (tokens inside strings, as the drawing's r₁ strings
 need), so a string wanting single characters escapes them: `<\=>`, `[\\]`, `|~` (the tilde
 token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 can't tokenize.

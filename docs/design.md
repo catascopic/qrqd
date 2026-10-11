@@ -120,7 +120,23 @@
    odd v11 result (table slower than the bit trick): measured properly, v11 ECC took 459 s
    with the table and 1087 s with the bit trick (2.4x, like v1); codewords ~15 s and
    interleaving ~10 s either way. The earlier runs' settings must have differed. Split removed.
-: transliterate accents (é → e), spell out multi-character tokens
+26. QRBASIC drawing: row flags. TI-BASIC's and/or never short-circuit, so the zigzag paid
+   for the whole r₁ test (fixed-pattern module?) on every module; at v7+ that test is long.
+   Each version branch now also builds L₃ (free by then: the EC tail is already in ʟCW) by
+   `seq(…,N,0,S-1`: 1 for rows where r₁ can be true (v1: row 6; v2-6: 6 and the alignment
+   band; v7+: rows 0-6 and the alignment bands), and the zigzag runs
+   `0 : If L₃(I+1 : r₁ : If not(Ans` (If leaves Ans alone, so unflagged rows skip r₁).
+   In tibasic, r₁ evaluations at v11 went 3434 → 958; v1 does ~5% more work (its r₁ was
+   just I=6).
+27. QRBASIC Redraw (main menu, Lbl R): draws whatever ʟCW holds, for timing the drawing alone.
+   V comes from dim(ʟCW) (all codewords plus the final 0: 27, 45, 71, …, 405) via
+   `int(.2dim(ʟCW)^.68` (exact at all 11 lengths, ≥0.12 from the next integer; found by a
+   search, like the original QRDRAW's `int(√(8n+400)/4-4-(27≥n`); startTmr, then `Goto D` (Lbl D just before FnOff). T is then
+   the drawing time. The menu text is "R\edraw": in max mode "Redraw" tokenized as the
+   TI-84+CE color token Red (EF42) + "raw". build.py now refuses a BASIC program whose
+   tokens need more than a monochrome TI-83+/84+ (`get_min_os()`, MONOCHROME).
+
+Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
 

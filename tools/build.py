@@ -1,7 +1,9 @@
 """Build and decompile TI-83+ programs for this project.
 
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
-                                           and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR)
+                                           and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
+                                           standalone/src/ (the QR-only release, same program
+                                           names) goes to build/standalone/
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
   python tools/build.py decompile F.8xp -o out.txt
 
@@ -102,14 +104,26 @@ def save_program(name, tokens, path, comment):
     assert bytes(TIProgram.open(str(path)).data) == tokens
 
 
+AXE_COMMENTS = {'QRSRC': 'QR engine source - compile with Axe',
+                'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
+                'SPEEDSRC': '15 MHz speed test - compile with Axe',
+                'NOTESSRC': 'Notefolio picker source - compile with Axe'}
+
+
 def build():
     (ROOT / 'build').mkdir(exist_ok=True)
+    shutil.rmtree(ROOT / 'build' / 'basic', ignore_errors=True)   # where the pure-BASIC set used to go
+    build_programs(ROOT / 'src', ROOT / 'build')
+    # the QR-only release (old engine with E=4 listing, BASIC note pager): same program names
+    (ROOT / 'build' / 'standalone').mkdir(exist_ok=True)
+    build_programs(ROOT / 'standalone' / 'src', ROOT / 'build' / 'standalone')
+    build_lists()
 
-    # Axe sources: the engine, and LOREMSRC (a test tool that writes a long Notefolio note)
-    comments = {'QRSRC': 'QR engine source - compile with Axe',
-                'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
-                'SPEEDSRC': '15 MHz speed test - compile with Axe'}
-    for path in sorted((ROOT / 'src').glob('*.axe.txt')):
+
+def build_programs(srcdir, outdir):
+    shown = outdir.relative_to(ROOT).as_posix() + '/'
+    # Axe sources: the engine, the note picker, and test tools (LOREMSRC, SPEEDSRC)
+    for path in sorted(srcdir.glob('*.axe.txt')):
         name = path.name.split('.')[0]
         src = path.read_text(encoding='utf-8').rstrip('\n')
         tokens = axe_tokenize(src)
@@ -117,15 +131,14 @@ def build():
         changed = [(a, b) for a, b in zip(src.split('\n'), back) if a != b and not a.startswith('.')]
         if changed:
             raise SystemExit('%s: Axe round trip changed code lines: %r' % (path.name, changed[:3]))
-        save_program(name, tokens, ROOT / 'build' / (name + '.8xp'), comments.get(name, 'Axe source'))
-        print('build/%-11s %5d token bytes' % (name + '.8xp', len(tokens)))
+        save_program(name, tokens, outdir / (name + '.8xp'), AXE_COMMENTS.get(name, 'Axe source'))
+        print('%-28s %5d token bytes' % (shown + name + '.8xp', len(tokens)))
 
     # BASIC programs: the hybrid's front end (prgmQR) and the pure-BASIC generator (prgmQRBASIC
     # + prgmθQRBIT). The pure-BASIC ones use "max" mode, which keeps tokens inside strings (the
     # r₁ expressions in the drawing need them); they write \= etc. where a string needs single
     # characters ("<\=>" is <,=,> not ≤,>). File names spell θ as _theta_ (TI Connect's way).
-    shutil.rmtree(ROOT / 'build' / 'basic', ignore_errors=True)   # where the pure-BASIC set used to go
-    for src in sorted((ROOT / 'src').glob('*.basic.txt')):
+    for src in sorted(srcdir.glob('*.basic.txt')):
         stem = src.name.split('.')[0]
         name = stem.replace('_theta_', 'θ')
         mode = 'max' if name in MAX_MODE else None
@@ -137,9 +150,11 @@ def build():
         if prog.get_min_os().model not in MONOCHROME:
             raise SystemExit('%s needs a %s token; escape it with \\ (like R\\edraw)'
                              % (src.name, prog.get_min_os().model))
-        save_program(name, bytes(prog.data), ROOT / 'build' / (stem + '.8xp'), BASIC_COMMENTS[name])
-        print('build/%-16s %5d token bytes' % (stem + '.8xp', len(prog.data)))
+        save_program(name, bytes(prog.data), outdir / (stem + '.8xp'), BASIC_COMMENTS[name])
+        print('%-28s %5d token bytes' % (shown + stem + '.8xp', len(prog.data)))
 
+
+def build_lists():
     # Lists QRBASIC expects on the calculator (sent once): the GF(256) tables (polynomial 11Dh)
     # ʟGFL(n) = log n and ʟGFX(k) = 2^(k-1), and ʟXOR, entry 16a+b+1 = a xor b (4-bit a, b)
     exp = [1]
@@ -159,7 +174,7 @@ def save_list(name, values, comment):
     path = ROOT / 'build' / (name + '.8xl')
     lst.save(str(path))
     finish_8xp(path, comment)
-    print('build/%-16s %5d entries' % (name + '.8xl', len(values)))
+    print('%-28s %5d entries' % ('build/' + name + '.8xl', len(values)))
 
 
 def decompile(path, out=None):

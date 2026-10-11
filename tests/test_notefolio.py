@@ -1,4 +1,4 @@
-"""Engine tests for Notefolio notes (E=3 check or encode, E=4 list).
+"""Notefolio tests: the engine (E=3 check or encode) and the picker prgmθNOTES.
 
   python tests/test_notefolio.py
 """
@@ -7,14 +7,18 @@ import struct
 import sys
 from pathlib import Path
 
-from qrtest import (CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode, matrix_from,
+from qrtest import (ROOT, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode, matrix_from,
                     AUTO, ASCII, ALNUM, BAD)
+
+PICKER = (ROOT / 'src' / 'NOTESSRC.axe.txt').read_text(encoding='utf-8')
 
 failures = []
 SIG = bytes([0xF3, 0x47, 0xBF, 0xAF])
 TI_FROM = {'\n': 0xD6, '[': 0xC1, '$': 0xF2, 'θ': 0x5B, 'é': 0x96, 'ñ': 0xB5, '⁴': 0x24}
 ALNUM_SET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:'
 NOTE = 3
+DOWN, LEFT, RIGHT, UP, ENTER, CLEAR = 1, 2, 3, 4, 9, 15   # getKey codes
+PICKED, CANCELLED, NO_NOTES = 1, 0, 2
 
 
 def expect(name, cond, detail=''):
@@ -59,8 +63,9 @@ def notefolio(title, tb):
             size.to_bytes(2, 'little') + (1).to_bytes(2, 'little') + tb + b'\0' + b'\0\0')
 
 
-def machine(notes, params, str3=None, extra=()):
-    m = Machine(SRC)
+def machine(notes, params, str2=None, keys=(), src=SRC, before=None):
+    m = Machine(src)
+    m.keys = list(keys)
     m.add_vat_other(0x05, 'QR')                             # a program
     m.add_appvar('SAVE', bytes(range(40)))                  # ordinary appvar
     m.add_vat_other(0x01, '\x5dBIN')                        # a named list
@@ -72,8 +77,10 @@ def machine(notes, params, str3=None, extra=()):
     m.build_vat()
     for k, v in {'O': 0, 'A': 0, 'B': 0, **params}.items():
         m.set_real(k, v)
-    if str3 is not None:
-        m.set_str(3, str3.encode().ljust(8, b'\x29'))        # padded with space tokens
+    if str2 is not None:
+        m.set_str(2, str2.encode().ljust(8, b'\x29'))        # padded with space tokens
+    if before:
+        before(m)
     m.run()
     return m
 
@@ -88,44 +95,39 @@ def synthetic():
              ('E', b'', False)]
     notes = [(n, notefolio(n, tb), arch) for n, tb, arch in texts]
 
-    m = machine(notes, {'E': 4})
-    s2 = m.os[('str', 2)]
-    s2b = bytes(m.mem[s2:s2 + m.rd16(s2 - 2)])
-    want = b''.join(n.encode().ljust(8, b'\x29') for n, _, _ in texts) + b'\x29' * 48
-    expect('list mode finds only the %d real notes (RAM + archived)' % len(texts),
-           m.ans == len(texts) and s2b == want, (m.ans, s2b[:40]))
+    picker(texts, notes)
 
     # checking (V=0): 2*length + 1 if alphanumeric; a note never fails in byte mode,
     # B = position of the first non-ASCII character (left alone if none)
     for name, tb, _ in texts:
         alnum = all(chr(c) in ALNUM_SET for c in expected_bytes(tb))
         want = (2 * len(tb) + alnum, first_non_ascii(tb))
-        m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str3=name)
+        m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
         got = (m.ans, m.get_real('B'))
         expect('check %s = %d, B=%d' % ((name,) + want), got == want, got)
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ALNUM}, str3='NOTES')
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='NOTES')
     expect('check NOTES forced alnum: lowercase at 2', m.ans == BAD + 2, m.ans)
     up = [('UP', notefolio('UP', ti_text('AB θ')), False)]
-    m = machine(up, {'E': NOTE, 'V': 0, 'M': ALNUM}, str3='UP')
+    m = machine(up, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='UP')
     expect('check θ forced alnum fails at 4, B untouched', (m.ans, m.get_real('B')) == (BAD + 4, 0),
            (m.ans, m.get_real('B')))
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str3='SHOUT')
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='SHOUT')
     expect('check SHOUT forced ASCII', m.ans == 2 * len(texts[3][1]), m.ans)
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str3='ODD')
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='ODD')
     expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (2 * len(texts[4][1]), 10),
            (m.ans, m.get_real('B')))
     every = bytes(range(1, 256))
     allnote = [('ALL', notefolio('ALL', every), False)]
-    m = machine(allnote, {'E': NOTE, 'V': 0, 'M': AUTO}, str3='ALL')
+    m = machine(allnote, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='ALL')
     expect('check every byte 1-255: length 255, first non-ASCII at 1',
            (m.ans, m.get_real('B')) == (2 * 255, 1), (m.ans, m.get_real('B')))
     # 2*16383+1 is the most Ans can carry; longer is "too long", even with a bad char past it
     for n, extra, want in ((16383, b'', 2 * 16383 + 1), (16384, b'', 65532), (16384, b'\x96', 65532)):
         big = [('BIG', notefolio('BIG', b'A' * n + extra), True)]
-        m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str3='BIG')
+        m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='BIG')
         expect('check a %d-character note -> %d' % (n + len(extra), want), m.ans == want, m.ans)
     for bad in ('SAVE', 'NOPE', 'TINY', 'FAKE'):
-        m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str3=bad)
+        m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=bad)
         expect('check %s -> 65535' % bad, m.ans == 65535, m.ans)
 
     count = 0
@@ -135,7 +137,7 @@ def synthetic():
         for v in range(1, 12):
             cap = (CAP_ALNUM if alnum else CAP_BYTE)[v - 1]
             for N in sorted({min(len(tb), cap), min(len(tb), cap) // 2}):
-                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO, 'A': int(alnum)}, str3=name)
+                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO, 'A': int(alnum)}, str2=name)
                 try:
                     check_symbol(m, v, payload[:N], 'alphanumeric' if alnum else 'byte')
                 except AssertionError as e:
@@ -144,20 +146,100 @@ def synthetic():
                 count += 1
     expect('%d note symbols match the reference and decode' % count, True)
 
-    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 4, 'M': AUTO, 'O': 4}, str3='TODO2')
+    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 4, 'M': AUTO, 'O': 4}, str2='TODO2')
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('skip 4 characters of a note', got == b'milk', got)
 
     # non-ASCII characters keep their calculator codes, with the swaps (θ -> C1h, ⁴ -> F2h)
-    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str3='ODD')
+    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str2='ODD')
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('ODD encodes θ ⁴ é ñ as C1 F2 96 B5', got == b'Line two \xc1 \xf2 \x96 \xb5', got)
-    m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO, 'A': 0}, str3='ALL')
+    m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO, 'A': 0}, str2='ALL')
     got = decode(matrix_from(m, 11))[0].bytes if m.ans == 0 else m.ans
     expect('every byte 1-255 encodes as mapped', got == expected_bytes(every), got)
     # one-to-one except the deliberate merges: wrap space with space, hyphen and negative with -
     expect('only wrap space, hyphen and negative share a byte with another character',
            len(set(expected_bytes(every))) == 255 - 3)
+
+
+def str2(m):
+    p = m.os.get(('str', 2))
+    return p and bytes(m.mem[p:p + m.rd16(p - 2)]).decode()
+
+
+def shown(frame):
+    """Names in a menu frame, in drawing order, and the highlighted slot. The title is an
+    inverted bar (rows 0-6); names are 7 rows apart in columns of 8 from y=8."""
+    texts, rects = frame
+    names = [t for x, y, t in texts if y > 7]
+    slots = [(x, y) for x, y, t in texts if y > 7]
+    assert all(xy == ((k // 8) * 48 + 2, (k % 8) * 7 + 8) for k, xy in enumerate(slots)), slots
+    assert len(rects) == 2 and rects[0] == (0, 0, 96, 7) and rects[1][2:] == (47, 7), rects
+    x, y = rects[1][:2]
+    assert (y - 8) % 7 == 0, y                                  # 1 row above the ink, 1 below
+    return names, x // 48 * 8 + (y - 8) // 7
+
+
+def picker(texts, notes):
+    """prgmθNOTES: lists the real notes sorted, moves with arrows, Enter writes Str2."""
+    names = sorted(n for n, _, _ in texts)
+    m = machine(notes, {}, str2='OLD', keys=[CLEAR], src=PICKER)
+    expect('picker lists the %d real notes (RAM + archived), sorted, first highlighted' % len(names),
+           shown(m.frames[0]) == (names, 0) and m.frames[0][0][0][2] == 'CHOOSE A NOTE', m.frames[0])
+    expect('Clear cancels, Str2 unchanged',
+           m.ans == CANCELLED and str2(m).startswith('OLD') and m.fix == 4, (m.ans, str2(m)))
+
+    def pick(keys):
+        m = machine(notes, {}, keys=keys + [ENTER], src=PICKER)
+        return m.ans, str2(m), shown(m.frames[-2])[1]
+    want = lambda k: (PICKED, names[k], k)
+    expect('Down twice picks the third (%s): Str2 = its name, unpadded' % names[2],
+           pick([DOWN] * 2) == want(2))
+    expect('Up and Left stop at the first', pick([UP, LEFT]) == want(0))
+    expect('Down stops at the last', pick([DOWN] * 9) == want(len(names) - 1))
+    expect('Right does nothing with one column', pick([RIGHT]) == want(0))
+
+    many = ['N%02d' % k for k in range(25)]                   # columns of 8, 8, 8, 1
+    lots = [(n, notefolio(n, b'X'), k % 3 == 0) for k, n in enumerate(reversed(many))]
+
+    def scroll(keys):
+        m = machine(lots, {}, keys=keys + [ENTER], src=PICKER)
+        return shown(m.frames[-2]), str2(m)
+    expect('Down past a column bottom continues at the next top', scroll([DOWN] * 8) == ((many[:16], 8), 'N08'))
+    expect('Right twice scrolls a column', scroll([RIGHT] * 2) == ((many[8:24], 8), 'N16'))
+    expect('Left back stays scrolled', scroll([RIGHT] * 2 + [LEFT]) == ((many[8:24], 0), 'N08'))
+    expect('Left again scrolls back', scroll([RIGHT] * 2 + [LEFT] * 2) == ((many[:16], 0), 'N00'))
+    expect('Right into the short last column goes to its end',
+           scroll([DOWN] * 7 + [RIGHT] * 3) == ((many[16:], 8), 'N24'))
+
+    full = [('F%02d' % k, notefolio('F%02d' % k, b'X'), False) for k in range(85)]
+    m = machine(full, {}, keys=[RIGHT] * 9 + [DOWN] * 8 + [ENTER], src=PICKER)
+    expect('at most 80 notes are listed', (m.ans, str2(m)) == (PICKED, 'F79'), (m.ans, str2(m)))
+
+    m = machine([], {}, keys=[ENTER], src=PICKER)
+    expect('no notes: a message, then Ans=2',
+           m.ans == NO_NOTES and m.frames[0][0] == [(0, 0, 'NO NOTEFOLIO FILES')] and m.fix == 4,
+           m.frames)
+
+    # leaving: the menu is erased and the home screen redrawn from textShadow, cursor kept
+    text = bytes((0x41 + k % 26) if k % 5 else 0x20 for k in range(128))
+    def home(m):
+        m.mem[0x8508:0x8588] = text
+        m.mem[0x844B], m.mem[0x844C] = 3, 0                       # curRow, curCol
+    for keys, what in (([CLEAR], 'cancel'), ([ENTER], 'pick')):
+        m = machine(notes, {}, keys=keys, src=PICKER, before=home)
+        got = bytes(m.home.get((k % 16, k // 16), 0) for k in range(128))
+        expect('%s: menu erased, home screen redrawn, cursor kept' % what,
+               not any(m.displays[-1]) and got == text and (m.mem[0x844B], m.mem[0x844C]) == (3, 0)
+               and (m.fix, m.scroll) == (4, 6), (got, m.mem[0x844B], m.mem[0x844C]))
+    m = machine([], {}, keys=[ENTER], src=PICKER, before=home)
+    expect('no notes: home screen redrawn too', bytes(m.home.get((k % 16, k // 16), 0) for k in range(128)) == text)
+
+    # what the picker writes is what the engine opens
+    m = machine(notes, {}, keys=[DOWN] * 3 + [ENTER], src=PICKER)
+    name = str2(m)
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
+    expect('the engine opens the picked note (%s)' % name, m.ans < BAD, m.ans)
 
 
 def real_file():
@@ -168,9 +250,9 @@ def real_file():
     archived = bool(data[14] & 0x80)
     content = data[19:19 + struct.unpack_from('<H', data, 17)[0]]
     notes = [(name, content, archived)]
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str3=name)
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
     expect('TEST.8xv checks as 44 ASCII characters', m.ans == 2 * 44, m.ans)
-    m = machine(notes, {'E': NOTE, 'V': 3, 'N': 44, 'M': AUTO}, str3=name)
+    m = machine(notes, {'E': NOTE, 'V': 3, 'N': 44, 'M': AUTO}, str2=name)
     got = decode(matrix_from(m, 3))[0].bytes if m.ans == 0 else m.ans
     expect('TEST.8xv decodes to the pangram', got == b'The quick brown fox jumps over the lazy dog.', got)
 

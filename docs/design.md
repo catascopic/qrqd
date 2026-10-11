@@ -135,6 +135,22 @@
    the drawing time. The menu text is "R\edraw": in max mode "Redraw" tokenized as the
    TI-84+CE color token Red (EF42) + "raw". build.py now refuses a BASIC program whose
    tokens need more than a monochrome TI-83+/84+ (`get_min_os()`, MONOCHROME).
+28. The note picker became its own Axe program, prgmθNOTES (`src/NOTESSRC.axe.txt`), for an
+   encryption add-on that will also open notes (design notes, not in the repo:
+   https://claude.ai/code/artifact/d8acc6c5-46a9-4ad8-8d6d-6c8d7911a7e0). It is the `filepicker`
+   branch's menu (item 12), returning just the name: Ans 1 picked, 0 cancelled, 2 no notes.
+   prgmθQR lost E=4 (`LS`, `NC`) and prgmQR lost the 5-at-a-time Menu( pager. The name moved
+   from Str3 to Str2 (free once the pager's name list was gone): Str1 stays the user's typed
+   text only (so 2nd RCL Str1 still brings a message back), Str2 is the note name. RAM:
+   `Asm(` needs room for the running program only, so a separate picker adds its stored size
+   but not to the peak. Still duplicated in both programs: `NH` and `RB` (is it a note, read
+   a byte) and the GDB8 signature.
+29. The QR-only release (no encryption) lives in `standalone/` on master, so it can be
+   built and tested without switching branches: the previous prgmQR and engine (commit
+   14b59a2, branch `basic_notefolio`; the user likes its BASIC pager) with one change, the
+   list of names (E=4) now in Str3 and the chosen name in Str2, matching the main set's Str2.
+   Same program names, built to `build/standalone/`. A fix that applies to both engines has
+   to be made in both copies.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -142,9 +158,9 @@ scoring instead of fixed mask 0.
 
 ## Engine phases (src/QRSRC.axe.txt)
 
-1. `Full` (15 MHz where supported). Read `E`. E=4 → `LS` (list) and return.
+1. `Full` (15 MHz where supported). Read `E`.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
-3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str3 (E=3,
+3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str2 (E=3,
    `NF`), or Str1 (E=1; T counts tokens).
 4. Text, check call only (encoding trusts it): read every character through `CH` (Str1
    token → ASCII via GDB0, 0 if none; or note character → byte via `MA`) and `AV` (ASCII →
@@ -179,7 +195,7 @@ scoring instead of fixed mask 0.
 
 | Area | Use |
 | --- | --- |
-| L₁+0..323 | data codewords; in list mode, collected names (8 bytes each, ≤80) |
+| L₁+0..323 | data codewords |
 | L₁+330..409 | EC codewords (blocks × EC per block) |
 | L₁+420.. | generator polynomial as logs (≤31 bytes) |
 | L₁+460.. | RS remainder (R+1 bytes) |
@@ -203,8 +219,8 @@ character just read, K/X first non-ASCII/non-alnum position while checking, Q th
 (RAM address, or 0 for an archived note read through Y₁), D/W/K bit writer
 pointer/accumulator/bit count, A/Z value and bit count for AB. Subroutines: AB append bits, CH
 next character → ASCII A, AV ASCII A → alnum value J, RS EC for one block, RV reserve rectangle
-(r₁-r₄), FP finder, AP alignment, MA calculator char C → output byte A, LS list notes, NC copy VAT
-name, NH is it a note (sets Q or opens Y₁), NF open note named in Str3, RB read byte r₁ of the
+(r₁-r₄), FP finder, AP alignment, MA calculator char C → output byte A,
+NH is it a note (sets Q or opens Y₁), NF open note named in Str2, RB read byte r₁ of the
 open note, GV OS real named at r₁ → r₁ (0 if missing).
 
 ## Notefolio format (NoteFolioEdit's source, confirmed by tests/data/TEST.8xv)
@@ -222,7 +238,7 @@ D6h ↔ 0Ah (Enter ↔ the calculator's 0Ah character), F1h → space, D2h/1Ah (
 `-`; every other byte goes out unchanged (so in byte mode a scanner shows its Latin-1 meaning).
 Anything outside printable ASCII and newline sets B (the warning), never fails.
 
-VAT scan (list mode): entries from `progPtr` (word at 9830h) down to `pTemp` (982Eh). Type in the
+VAT scan (prgmθNOTES): entries from `progPtr` (word at 9830h) down to `pTemp` (982Eh). Type in the
 low 5 bits at P (15h = appvar), name length at P-6, name bytes from P-7 downward, next entry at
 P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opened by name).
 
@@ -248,11 +264,37 @@ centered on the bar). Up to 3 digits (from x=83) stay clear of the code's 4-modu
 (v11 ends at x=77). (It was at the left edge, x=0, before.) The check call allows 16383 characters (51 version 11 codes), so 3-digit
 counts only happen with a small set version. Longer: ERR:TOO LONG (Lbl G), Pause, main menu.
 Keys (Lbl K): Enter/→ next, ← back, Clear stops; ← on the first and → on the last do nothing;
-Enter on the last ends. Notefolio picker: E=4 fills Str2, Menu( shows 5 names + More +
-Back (More does nothing on the last page; Back goes back a page, or to the main menu
-from the first), the pick goes into Str3, then the check and version flow with E=3. Scratch:
-U requested version, M mode, L length, A alnum flag, B first non-ASCII, K, P, I, L₁, Str1, Str2, Str3; split: J
+Enter on the last ends. NoteFolio (Lbl N): `Asm(prgmθNOTES`; Ans=1 → E=3 and the check and
+version flow from Lbl C; anything else → main menu (65534/65535 → the Asm error menu). Scratch:
+U requested version, M mode, L length, A alnum flag, B first non-ASCII, K, L₁, Str1, Str2; split: J
 codes, C capacity per code, W per code, P current, O skip.
+
+## Note picker (prgmθNOTES, src/NOTESSRC.axe.txt)
+
+`LS` walks the VAT (below) and keeps appvars that pass `NC` (name only A-Z, 0-9, θ, copied
+to L₁+700 as an OP1 name) and `NH` (signature, size ≥ 27): names at L₁+8k, 0-padded, at
+most 80 (L₁+0..639). Selection sort with `LT`; L₁+690..698 is the swap buffer and the
+0-terminated name for `Text(`. Small font with `Fix 5` (draw to the buffer; `Fix 4` again
+before every return, or the OS keeps drawing text to the buffer). Title "CHOOSE A NOTE" at
+y=0 in an inverted bar (`RectI(0,0,96,7)`, rows 0-6, like the OS's menu titles), then
+columns of 8 names 7 rows apart (two blank rows between names; it was 9 names 6 apart, which
+the user found cramped; 9 at 7 don't fit under a title), 2 columns shown: name k (counting
+from the left column shown, T·8) at x=(k/8)·48+2, y=(k mod 8)·7+8. The selection S is
+inverted with `RectI(` (47×7, from y=(k mod 8)·7+8: small-font glyphs leave their top row of
+6 blank, so this puts one blank row above the ink and one below; the last row ends at y=63).
+getKey: Up/Down ±1 (continuing into the next column), Left/Right ±8 (Right into a shorter
+last column goes to its last name), stopping at the ends; Enter picks, Clear cancels. The
+view scrolls a column at a time to keep S visible. No notes → "NO NOTEFOLIO FILES" until a
+key, Ans=2. Enter: Str2 = the name without padding (GetCalc("Str2",L)), Ans=1; 65535 if Str2
+can't be created.
+
+Leaving (`EX`, every exit): an assembly program returning to the home screen doesn't make
+the OS redraw it, so the menu stayed on the LCD with the result printed over it. `EX` clears
+the buffer and shows it (blank LCD), then redraws the home screen's text from the OS's copy,
+textShadow (8508h, 16×8 character codes): `Output(` + `Disp …►Char` per cell, with `Fix 7`
+so the last cell can't scroll the screen (`Fix 6` after), and curRow/curCol (word at 844Bh)
+saved and put back so the OS prints the result where it would have. The graph buffer is left
+clear (its old contents, e.g. a drawn QR code, are lost, as before).
 
 ## Risks: not verified on hardware
 
@@ -262,6 +304,11 @@ codes, C capacity per code, W per code, P current, O skip.
 - Archived notes read through Axe files (`GetCalc(name,Y₁)`, `{Y₁+k}`, `{Y₁-2}ʳ`).
 - VAT entry layout as above.
 - The graph-redraw assumption behind `ClrDraw:DispGraph` before `Asm(`.
+- The note picker: `Text(`/`Fix 5`/`RectI(`/`getKey` are modelled loosely in axesim (text is
+  recorded, not drawn), so the menu's look and key handling are only checked on hardware.
+  The home-screen redraw assumes textShadow holds plain displayable codes (`Disp ►Char` uses
+  the OS's character output, which might treat a few codes specially) and that `Fix 7` stops
+  the bottom-right cell from scrolling.
 
 ## References
 

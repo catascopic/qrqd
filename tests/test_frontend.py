@@ -1,8 +1,8 @@
 """Menu-flow tests for the BASIC front end (src/QR.basic.txt), run in tibasic.
 
-tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` and a BASIC
-stand-in plays the engine:
-  E=4 (list notes)  copies Str9 to Str2 and returns Z, the note count the test set up
+tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` (and the same for
+prgmθNOTES), and BASIC stand-ins play them. The picker logs E=4 and returns Z, set up by
+the test (1 picked, 0 cancelled, 2 no notes), storing "NOTE7" to Str2 if Z=1. The engine:
   V=0 (check text)  returns W, set up by the test (2*length+alnum, or 32768+position),
                     and sets B to X if X isn't 0 (a note's first non-ASCII position;
                     like the engine, it leaves B alone otherwise)
@@ -17,7 +17,6 @@ import sys
 
 from test_basic import (ROOT, TIProgram, Environment, ScriptedConsole, TiList, install,
                         get_token, CHAR_TABLE, expect, failures)
-from core import TiString
 
 MESSAGE, NOTEFOLIO, BINARY, SET_VERSION, MODE, EXIT = range(6)   # main menu
 STUB = '''T+1→T
@@ -25,18 +24,20 @@ If T>20
 Stop
 10000N+100V+10M+E→L₆(T
 O→L₅(T
-If E=4
-Str9→Str2
 If not(V
 If X
 X→B
 G
 If not(V
-W
-If E=4
-Z'''                                                            # T>20: stop a runaway loop
-NOTES = ['NOTE%d' % i for i in range(1, 13)]                    # 3 pages: 5, 5, 2
+W'''                                                            # T>20: stop a runaway loop
+PICKER_STUB = '''T+1→T
+4→L₆(T
+0→L₅(T
+If Z=1
+"NOTE7→Str2
+Z'''
 BAD = 32768
+PICKED, CANCELLED, NO_NOTES = 1, 0, 2
 
 
 class MenuLog(ScriptedConsole):
@@ -60,20 +61,21 @@ def tokens(text):
     return bytes(p.data)
 
 
-def run(choices, inputs, notes=(), check=0, encode=0, binary=None, keys=(), warn=0):
+def run(choices, inputs, pick=CANCELLED, check=0, encode=0, binary=None, keys=(), warn=0):
     env = Environment(console=MenuLog(inputs=inputs, choices=choices, keys=keys))
     front = tokens((ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n'))
-    assert front.count(b'\xbb\x6a\x5f\x5bQR') == 3                  # Asm(prgmθQR
-    install(env, 'QR', front.replace(b'\xbb\x6a\x5f\x5bQR', b'\x5f\x5bQR'))
+    asm = b'\xbb\x6a\x5f\x5b'                                     # Asm(prgmθ
+    assert front.count(asm + b'QR') == 2 and front.count(asm + b'NOTES') == 1
+    install(env, 'QR', front.replace(asm, b'\x5f\x5b'))
     install(env, 'θQR', tokens(STUB))
+    install(env, 'θNOTES', tokens(PICKER_STUB))
     for v in 'TNVO':
         setattr(env.numerics, v, 0.0)
-    env.numerics.Z = float(len(notes))
+    env.numerics.Z = float(pick)
     env.numerics.W = float(check)
     env.numerics.G = float(encode)
     env.numerics.X = float(warn)
     env.numerics.B = 7.0                                        # prgmQR must reset it
-    env.strings[8] = TiString.from_str(''.join(n.ljust(8) for n in notes) + ' ' * 48)
     if binary is not None:
         env.user_lists['BIN'] = TiList([float(b) for b in binary])
     env.lists[5] = TiList([0.0])
@@ -86,10 +88,10 @@ def run(choices, inputs, notes=(), check=0, encode=0, binary=None, keys=(), warn
 
 
 def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_screen=(),
-         want_str3=None, want_offsets=None, **kw):
+         want_str2=None, want_offsets=None, **kw):
     """want_calls: (N, V, M, E) per engine call; want_menus: option lists after the first
     main menu (blank-padded options stripped); want_screen: text that must appear on a
-    home-screen frame captured at a Pause; want_str3: the note picked."""
+    home-screen frame captured at a Pause; want_str2: the note picked."""
     try:
         calls, menus, env = run(choices, inputs, **kw)
     except Exception as e:
@@ -97,22 +99,17 @@ def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_sc
         return
     got_menus = [[o.strip() for o in opts] for _, opts in menus[1:]]
     screens = '\n'.join(env.console.frames)
-    str3 = env.strings[2] and str(env.strings[2]).strip()
+    str2 = env.strings[1] and str(env.strings[1]).strip()
     ok = (calls == want_calls and got_menus == want_menus and
           all(t in screens for t in want_screen) and not any(t in screens for t in avoid_screen) and
-          (want_str3 is None or str3 == want_str3) and
+          (want_str2 is None or str2 == want_str2) and
           (want_offsets is None or env.offsets == want_offsets))
-    expect(name, ok, 'calls %r, offsets %r, menus %r, Str3 %r, screens:\n%s'
-           % (calls, env.offsets, got_menus, str3, screens))
+    expect(name, ok, 'calls %r, offsets %r, menus %r, Str2 %r, screens:\n%s'
+           % (calls, env.offsets, got_menus, str2, screens))
 
 
 def main(mode='Auto'):
     return ['Message', 'NoteFolio', 'Binary (ʟBIN)', 'Set version', 'Mode:' + mode, 'Exit']
-
-
-def page(n):
-    names = NOTES[5 * n:5 * n + 5]
-    return names + [''] * (5 - len(names)) + ['More', 'Back']
 
 
 CHECKED = (0, 0, 0, 1)                         # the check call for a message in auto mode
@@ -146,29 +143,23 @@ if __name__ == '__main__':
          [CHECKED, (4, 1, 0, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Pos=4'],
          check=2 * 4, encode=BAD + 4)
 
-    # NoteFolio picker: menu options are 5 names, More (5), Back (6)
-    LISTED = [(0, 0, 0, 4)]
-    case('Back on the first page goes to the main menu', [NOTEFOLIO, 6, EXIT], [],
-         LISTED, [page(0), main()], notes=NOTES)
-    case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
-         LISTED, [page(0), page(1), page(0), main()], notes=NOTES)
-    case('More does nothing on the last page', [NOTEFOLIO, 5, 5, 5, 6, 6, 6, EXIT], [],
-         LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
-    case('a blank slot on the last page stays there', [NOTEFOLIO, 5, 5, 3, 6, 6, 6, EXIT], [],
-         LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
-    case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0), page(1), page(2), page(1)],
-         notes=NOTES, check=2 * 12, want_str3='NOTE7')
-    case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
-         notes=NOTES, check=2 * 12, warn=40)
-    case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 0, 3)], [page(0)], [], ['NON-ASCII'],
-         notes=NOTES, check=2 * 12)
-    case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
-         LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
-         notes=NOTES, check=BAD + 40)
-    case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()])
+    # NoteFolio: prgmθNOTES picks (logged as E=4), then the usual check and encode with E=3
+    PICKER = [(0, 0, 0, 4)]
+    case('pick a note, then check and encode it', [NOTEFOLIO], [],
+         PICKER + [(0, 0, 0, 3), (12, 1, 0, 3)], [], pick=PICKED, check=2 * 12, want_str2='NOTE7')
+    case('cancel goes back to the main menu', [NOTEFOLIO, EXIT], [], PICKER, [main()], pick=CANCELLED)
+    case('no notes: back to the main menu (the picker said so)', [NOTEFOLIO, EXIT], [],
+         PICKER, [main()], pick=NO_NOTES)
+    case('picker missing: the Asm error menu', [NOTEFOLIO, 0, EXIT], [],
+         PICKER, [['Back', 'Exit'], main()], pick=65534)
+    case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO], [],
+         PICKER + [(0, 0, 0, 3), (12, 1, 0, 3)], [], ['Non-ASCII chars', 'Pos=40'],
+         pick=PICKED, check=2 * 12, warn=40)
+    case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO], [],
+         PICKER + [(0, 0, 0, 3), (12, 1, 0, 3)], [], [], ['Non-ASCII'], pick=PICKED, check=2 * 12)
+    case('bad char in a note (forced alnum): position only', [NOTEFOLIO, EXIT], [],
+         PICKER + [(0, 0, 0, 3)], [main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
+         pick=PICKED, check=BAD + 40)
     # too long for one code: always split, into even pieces at the smallest version that fits
     # one (or the set version); Enter/→ next,
     # ← back, Clear stops, Enter on the last ends

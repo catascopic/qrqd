@@ -18,13 +18,15 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | Path | What |
 | --- | --- |
 | `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
-| `docs/API.md` | how other programs call prgmθQR (variables, return values, capacity, a tested example) |
+| `src/NOTESSRC.axe.txt` | Axe note picker, compiles to prgmθNOTES: menu of Notefolio notes, name → Str2 (Ans 1 picked, 0 cancelled, 2 none) |
+| `docs/API.md` | how other programs call prgmθQR and prgmθNOTES (variables, return values, capacity, a tested example) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
 | `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |
+| `standalone/` | the QR-only release the user plans to publish (no encryption): `src/QR.basic.txt` + `src/QRSRC.axe.txt` as of commit 14b59a2 (= branch `basic_notefolio`: engine E=4 lists notes, BASIC 5-per-page Menu( pager), except the list of names is in Str3 and the chosen name in Str2. Same file and program names as the main set (prgmQR, prgmθQR), so only one set can be on the calculator at a time. Built to `build/standalone/`; `standalone/API.md`; tests in `standalone/tests/` |
 | `tools/build.py` | builds both `.8xp`; `decompile` turns any `.8xp` back into text |
 | `tools/axe_tokens.json` | Axe 1.2.1 token table (from TokenIDE's AxeTokens.xml by Runer112; reuse permitted) |
 | `tools/axesim.py` | interpreter for the Axe subset the engine uses; the tests run the engine in it |
-| `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (modes 3-5), `qrtest.py` helpers |
+| `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (notes, and the picker), `qrtest.py` helpers |
 | `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
 | `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
 | `src/QRBASIC.basic.txt`, `src/_theta_QRBIT.basic.txt` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/` with everything else |
@@ -43,6 +45,9 @@ python tests/test_notefolio.py
 python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1
 python tests/test_basic.py --quick       # pure-BASIC set; same needs
 python tests/test_lorem.py               # the LOREM note maker
+python tests/test_engine.py --quick --standalone   # the standalone engine (modes 0-2)
+python standalone/tests/test_notefolio.py          # its notes, E=4 list
+python standalone/tests/test_frontend.py           # its menus (PYTHONUTF8=1)
 python tools/build.py decompile build/QRSRC.8xp
 ```
 
@@ -53,8 +58,8 @@ for BASIC changes) → give the user `build/*.8xp`.
 
 ## How the user runs it
 
-TI-83+ family, Axe Parser 1.2.2. Send both files, compile QRSRC in Axe with Options → shell
-"No Shell" (the `.θQR` header line names the output), run prgmQR. Running prgmθQR
+TI-83+ family, Axe Parser 1.2.2. Send QR, QRSRC and NOTESSRC, compile QRSRC and NOTESSRC in
+Axe with Options → shell "No Shell" (the `.θQR`/`.θNOTES` header lines name the output), run prgmQR. Running prgmθQR
 needs free RAM at least its compiled size (`Asm(` copies it to userMem each call), so engine
 size is RAM the user must keep free; static buffers inside the program cost it too. Old QRCW/QRBIT/QRECC/
 QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`build/`: prgmQRBASIC,
@@ -74,12 +79,14 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 
 ## Engine interface (BASIC sets OS variables, runs `Asm(prgmθQR)`, reads Ans)
 
+prgmQR's NoteFolio entry runs `Asm(prgmθNOTES)` first (the picker writes the name to Str2),
+then uses E=3.
+
 | E | Source |
 | --- | --- |
 | 1 | text in Str1 (tokens) |
 | 2 | bytes in list ʟBIN |
-| 3 | text of the Notefolio note named in Str3 (calculator character codes) |
-| 4 | list Notefolio notes: Ans = count; names in Str2, 8 chars each + 48 spaces padding |
+| 3 | text of the Notefolio note named in Str2 (calculator character codes) |
 
 A missing OS variable reads as 0 (subroutine `GV`). For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
 ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for

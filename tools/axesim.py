@@ -4,6 +4,13 @@ Models: strict left-to-right evaluation, 16-bit unsigned math, byte/word
 memory, OS variable lookup via GetCalc, float{}, the main and back graph
 buffers, subroutine calls with r1..r6 arguments.  Anything whose behaviour
 on a real calculator is uncertain raises an error instead of guessing.
+
+The note picker's commands are modelled loosely: Text( records (x, y, string)
+instead of drawing glyphs (there is no font), RectI( inverts a rectangle, getKey
+returns scripted keys (running out raises, so a stuck loop can't hang a test),
+and returning with Fix 5 or Fix 7 still on is an error. The home screen is a
+16x8 grid of character codes (`home`): Output( moves the cursor (curCol 844Ch,
+curRow 844Bh), Disp X►Char writes one cell and advances, DispGraph wipes it.
 """
 import re
 
@@ -12,6 +19,7 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
+    'Text(', 'RectI(', 'Fix ', 'getKey', 'Output(', '►Char',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
     'ClrDraw', 'DispGraph', 'Disp ', 'Full', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
@@ -77,6 +85,13 @@ class Machine:
         self.file = None      # data pointer of the open Y1 file
         self.arch_ptr = 0x4000
         self.vat = []
+        self.keys = []        # scripted getKey results
+        self.texts = []       # (x, y, string) drawn since the last ClrDraw
+        self.rects = []       # inverted rectangles since the last ClrDraw
+        self.frames = []      # (texts, rects) at each DispGraph
+        self.fix = 4          # 4 text to the screen, 5 to the buffer
+        self.scroll = 6       # 6 scroll at the last line, 7 don't
+        self.home = {}        # (col, row) -> character code on the home screen
         self.lines = []
         for raw in src.split('\n'):
             s = raw.rstrip('\n')
@@ -342,6 +357,9 @@ class Machine:
                 self.mem[self.data_ptr:self.data_ptr + len(data)] = data
                 self.data_ptr += len(data)
             return self.literals[t], i + 1
+        if t == 'getKey':
+            if not self.keys: raise AxeError('getKey: no scripted keys left')
+            return self.keys.pop(0), i + 1
         if t == 'Y₁':
             if self.file is None: raise AxeError('Y1 used without an open file')
             return self.file, i + 1
@@ -425,7 +443,10 @@ class Machine:
                     continue
                 pc += 1; continue
             if h == ('T', 'Return'):
-                if not calls: return
+                if not calls:
+                    if self.fix == 5: raise AxeError('returned with Fix 5 on')
+                    if self.scroll == 7: raise AxeError('returned with Fix 7 on')
+                    return
                 pc = calls.pop(); continue
             if h == ('T', 'sub('):
                 name = ''
@@ -450,6 +471,28 @@ class Machine:
             if h == ('T', 'ClrDraw'):
                 base = L3 if len(t) > 1 and t[1] == ('T', 'ʳ') else L6
                 self.mem[base:base + 768] = bytes(768)
+                if base == L6: self.texts, self.rects = [], []
+                pc += 1; continue
+            if h == ('T', 'Disp ') and t[-1] == ('T', '►Char'):
+                c, j = self.expr(t, 1)
+                assert j == len(t) - 1, self.lines[pc]
+                col, row = self.mem[0x844C], self.mem[0x844B]
+                if not (col < 16 and row < 8): raise AxeError('cursor at %d,%d' % (col, row))
+                self.home[col, row] = c & 0xFF
+                col += 1
+                if col == 16:
+                    col, row = 0, row + 1
+                    if row == 8:
+                        if self.scroll == 6: raise AxeError('Disp scrolled the home screen')
+                        row = 7
+                self.mem[0x844C], self.mem[0x844B] = col, row
+                pc += 1; continue
+            if h == ('T', 'Output('):
+                x, j = self.expr(t, 1); j = self.expect(t, j, ',')
+                y, j = self.expr(t, j); j = self.expect(t, j, ')')
+                assert j == len(t), self.lines[pc]
+                if not (x < 16 and y < 8): raise AxeError('Output(%d,%d' % (x, y))
+                self.mem[0x844C], self.mem[0x844B] = x, y
                 pc += 1; continue
             if h == ('T', 'Disp '):
                 p, j = self.expr(t, 1)
@@ -460,7 +503,37 @@ class Machine:
                 assert len(t) == 1, self.lines[pc]
                 self.full = True; pc += 1; continue
             if h == ('T', 'DispGraph'):
-                self.displays.append(bytes(self.mem[L6:L6 + 768])); pc += 1; continue
+                self.displays.append(bytes(self.mem[L6:L6 + 768]))
+                self.frames.append((list(self.texts), list(self.rects)))
+                self.home = {}
+                pc += 1; continue
+            if h == ('T', 'Fix '):
+                assert t[1][0] == 'NUM' and len(t) == 2
+                n = t[1][1]
+                if n in (4, 5): self.fix = n
+                elif n in (6, 7): self.scroll = n
+                else: raise AxeError('unmodelled Fix %d' % n)
+                pc += 1; continue
+            if h == ('T', 'Text('):
+                x, j = self.expr(t, 1); j = self.expect(t, j, ',')
+                y, j = self.expr(t, j); j = self.expect(t, j, ',')
+                p, j = self.expr(t, j); self.expect(t, j, ')')
+                if self.fix != 5: raise AxeError('Text( without Fix 5 draws to the screen')
+                text = bytes(self.mem[p:self.mem.index(0, p)]).decode('latin-1')
+                if not (0 <= x < 96 and 0 <= y <= 58): raise AxeError('text at %d,%d' % (x, y))
+                self.texts.append((x, y, text)); pc += 1; continue
+            if h == ('T', 'RectI('):
+                args, j = [], 1
+                for k in range(4):
+                    v, j = self.expr(t, j); args.append(v)
+                    j = self.expect(t, j, ',' if k < 3 else ')')
+                x, y, w, hh = args
+                for yy in range(y, y + hh):
+                    for xx in range(x, x + w):
+                        if not (0 <= xx < 96 and 0 <= yy < 64):
+                            raise AxeError('RectI out of range %d,%d' % (xx, yy))
+                        self.mem[L6 + yy * 12 + xx // 8] ^= 0x80 >> (xx % 8)
+                self.rects.append(tuple(args)); pc += 1; continue
             if h == ('T', 'Copy('):
                 s, j = self.expr(t, 1); j = self.expect(t, j, ',')
                 d, j = self.expr(t, j); j = self.expect(t, j, ',')

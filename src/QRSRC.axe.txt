@@ -3,8 +3,8 @@
 .VERSIONS 1-11, EC LEVEL L, MASK 0
 .E=1 TEXT IN STR1
 .  2 BYTES IN LIST BIN
-.  3 TEXT OF NOTEFOLIO NAMED IN STR3
-.  4 LIST NOTEFOLIOS INTO STR2
+.  3 TEXT OF NOTEFOLIO NAMED IN STR2
+.    (PRGMθNOTES PICKS ONE)
 .IN V=VERSION, 0 TO CHECK TEXT ONLY
 .   M=MODE 0 AUTO 1 ASCII 2 ALNUM
 .   N=COUNT TO ENCODE (V>0), O=COUNT
@@ -60,10 +60,6 @@ Full
 .READ PARAMETERS (A MISSING ONE IS 0)
 sub(GV,"varE")
 r₁→E
-If E=4
-sub(LS)
-Return
-End
 sub(GV,"varV")
 r₁→V
 sub(GV,"varM")
@@ -588,55 +584,6 @@ If U
 End
 Return
 .
-.LIST NOTEFOLIO APPVARS INTO STR2
-Lbl LS
-{ᴇ9830}ʳ→P
-0→K
-While P>{ᴇ982E}ʳ
-{P-6}→L
-If {P} and 31=21 and (L-1<8)
-sub(NC)
-If X and (K<80)
-sub(NH)
-If X
-For(I,0,7)
-41→{K*8+L₁+I}
-End
-Copy(L₁+701,K*8+L₁,L)
-K+1→K
-End
-End
-End
-P-7-L→P
-End
-GetCalc("Str2",K*8+48)→W
-!If W
-65535→Ans
-Return
-End
-If K
-Copy(L₁,W,K*8)
-End
-For(I,0,47)
-41→{K*8+W+I}
-End
-K→Ans
-Return
-.
-.VAT NAME AT P, LENGTH L, TO L1+700
-Lbl NC
-21→{L₁+700}
-1→X
-For(I,0,L-1)
-{P-7-I}→C
-C→{I+L₁+701}
-!If C-48<10 or (C-65<27)
-0→X
-End
-End
-0→{L+L₁+701}
-Return
-.
 .IS L1+700 A NOTEFOLIO? X=1 IF SO
 .RAM DATA AT Q, OR Q=0 AND FILE Y1
 Lbl NH
@@ -662,11 +609,11 @@ End
 1→X
 Return
 .
-.OPEN NOTEFOLIO NAMED IN STR3
+.OPEN NOTEFOLIO NAMED IN STR2
 .X=1 IF FOUND, T=TEXT LENGTH
 Lbl NF
 0→X
-GetCalc("Str3")→Z
+GetCalc("Str2")→Z
 !If Z
 Return
 End

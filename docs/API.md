@@ -41,7 +41,7 @@ Pause
 
 | Var | Meaning |
 | --- | --- |
-| E | What to encode: **1** Str1, **2** list ʟBIN (one byte per element, 0-255), **3** the Notefolio note named in Str3, **4** list Notefolio notes (see below) |
+| E | What to encode: **1** Str1, **2** list ʟBIN (one byte per element, 0-255), **3** the Notefolio note named in Str2 (see below) |
 | V | **0** = check only (E=1 or 3); **1-11** = draw a code of that version |
 | M | Text mode for E=1 and 3: **0** auto (alphanumeric if every character allows it, else byte), **1** byte (ASCII), **2** alphanumeric only. Ignored for ʟBIN |
 | N | Number of characters (or list elements) to encode. **Must fit the version's capacity**; the engine doesn't check. It is cut to the input's length |
@@ -75,7 +75,6 @@ stays 65534, and your error check catches it.
 - **Variables:** it writes only Ans, plus:
   - **B**, for a check of a note (E=3) in byte mode: the position of the first non-ASCII
     character. Left unchanged if there's none, so set B to 0 first.
-  - **Str2**, for E=4.
 - **Scratch RAM:** it uses L₁ (saveSScreen) and L₃ (appBackUpScreen), the usual scratch areas.
 
 ## Capacity per version (error correction level L)
@@ -108,8 +107,34 @@ once and pass the same A to every piece. prgmQR's Lbl Q and Lbl H do exactly thi
 
 ## Notefolio notes
 
-- **E=4** lists the notes in RAM and archive:
-  - Ans = the number of notes;
-  - Str2 = their names, 8 characters each (padded with spaces), followed by 48 spaces.
-- **E=3** reads the note whose name is in Str3, padded with spaces or not. Use it like E=1.
+- **E=3** reads the note whose name is in Str2, padded with spaces or not. Use it like E=1.
   Positions count calculator characters. A check also sets B, as described above.
+- To let the user choose the note, run prgmθNOTES first (next section).
+
+# Choosing a note: prgmθNOTES
+
+prgmθNOTES is a menu of the Notefolio notes on the calculator, in RAM or archive. It
+takes no input. It writes the chosen name to Str2, which is what prgmθQR's E=3 reads.
+
+```
+65534
+Asm(prgmθNOTES
+If Ans≠1:Stop
+```
+
+- **The menu:** names sorted, in columns of 8, two columns on screen. The arrow keys
+  move, Enter picks, Clear cancels.
+- **Which notes:** appvars with the Notefolio signature whose names use only `A-Z`,
+  `0-9` and `θ` (others can't be typed into a string). At most 80 are listed.
+- **Requirements:** in RAM (unarchived), and free RAM at least its size, like prgmθQR.
+
+| Ans | Meaning |
+| --- | --- |
+| 1 | Picked: Str2 = the note's name (1-8 characters, no padding) |
+| 0 | Cancelled with Clear. Str2 is unchanged |
+| 2 | No notes. It has already said so on screen and waited for a key |
+| 65535 | Not enough RAM to create Str2 |
+
+It changes only Str2 and Ans. It uses L₁ for scratch and draws on the graph buffer, which
+it leaves clear. When it returns, the screen shows the home screen as it was (redrawn from
+the OS's copy of the home-screen text, with the cursor where it was).

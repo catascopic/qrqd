@@ -174,7 +174,7 @@ def shown(frame):
     names = [t for x, y, t in texts if y > 7]
     slots = [(x, y) for x, y, t in texts if y > 7]
     assert all(xy == ((k // 8) * 48 + 2, (k % 8) * 7 + 8) for k, xy in enumerate(slots)), slots
-    assert len(rects) == 2 and rects[0] == (0, 0, 96, 7) and rects[1][2:] == (47, 7), rects
+    assert len(rects) == 2 and rects[0] == (0, 0, 95, 7) and rects[1][2:] == (47, 7), rects
     x, y = rects[1][:2]
     assert (y - 8) % 7 == 0, y                                  # 1 row above the ink, 1 below
     return names, x // 48 * 8 + (y - 8) // 7
@@ -197,8 +197,8 @@ def picker(texts, notes):
     else:
         glyphs = [SMALL_FONT[ord(c)] for c in title]
         ink = sum(map(len, glyphs)) - (glyphs[-1][-1] == 0)   # minus the blank column after ':'
-        expect('title centered: %d px wide at x=%d (margins %d, %d)' % (ink, x, x, 96 - x - ink),
-               0 <= (96 - x - ink) - x <= 1)
+        expect('title centered in x=0-94: %d px wide at x=%d (margins %d, %d)' % (ink, x, x, 95 - x - ink),
+               0 <= (95 - x - ink) - x <= 1)
     expect('the run indicator is turned off', not m.run_indicator)
     expect('Clear cancels, Str2 unchanged',
            m.ans == CANCELLED and str2(m).startswith('OLD') and m.fix == 4, (m.ans, str2(m)))
@@ -221,6 +221,9 @@ def picker(texts, notes):
         return shown(m.frames[-2]), str2(m)
     expect('Down past a column bottom continues at the next top', scroll([DOWN] * 8) == ((many[:16], 8), 'N08'))
     expect('Right twice scrolls a column', scroll([RIGHT] * 2) == ((many[8:24], 8), 'N16'))
+    m = machine(lots, {}, keys=[RIGHT] * 3 + [ENTER], src=PICKER)   # highlight in the right column
+    expect('column 95 (reserved) is never drawn on',
+           not any(d[y * 12 + 11] & 1 for d in m.displays for y in range(64)))
     expect('Left back stays scrolled', scroll([RIGHT] * 2 + [LEFT]) == ((many[8:24], 0), 'N08'))
     expect('Left again scrolls back', scroll([RIGHT] * 2 + [LEFT] * 2) == ((many[:16], 0), 'N00'))
     expect('Right into the short last column goes to its end',

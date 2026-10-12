@@ -3,7 +3,9 @@
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
                                            and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
                                            src/standalone/ (the QR-only release, same program
-                                           names) goes to build/standalone/
+                                           names) goes to build/standalone/;
+                                           build/83_safe_QRBASIC.8xp is prgmQRBASIC without
+                                           the stopwatch (TI-83+)
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
   python tools/build.py decompile F.8xp -o out.txt
 
@@ -23,11 +25,11 @@ from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
 MONOCHROME = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE', 'TI-84+', 'TI-84+SE'}   # BASIC tokens must exist here
+TI83P = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE'}  # 83_safe_QRBASIC's tokens must exist here
 MAX_MODE = {'QRBASIC', 'θQRBIT'}               # BASIC programs tokenized in tivars "max" mode
 BASIC_COMMENTS = {'QR': 'QR code menus (BASIC front end)',
                   'QRBASIC': 'QR code generator, pure BASIC',
                   'θQRBIT': 'QR code generator, pure BASIC'}
-
 # tivars 1.1.1 decompiles the π token (ACh) as "π" but only accepts "pi" when tokenizing,
 # and "pi" inside a string becomes two lowercase letters. Teach every model's trie "π".
 for _model in (v for k, v in vars(tivars.models).items() if k.startswith('TI_')):
@@ -118,6 +120,34 @@ def build():
     (ROOT / 'build' / 'standalone').mkdir(exist_ok=True)
     build_programs(ROOT / 'src' / 'standalone', ROOT / 'build' / 'standalone')
     build_lists()
+    build_83_safe()
+
+
+def strip_timer(text):
+    """QRBASIC without its stopwatch, for the TI-83+: every line with startTmr or checkTmr(
+    goes. Refuses one right after a one-line If (removing it would hand the If the next line)."""
+    lines, out = text.split('\n'), []
+    for k, line in enumerate(lines):
+        if 'startTmr' in line or 'checkTmr(' in line:
+            if k and lines[k - 1].startswith('If '):
+                raise SystemExit('QRBASIC line %d: timer line under a one-line If' % (k + 1))
+        else:
+            out.append(line)
+    return '\n'.join(out)
+
+
+def build_83_safe():
+    """build/83_safe_QRBASIC.8xp: prgmQRBASIC without the stopwatch, for the TI-83+. Same
+    program name, so it installs as prgmQRBASIC; everything else in build/ is shared."""
+    shutil.rmtree(ROOT / 'build' / 'release', ignore_errors=True)   # an earlier layout
+    text = strip_timer((ROOT / 'src' / 'QRBASIC.basic.txt').read_text(encoding='utf-8').rstrip('\n'))
+    prog = TIProgram(name='QRBASIC')
+    prog.load_string(text, mode='max')
+    if prog.get_min_os().model not in TI83P:
+        raise SystemExit('83_safe_QRBASIC still needs a %s token' % prog.get_min_os().model)
+    save_program('QRBASIC', bytes(prog.data), ROOT / 'build' / '83_safe_QRBASIC.8xp',
+                 'QR code generator, pure BASIC, TI-83+')
+    print('%-28s %5d token bytes' % ('build/83_safe_QRBASIC.8xp', len(prog.data)))
 
 
 def build_programs(srcdir, outdir):

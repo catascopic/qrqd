@@ -124,6 +124,9 @@
    the hybrid); the automatic pick still bumps 5→6 and 9→10, which stay a little faster even
    with the XOR table (more XORs per byte in 5 and 9 outweigh the smaller drawing). Their
    generator tables are back (from git, as before).
+   Then the user timed every version: with the XOR table, 5 is faster than 6, so the automatic
+   pick skips 5 only with the table off (`V+(V=9 or V=5 and not(ʟQROPT(4→V`); 9 is always
+   bumped to 10.
 26. QRBASIC drawing: row flags. TI-BASIC's and/or never short-circuit, so the zigzag paid
    for the whole r₁ test (fixed-pattern module?) on every module; at v7+ that test is long.
    Each version branch now also builds L₃ (free by then: the EC tail is already in ʟCW) by
@@ -155,6 +158,19 @@
    list of names (E=4) now in Str3 and the chosen name in Str2, matching the main set's Str2.
    Same program names, built to `build/standalone/`. A fix that applies to both engines has
    to be made in both copies.
+30. TI-83+ copy of QRBASIC: the stopwatch (`startTmr`, `checkTmr(`) is the only thing in either
+   release that needs a TI-84+ (checked token by token against tivars' table; the hybrid needs
+   TI-83+ OS 1.03, QRBASIC's ASCII table OS 1.15 for its punctuation tokens such as # $ % & @ ~). build.py writes
+   `build/83_safe_QRBASIC.8xp`: the source with every timer line removed (`strip_timer`, which
+   refuses a timer line right after a one-line If), same program name, so one release ships
+   both files and the user sends one. Everything else (θQRBIT, the lists) is shared.
+31. QRBASIC stopwatch in three laps, in L₆ (was the total in T): L₆ = {codewords, ECC +
+   interleaving, drawing}, whole seconds. L₆ was unused, and QRBASIC already overwrites L₁-L₅,
+   so no custom list; three reals (G, H, θ were free) would be harder to find, while L₆ shows
+   in STAT Edit. The timer restarts at each boundary (`{checkTmr(A→L₆`, `startTmr→A`, then
+   `checkTmr(A→L₆(2`, …), so the laps add up to the total. Redraw: `{0,0→L₆:startTmr→A`,
+   giving {0,0,drawing}. Every timer line (and that whole Redraw line) is cut from
+   83_safe_QRBASIC, which leaves L₆ alone.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty

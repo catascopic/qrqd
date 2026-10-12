@@ -10,6 +10,7 @@ graph screen is compared with the `qrcode` reference and decoded, as in qrtest.p
   python tools/build.py && python tests/test_basic.py           all versions
   python tools/build.py && python tests/test_basic.py --quick   versions 1, 6, 10
   python tests/test_basic.py --originals                        run originals/ instead
+  python tests/test_basic.py --ti83      build/83_safe_QRBASIC.8xp (no stopwatch) instead
 
 Timing means nothing here: the interpreter is not a calculator.
 """
@@ -31,8 +32,9 @@ from catalog import get_token, CHAR_TABLE         # noqa: E402
 from core import TiString                         # noqa: E402
 
 sys.path.insert(0, str(ROOT / 'tools'))
-from build import TIProgram                       # noqa: E402  (with the π fix)
+from build import TIProgram, strip_timer          # noqa: E402  (with the π fix)
 
+TI83 = '--ti83' in sys.argv
 PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
 ASCII, ALNUM, BINARY, SET_VERSION, OPTIONS, REDRAW, EXIT = range(7)   # main menu choices
@@ -75,12 +77,16 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None, cw=Non
     else:                                 # build/ also holds the hybrid's files
         for name in ('GFL', 'GFX', 'XOR'):
             tifile._READERS['.8xl'].load(PROGRAMS / (name + '.8xl')).store_to(env)
-        files = [PROGRAMS / 'QRBASIC.8xp', PROGRAMS / '_theta_QRBIT.8xp']
+        files = [PROGRAMS / ('83_safe_QRBASIC.8xp' if TI83 else 'QRBASIC.8xp'),
+                 PROGRAMS / '_theta_QRBIT.8xp']
     for f in files:
         data = bytes(TIProgram.open(str(f)).data)
-        name = f.stem.replace('_theta_', 'θ')   # the file name spells θ as _theta_
+        name = TIProgram.open(str(f)).name      # from the file (83_safe_ is in the file name only)
+        stem = name.replace('θ', '_theta_')    # the source file name spells θ as _theta_
         if patch and name in patch:     # from the source: decompiled text loses its escapes
-            src = (ROOT / 'src' / (f.stem + '.basic.txt')).read_text(encoding='utf-8')
+            src = (ROOT / 'src' / (stem + '.basic.txt')).read_text(encoding='utf-8')
+            if TI83 and name == 'QRBASIC':
+                src = strip_timer(src.rstrip('\n'))
             p = TIProgram(name=name)
             p.load_string(patch[name](src).rstrip('\n'), mode='max')
             data = bytes(p.data)
@@ -95,6 +101,11 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None, cw=Non
         env.user_lists['CW'] = TiList([float(x) for x in cw])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in ('QR' if ORIGINALS else 'QRBASIC'))])
     return env
+
+
+def l6(env):
+    """L₆ as a list of numbers ([] if it doesn't exist)."""
+    return [float(x) for x in env.lists[5].data] if env.lists[5] is not None else []
 
 
 def symbol(env, version, center):
@@ -174,10 +185,15 @@ def edge_cases():
            '17 of 20' in screens(env) and 'bytes encoded' in screens(env), screens(env))
     env = run_qr([ALNUM], ['HELLO'])
     expect('no note when it fits', 'encoded' not in screens(env), screens(env))
-    # auto version: the smallest that fits, skipping 5 and 9
+    # auto version: the smallest that fits, skipping 9 always and 5 with the XOR table off
+    # (the user's timings: with the table, 5 is faster than 6; 9 stays slower than 10)
     env = run_qr([ALNUM], ['A' * 120])
-    expect('120 alphanumeric chars: version 6 (not 5)', check('auto v6', env, 6, 0, 'A' * 120, 'alphanumeric'))
-    # versions 5 and 9: skipped by the automatic pick (above: 120 chars -> 6), drawn when set
+    expect('120 alphanumeric chars, table off: version 6 (not 5)', check('auto v6', env, 6, 0, 'A' * 120, 'alphanumeric'))
+    env = run_qr([OPTIONS, XOR_TABLE, BACK, ALNUM], ['A' * 120])
+    expect('120 alphanumeric chars, table on: version 5', check('auto v5', env, 5, 0, 'A' * 120, 'alphanumeric'))
+    env = run_qr([OPTIONS, XOR_TABLE, BACK, ALNUM], ['A' * 300])
+    expect('300 alphanumeric chars, table on: still version 10 (not 9)', check('auto v10 table', env, 10, 0, 'A' * 300, 'alphanumeric'))
+    # versions 5 and 9: drawn when set, whatever the automatic pick does
     for v in (5, 9):
         env = run_qr([SET_VERSION, ALNUM], [str(v), 'HELLO 5 AND 9'])
         expect('set version %d is drawn as %d' % (v, v), check('set v%d' % v, env, v, 0, 'HELLO 5 AND 9', 'alphanumeric'))
@@ -198,9 +214,10 @@ def edge_cases():
         finally:
             Environment.now = real_now
         same = all(env.graph.get(r, c) == first.graph.get(r, c) for r in range(64) for c in range(96))
-        expect('Redraw v%d from ʟCW (%d elements): same code, T = drawing only' % (v, len(cw)),
-               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric') and env.numerics.T == 7,
-               (same, env.numerics.T))
+        timed = l6(env) == ([] if TI83 else [0, 0, 7])   # 83_safe: no stopwatch
+        expect('Redraw v%d from ʟCW (%d elements): same code, L₆ = {0,0,drawing}' % (v, len(cw)),
+               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric') and timed,
+               (same, l6(env)))
     # a bad character: error with the character and position, back to the menu, nothing drawn
     for mode, text, pos, ch in ((ALNUM, 'ABcD', 3, 'c'), (ASCII, 'ab' + 'θ' + 'c', 3, 'θ')):
         try:
@@ -215,20 +232,24 @@ def edge_cases():
     # alt punct: ? ; ' , - . ! : type in place of $ % * + - . / :
     env = run_qr([OPTIONS, ALT_PUNCT, BACK, ALNUM], ["HI?;'!"])
     expect("alt punct: HI?;'! scans as HI$%*/", check('alt punct', env, 1, 0, 'HI$%*/', 'alphanumeric'))
-    # stopwatch: T = seconds from startTmr (after the input) to checkTmr( (after drawing);
-    # the clock here jumps 123 s between the two readings
+    # stopwatch: L₆ = seconds for codewords, ECC + interleaving, drawing; the timer restarts
+    # at each boundary (clock readings: start, check, start, check, start, check)
+    times = [0, 5, 5, 12, 12, 20]
     real_now, readings = Environment.now, []
     base = datetime(2026, 1, 1)                  # a fixed clock, so no real second ticks over
     def fake_now(self):
         readings.append(1)
-        return base + timedelta(seconds=123 * (len(readings) - 1))
+        return base + timedelta(seconds=times[min(len(readings), len(times)) - 1])
     Environment.now = fake_now
     try:
         env = run_qr([ALNUM], ['HELLO'])
     finally:
         Environment.now = real_now
-    expect('stopwatch: T = 123 after drawing', env.numerics.T == 123 and len(readings) == 2,
-           (env.numerics.T, len(readings)))
+    if TI83:                                     # no timer: the clock is never read, L₆ untouched
+        expect('TI-83+: no stopwatch', len(readings) == 0 and l6(env) == [], (len(readings), l6(env)))
+    else:
+        expect('stopwatch: L₆ = {5,7,8}', l6(env) == [5, 7, 8] and len(readings) == 6,
+               (l6(env), len(readings)))
     # ASCII: π stands in for the quote
     # ASCII fix: a 95-character Str3 of your own (here with a real quote) is used as the table
     table = [CHAR_TABLE[chr(c)] for c in range(32, 127)]

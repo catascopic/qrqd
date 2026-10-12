@@ -30,7 +30,7 @@ ClrHome
 Goto 0
 Lbl R
 int(.2dim(ʟCW)^.68→V
-startTmr→A
+{0,0→L₆:startTmr→A
 Goto D
 Lbl C:0:Goto M
 Lbl A:1:Goto M
@@ -55,7 +55,7 @@ End
 If not(V
 Then
 min(11,1+sum(L₁<L→V
-V+(V=5 or V=9→V
+V+(V=9 or V=5 and not(ʟQROPT(4→V
 End
 min(L₁(V),L→N
 0→K
@@ -149,6 +149,8 @@ End
 For(X,1,M-dim(ʟCW
 236-219not(fPart(X/2→ʟCW(1+dim(ʟCW
 End
+{checkTmr(A→L₆
+startTmr→A
 1+(V>5)+2(V>9→Z
 int(M/Z→Q
 M-ZQ→Y
@@ -201,6 +203,8 @@ End
 For(J,1,dim(L₃
 L₃(J→ʟCW(QZ+J
 End
+checkTmr(A→L₆(2
+startTmr→A
 Lbl D
 FnOff 
 AxesOff
@@ -348,7 +352,7 @@ Else
 D+I→I
 End
 End
-checkTmr(A→T
+checkTmr(A→L₆(3
 If ʟQROPT(1
 StorePic 1
 "→r₁

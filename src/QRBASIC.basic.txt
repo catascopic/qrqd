@@ -30,7 +30,6 @@ ClrHome
 Goto 0
 Lbl R
 int(.2dim(ʟCW)^.68→V
-{0,0→L₆:startTmr→A
 Goto D
 Lbl C:0:Goto M
 Lbl A:1:Goto M
@@ -39,7 +38,6 @@ Lbl M
 Ans→E
 If E≠2
 Input "msg=",Str1
-startTmr→A
 If E
 Then
 {17,32,53,78,106,134,154,192,230,271,321→L₁
@@ -149,8 +147,6 @@ End
 For(X,1,M-dim(ʟCW
 236-219not(fPart(X/2→ʟCW(1+dim(ʟCW
 End
-{checkTmr(A→L₆
-startTmr→A
 1+(V>5)+2(V>9→Z
 int(M/Z→Q
 M-ZQ→Y
@@ -203,8 +199,6 @@ End
 For(J,1,dim(L₃
 L₃(J→ʟCW(QZ+J
 End
-checkTmr(A→L₆(2
-startTmr→A
 Lbl D
 FnOff 
 AxesOff
@@ -352,7 +346,6 @@ Else
 D+I→I
 End
 End
-checkTmr(A→L₆(3
 If ʟQROPT(1
 StorePic 1
 "→r₁

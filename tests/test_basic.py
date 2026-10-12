@@ -10,13 +10,11 @@ graph screen is compared with the `qrcode` reference and decoded, as in qrtest.p
   python tools/build.py && python tests/test_basic.py           all versions
   python tools/build.py && python tests/test_basic.py --quick   versions 1, 6, 10
   python tests/test_basic.py --originals                        run originals/ instead
-  python tests/test_basic.py --ti83      build/83_safe_QRBASIC.8xp (no stopwatch) instead
 
 Timing means nothing here: the interpreter is not a calculator.
 """
 import io
 import os
-from datetime import datetime, timedelta
 import random
 import sys
 from pathlib import Path
@@ -32,9 +30,8 @@ from catalog import get_token, CHAR_TABLE         # noqa: E402
 from core import TiString                         # noqa: E402
 
 sys.path.insert(0, str(ROOT / 'tools'))
-from build import TIProgram, strip_timer          # noqa: E402  (with the π fix)
+from build import TIProgram                       # noqa: E402  (with the π fix)
 
-TI83 = '--ti83' in sys.argv
 PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
 ASCII, ALNUM, BINARY, SET_VERSION, OPTIONS, REDRAW, EXIT = range(7)   # main menu choices
@@ -77,16 +74,12 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None, cw=Non
     else:                                 # build/ also holds the hybrid's files
         for name in ('GFL', 'GFX', 'XOR'):
             tifile._READERS['.8xl'].load(PROGRAMS / (name + '.8xl')).store_to(env)
-        files = [PROGRAMS / ('83_safe_QRBASIC.8xp' if TI83 else 'QRBASIC.8xp'),
-                 PROGRAMS / '_theta_QRBIT.8xp']
+        files = [PROGRAMS / 'QRBASIC.8xp', PROGRAMS / '_theta_QRBIT.8xp']
     for f in files:
         data = bytes(TIProgram.open(str(f)).data)
-        name = TIProgram.open(str(f)).name      # from the file (83_safe_ is in the file name only)
-        stem = name.replace('θ', '_theta_')    # the source file name spells θ as _theta_
+        name = f.stem.replace('_theta_', 'θ')   # the file name spells θ as _theta_
         if patch and name in patch:     # from the source: decompiled text loses its escapes
-            src = (ROOT / 'src' / (stem + '.basic.txt')).read_text(encoding='utf-8')
-            if TI83 and name == 'QRBASIC':
-                src = strip_timer(src.rstrip('\n'))
+            src = (ROOT / 'src' / (f.stem + '.basic.txt')).read_text(encoding='utf-8')
             p = TIProgram(name=name)
             p.load_string(patch[name](src).rstrip('\n'), mode='max')
             data = bytes(p.data)
@@ -101,11 +94,6 @@ def run_qr(choices, inputs, center=1, binary=None, patch=None, str3=None, cw=Non
         env.user_lists['CW'] = TiList([float(x) for x in cw])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in ('QR' if ORIGINALS else 'QRBASIC'))])
     return env
-
-
-def l6(env):
-    """L₆ as a list of numbers ([] if it doesn't exist)."""
-    return [float(x) for x in env.lists[5].data] if env.lists[5] is not None else []
 
 
 def symbol(env, version, center):
@@ -199,25 +187,15 @@ def edge_cases():
         expect('set version %d is drawn as %d' % (v, v), check('set v%d' % v, env, v, 0, 'HELLO 5 AND 9', 'alphanumeric'))
     env = run_qr([ALNUM], ['A' * 300])
     expect('300 alphanumeric chars: version 10 (not 9)', check('auto v10', env, 10, 0, 'A' * 300, 'alphanumeric'))
-    # Redraw: draws whatever ʟCW holds (the version from its length), timing only the drawing
+    # Redraw: draws whatever ʟCW holds (the version from its length)
     for v in (2, 7):
         msg = 'REDRAW TEST %d' % v
         first = run_qr([SET_VERSION, ALNUM], [str(v), msg])
         cw = [x for x in first.user_lists['CW'].data]
-        real_now, readings = Environment.now, []
-        def fake_now(self):
-            readings.append(1)
-            return datetime(2026, 1, 1) + timedelta(seconds=7 * (len(readings) - 1))
-        Environment.now = fake_now
-        try:
-            env = run_qr([REDRAW], [], cw=cw)
-        finally:
-            Environment.now = real_now
+        env = run_qr([REDRAW], [], cw=cw)
         same = all(env.graph.get(r, c) == first.graph.get(r, c) for r in range(64) for c in range(96))
-        timed = l6(env) == ([] if TI83 else [0, 0, 7])   # 83_safe: no stopwatch
-        expect('Redraw v%d from ʟCW (%d elements): same code, L₆ = {0,0,drawing}' % (v, len(cw)),
-               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric') and timed,
-               (same, l6(env)))
+        expect('Redraw v%d from ʟCW (%d elements): same code' % (v, len(cw)),
+               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric'), same)
     # a bad character: error with the character and position, back to the menu, nothing drawn
     for mode, text, pos, ch in ((ALNUM, 'ABcD', 3, 'c'), (ASCII, 'ab' + 'θ' + 'c', 3, 'θ')):
         try:
@@ -232,24 +210,6 @@ def edge_cases():
     # alt punct: ? ; ' , - . ! : type in place of $ % * + - . / :
     env = run_qr([OPTIONS, ALT_PUNCT, BACK, ALNUM], ["HI?;'!"])
     expect("alt punct: HI?;'! scans as HI$%*/", check('alt punct', env, 1, 0, 'HI$%*/', 'alphanumeric'))
-    # stopwatch: L₆ = seconds for codewords, ECC + interleaving, drawing; the timer restarts
-    # at each boundary (clock readings: start, check, start, check, start, check)
-    times = [0, 5, 5, 12, 12, 20]
-    real_now, readings = Environment.now, []
-    base = datetime(2026, 1, 1)                  # a fixed clock, so no real second ticks over
-    def fake_now(self):
-        readings.append(1)
-        return base + timedelta(seconds=times[min(len(readings), len(times)) - 1])
-    Environment.now = fake_now
-    try:
-        env = run_qr([ALNUM], ['HELLO'])
-    finally:
-        Environment.now = real_now
-    if TI83:                                     # no timer: the clock is never read, L₆ untouched
-        expect('TI-83+: no stopwatch', len(readings) == 0 and l6(env) == [], (len(readings), l6(env)))
-    else:
-        expect('stopwatch: L₆ = {5,7,8}', l6(env) == [5, 7, 8] and len(readings) == 6,
-               (l6(env), len(readings)))
     # ASCII: π stands in for the quote
     # ASCII fix: a 95-character Str3 of your own (here with a real quote) is used as the table
     table = [CHAR_TABLE[chr(c)] for c in range(32, 127)]

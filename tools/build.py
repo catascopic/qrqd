@@ -3,9 +3,7 @@
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
                                            and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
                                            src/standalone/ (the QR-only release, same program
-                                           names) goes to build/standalone/;
-                                           build/83_safe_QRBASIC.8xp is prgmQRBASIC without
-                                           the stopwatch (TI-83+)
+                                           names) goes to build/standalone/
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
   python tools/build.py decompile F.8xp -o out.txt
 
@@ -24,8 +22,7 @@ from tivars import TIProgram, TIRealList
 from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
-MONOCHROME = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE', 'TI-84+', 'TI-84+SE'}   # BASIC tokens must exist here
-TI83P = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE'}  # 83_safe_QRBASIC's tokens must exist here
+TI83P = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE'}  # BASIC tokens must exist on a TI-83+
 MAX_MODE = {'QRBASIC', 'θQRBIT'}               # BASIC programs tokenized in tivars "max" mode
 BASIC_COMMENTS = {'QR': 'QR code menus (BASIC front end)',
                   'QRBASIC': 'QR code generator, pure BASIC',
@@ -99,6 +96,8 @@ def check_spaces(name, text, mode=None):
 
 
 def save_program(name, tokens, path, comment):
+    if len(name) > 8:   # tivars would quietly cut it (UNPROTSRC became UNPROTSR)
+        raise SystemExit('%s: program names are at most 8 characters' % name)
     prog = TIProgram(name=name)
     prog.data = tokens
     prog.save(str(path))
@@ -109,45 +108,19 @@ def save_program(name, tokens, path, comment):
 AXE_COMMENTS = {'QRSRC': 'QR engine source - compile with Axe',
                 'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
                 'SPEEDSRC': '15 MHz speed test - compile with Axe',
-                'NOTESSRC': 'Notefolio picker source - compile with Axe'}
+                'NOTESSRC': 'Notefolio picker source - compile with Axe',
+                'UNPROSRC': 'Program unprotector - compile with Axe'}
 
 
 def build():
     (ROOT / 'build').mkdir(exist_ok=True)
     shutil.rmtree(ROOT / 'build' / 'basic', ignore_errors=True)   # where the pure-BASIC set used to go
+    (ROOT / 'build' / '83_safe_QRBASIC.8xp').unlink(missing_ok=True)   # the timer-free copy, now QRBASIC
     build_programs(ROOT / 'src', ROOT / 'build')
     # the QR-only release (old engine with E=4 listing, BASIC note pager): same program names
     (ROOT / 'build' / 'standalone').mkdir(exist_ok=True)
     build_programs(ROOT / 'src' / 'standalone', ROOT / 'build' / 'standalone')
     build_lists()
-    build_83_safe()
-
-
-def strip_timer(text):
-    """QRBASIC without its stopwatch, for the TI-83+: every line with startTmr or checkTmr(
-    goes. Refuses one right after a one-line If (removing it would hand the If the next line)."""
-    lines, out = text.split('\n'), []
-    for k, line in enumerate(lines):
-        if 'startTmr' in line or 'checkTmr(' in line:
-            if k and lines[k - 1].startswith('If '):
-                raise SystemExit('QRBASIC line %d: timer line under a one-line If' % (k + 1))
-        else:
-            out.append(line)
-    return '\n'.join(out)
-
-
-def build_83_safe():
-    """build/83_safe_QRBASIC.8xp: prgmQRBASIC without the stopwatch, for the TI-83+. Same
-    program name, so it installs as prgmQRBASIC; everything else in build/ is shared."""
-    shutil.rmtree(ROOT / 'build' / 'release', ignore_errors=True)   # an earlier layout
-    text = strip_timer((ROOT / 'src' / 'QRBASIC.basic.txt').read_text(encoding='utf-8').rstrip('\n'))
-    prog = TIProgram(name='QRBASIC')
-    prog.load_string(text, mode='max')
-    if prog.get_min_os().model not in TI83P:
-        raise SystemExit('83_safe_QRBASIC still needs a %s token' % prog.get_min_os().model)
-    save_program('QRBASIC', bytes(prog.data), ROOT / 'build' / '83_safe_QRBASIC.8xp',
-                 'QR code generator, pure BASIC, TI-83+')
-    print('%-28s %5d token bytes' % ('build/83_safe_QRBASIC.8xp', len(prog.data)))
 
 
 def build_programs(srcdir, outdir):
@@ -176,10 +149,10 @@ def build_programs(srcdir, outdir):
         check_spaces(src.name, text, mode)
         prog = TIProgram(name=name)
         prog.load_string(text, mode=mode)
-        # max munch can pick a token the user's TI-84+ lacks ("Redraw" -> the CE color Red)
-        if prog.get_min_os().model not in MONOCHROME:
-            raise SystemExit('%s needs a %s token; escape it with \\ (like R\\edraw)'
-                             % (src.name, prog.get_min_os().model))
+        # a TI-84+ command (startTmr), or max munch picking a CE token ("Redraw" -> color Red)
+        if prog.get_min_os().model not in TI83P:
+            raise SystemExit('%s needs a %s token; if max munch picked it, escape it with \\ '
+                             '(like R\\edraw)' % (src.name, prog.get_min_os().model))
         save_program(name, bytes(prog.data), outdir / (stem + '.8xp'), BASIC_COMMENTS[name])
         print('%-28s %5d token bytes' % (shown + stem + '.8xp', len(prog.data)))
 

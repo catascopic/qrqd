@@ -6,8 +6,9 @@ buffers, subroutine calls with r1..r6 arguments.  Anything whose behaviour
 on a real calculator is uncertain raises an error instead of guessing.
 
 The note picker's commands are modelled loosely: Text( records (x, y, string)
-instead of drawing glyphs (there is no font), RectI( inverts a rectangle, getKey
-returns scripted keys (running out raises, so a stuck loop can't hang a test),
+instead of drawing glyphs (there is no font), Rect( fills and RectI( inverts a rectangle
+(on either buffer), getKey returns scripted keys (running out raises, so a stuck loop
+can't hang a test),
 and returning with Fix 5 or Fix 7 still on is an error. The home screen is a
 16x8 grid of character codes (`home`): Output( moves the cursor (curCol 844Ch,
 curRow 844Bh), Disp X►Char writes one cell and advances, DispGraph wipes it.
@@ -20,7 +21,7 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
-    'Text(', 'RectI(', 'Fix ', 'getKey', 'Output(', '►Char', 'Asm(',
+    'Text(', 'RectI(', 'Rect(', 'Fix ', 'getKey', 'Output(', '►Char', 'Asm(',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
     'ClrDraw', 'DispGraph', 'Disp ', 'Full', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
@@ -533,18 +534,27 @@ class Machine:
                 text = bytes(self.mem[p:self.mem.index(0, p)]).decode('latin-1')
                 if not (0 <= x < 96 and 0 <= y <= 58): raise AxeError('text at %d,%d' % (x, y))
                 self.texts.append((x, y, text)); pc += 1; continue
-            if h == ('T', 'RectI('):
+            if h in (('T', 'RectI('), ('T', 'Rect(')):   # filled (Rect) or inverted (RectI)
                 args, j = [], 1
                 for k in range(4):
                     v, j = self.expr(t, j); args.append(v)
                     j = self.expect(t, j, ',' if k < 3 else ')')
+                back = j < len(t) and t[j] == ('T', 'ʳ')
+                base = L3 if back else L6
                 x, y, w, hh = args
+                if not (w and hh): raise AxeError('empty %s%d,%d' % (h[1], w, hh))
                 for yy in range(y, y + hh):
                     for xx in range(x, x + w):
                         if not (0 <= xx < 96 and 0 <= yy < 64):
-                            raise AxeError('RectI out of range %d,%d' % (xx, yy))
-                        self.mem[L6 + yy * 12 + xx // 8] ^= 0x80 >> (xx % 8)
-                self.rects.append(tuple(args)); pc += 1; continue
+                            raise AxeError('%s out of range %d,%d' % (h[1], xx, yy))
+                        bit = 0x80 >> (xx % 8)
+                        if h[1] == 'RectI(':
+                            self.mem[base + yy * 12 + xx // 8] ^= bit
+                        else:
+                            self.mem[base + yy * 12 + xx // 8] |= bit
+                if h[1] == 'RectI(' and not back:
+                    self.rects.append(tuple(args))
+                pc += 1; continue
             if h == ('T', 'Copy('):
                 s, j = self.expr(t, 1); j = self.expect(t, j, ',')
                 d, j = self.expr(t, j); j = self.expect(t, j, ',')

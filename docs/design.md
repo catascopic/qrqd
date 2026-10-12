@@ -171,6 +171,18 @@
    `checkTmr(A→L₆(2`, …), so the laps add up to the total. Redraw: `{0,0→L₆:startTmr→A`,
    giving {0,0,drawing}. Every timer line (and that whole Redraw line) is cut from
    83_safe_QRBASIC, which leaves L₆ alone.
+32. Stopwatch removed: it was for testing, and the release is one QRBASIC for every model (the
+   83_safe copy became QRBASIC; no `strip_timer`, no 83_safe file). The three-lap version is
+   kept on branch `timer3`. build.py now refuses any BASIC token a TI-83+ lacks (was: any a
+   monochrome TI-84+ lacks), so a timer command can't come back unnoticed. L₆ is unused again.
+   Redraw (item 27) stays: it still redraws ʟCW, just untimed.
+33. Engine size (standalone prgmθQR: 6423 bytes compiled, MirageOS build disassembled in
+   `build/dump/`): main body 51%, subroutines 37% (NoteFolio ~930 bytes: LS, NF, NH, NC, RB,
+   MA), Axe's library 6%, data 6%; drawing about a third. So the drawing went to Axe's
+   rectangle commands: finder and alignment patterns and the reserved-module map (`RV`, a
+   Pxl-On loop, removed) are `Rect(`/`RectI(` calls, faster too. `CW`'s M/B and B-(M^B),
+   recomputed per codeword, are now set once before the zigzag (T and U). Both engines.
+   Compiled size not measured here (no Axe on the PC).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -205,9 +217,11 @@ scoring instead of fixed mask 0.
 9. No interleave buffer: the zigzag asks `CW` for codeword Q in interleaved order, which finds
    it in place: data byte Q/B of block Q mod B, then the long blocks' last bytes, then EC byte
    of each block in turn at L₁+330, then 0 (remainder bits).
-10. Draw. Back buffer = reserved-module map in module coordinates (rectangles via `RV`:
+10. Draw. Back buffer = reserved-module map in module coordinates (`Rect(…)ʳ`:
    finders+separators+format areas, timing row/column, alignment 5×5s, version blocks for v≥7).
-   Main buffer gets finders (`FP`), timing, alignment (`AP`), format bits (always 77C4h = EC L,
+   Main buffer gets finders (`FP`: 7×7 Rect, 5×5 RectI, 3×3 Rect), timing, alignment (`AP`:
+   5×5 Rect, 3×3 RectI, center pixel; each pattern sets its own light modules, so the order
+   against the timing pattern doesn't matter), format bits (always 77C4h = EC L,
    mask 0, so the 18 dark modules plus the dark module come from the GDB7 table), version info (v≥7), then data in the standard zigzag, skipping reserved
    modules. Mask 0: a data module is dark iff its bit equals (x+y) mod 2. DispGraph, Ans=0.
 
@@ -238,8 +252,7 @@ M/R/B version data, P input pointer (later codeword pointer), T text length, O p
 character just read, K/X first non-ASCII/non-alnum position while checking, Q the open note
 (RAM address, or 0 for an archived note read through Y₁), D/W/K bit writer
 pointer/accumulator/bit count, A/Z value and bit count for AB. Subroutines: AB append bits, CH
-next character → ASCII A, AV ASCII A → alnum value J, RS EC for one block, RV reserve rectangle
-(r₁-r₄), FP finder, AP alignment, MA calculator char C → output byte A,
+next character → ASCII A, AV ASCII A → alnum value J, RS EC for one block, FP finder, AP alignment, MA calculator char C → output byte A,
 NH is it a note (sets Q or opens Y₁), NF open note named in Str2, RB read byte r₁ of the
 open note, GV OS real named at r₁ → r₁ (0 if missing).
 

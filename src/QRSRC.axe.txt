@@ -295,14 +295,14 @@ End
 .RESERVED MODULES IN BACK BUFFER
 ClrDraw
 ClrDrawʳ
-sub(RV,0,0,9,9)
-sub(RV,S-8,0,8,9)
-sub(RV,0,S-8,9,8)
-sub(RV,0,6,S,1)
-sub(RV,6,0,1,S)
+Rect(0,0,9,9)ʳ
+Rect(S-8,0,8,9)ʳ
+Rect(0,S-8,9,8)ʳ
+Rect(0,6,S,1)ʳ
+Rect(6,0,1,S)ʳ
 If V≥7
-sub(RV,S-11,0,3,6)
-sub(RV,0,S-11,6,3)
+Rect(S-11,0,3,6)ʳ
+Rect(0,S-11,6,3)ʳ
 End
 .FINDER PATTERNS
 0→X
@@ -367,7 +367,10 @@ A/2→A
 End
 End
 .
-.DATA MODULES, ZIGZAG
+.DATA MODULES, ZIGZAG. FOR CW: T SHORT
+.BLOCK LENGTH, U SHORT BLOCKS
+M/B→T
+B-(M^B)→U
 0→Q
 sub(CW)
 128→Z
@@ -407,8 +410,6 @@ Return
 .CODEWORD Q IN INTERLEAVED ORDER→D:
 .DATA, LONG BLOCKS' LAST BYTES, EC, 0
 Lbl CW
-M/B→T
-B-(M^B)→U
 0→D
 If Q<M
 If Q<(T*B)
@@ -511,39 +512,20 @@ End
 Copy(L₁+460,Z,R)
 Return
 .
-.RESERVE RECT r₁,r₂ SIZE r₃ BY r₄
-Lbl RV
-For(I,0,r₄-1)
-For(J,0,r₃-1)
-Pxl-On(r₁+J,r₂+I)ʳ
-End
-End
-Return
-.
-.FINDER PATTERN AT X,Y
+.FINDER PATTERN AT X,Y: 7×7 DARK, 5×5
+.CLEARED (INVERTED), 3×3 DARK
 Lbl FP
-For(K,0,6)
-Pxl-On(X+K+H,Y+G)
-Pxl-On(X+K+H,Y+6+G)
-Pxl-On(X+H,Y+K+G)
-Pxl-On(X+6+H,Y+K+G)
-End
-For(K,2,4)
-For(J,2,4)
-Pxl-On(X+K+H,Y+J+G)
-End
-End
+Rect(X+H,Y+G,7,7)
+RectI(X+H+1,Y+G+1,5,5)
+Rect(X+H+2,Y+G+2,3,3)
 Return
 .
-.ALIGNMENT PATTERN AT X,Y
+.ALIGNMENT PATTERN AT X,Y (RESERVED TOO):
+.5×5 DARK, 3×3 CLEARED, CENTER DARK
 Lbl AP
-sub(RV,X-2,Y-2,5,5)
-For(K,0,4)
-Pxl-On(X-2+K+H,Y-2+G)
-Pxl-On(X-2+K+H,Y+2+G)
-Pxl-On(X-2+H,Y-2+K+G)
-Pxl-On(X+2+H,Y-2+K+G)
-End
+Rect(X-2,Y-2,5,5)ʳ
+Rect(X-2+H,Y-2+G,5,5)
+RectI(X-1+H,Y-1+G,3,3)
 Pxl-On(X+H,Y+G)
 Return
 .

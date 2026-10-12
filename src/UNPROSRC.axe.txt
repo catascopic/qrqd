@@ -1,0 +1,51 @@
+.UNPROT
+.UNPROTECTS THE PROGRAM NAMED IN Str1
+.(TYPE 06h→05h IN THE VAT) SO TI CONNECT
+.CAN COPY IT. "θQR"→Str1:Asm(prgmUNPROT
+.prgm IN FRONT IS ALLOWED. IT MUST BE IN
+.RAM. RECOMPILING PROTECTS IT AGAIN.
+.
+GetCalc("Str1")→S
+0→N
+If S
+{S-2}ʳ→N
+End
+.SKIP A LEADING prgm TOKEN
+If N≠0 and ({S}=95)
+S+1→S
+N-1→N
+End
+!If N
+Disp "PUT NAME IN STR1"
+Return
+End
+.VAT: TYPE AT P, NAME LENGTH AT P-6,
+.NAME FROM P-7 DOWN, PAGE AT P-5
+{ᴇ9830}ʳ→P
+While P>{ᴇ982E}ʳ
+{P-6}→L
+If {P} and 31≥5 and ({P} and 31≤6) and (L=N)
+1→X
+For(I,0,L-1)
+If {P-7-I}≠{S+I}
+0→X
+End
+End
+If X
+If {P-5}
+Disp "UNARCHIVE IT"
+Return
+End
+If {P} and 31=5
+Disp "NOT PROTECTED"
+Return
+End
+{P} and 224 or 5→{P}
+Disp "UNPROTECTED"
+Return
+End
+End
+P-7-L→P
+End
+Disp "NOT FOUND"
+Return

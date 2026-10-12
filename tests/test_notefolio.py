@@ -63,8 +63,10 @@ def notefolio(title, tb):
             size.to_bytes(2, 'little') + (1).to_bytes(2, 'little') + tb + b'\0' + b'\0\0')
 
 
-def machine(notes, params, str2=None, keys=(), src=SRC, before=None):
+def machine(notes, params, str2=None, keys=(), src=SRC, before=None, arch_at=None):
     m = Machine(src)
+    if arch_at is not None:      # where archived data starts (the default 4000h holds 16 KB)
+        m.arch_ptr = arch_at
     m.keys = list(keys)
     m.add_vat_other(0x05, 'QR')                             # a program
     m.add_appvar('SAVE', bytes(range(40)))                  # ordinary appvar
@@ -75,7 +77,7 @@ def machine(notes, params, str2=None, keys=(), src=SRC, before=None):
     m.add_appvar('FAKE', b'\x00\x47\xbf\xaf' + bytes(40))   # wrong signature
     m.add_appvar('lower', notefolio('lower', b'hi'))        # name can't be opened by name
     m.build_vat()
-    for k, v in {'O': 0, 'A': 0, 'B': 0, **params}.items():
+    for k, v in {'O': 0, 'B': 0, **params}.items():
         m.set_real(k, v)
     if str2 is not None:
         m.set_str(2, str2.encode().ljust(8, b'\x29'))        # padded with space tokens
@@ -97,14 +99,14 @@ def synthetic():
 
     picker(texts, notes)
 
-    # checking (V=0): 2*length + 1 if alphanumeric; a note never fails in byte mode,
+    # checking (V=0): the length, and M=2 if alphanumeric (else 1); a note never fails in byte mode,
     # B = position of the first non-ASCII character (left alone if none)
     for name, tb, _ in texts:
         alnum = all(chr(c) in ALNUM_SET for c in expected_bytes(tb))
-        want = (2 * len(tb) + alnum, first_non_ascii(tb))
+        want = (len(tb), first_non_ascii(tb), 1 + alnum)
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
-        got = (m.ans, m.get_real('B'))
-        expect('check %s = %d, B=%d' % ((name,) + want), got == want, got)
+        got = (m.ans, m.get_real('B'), m.get_real('M'))
+        expect('check %s = %d, B=%d, M=%d' % ((name,) + want), got == want, got)
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='NOTES')
     expect('check NOTES forced alnum: lowercase at 2', m.ans == BAD + 2, m.ans)
     up = [('UP', notefolio('UP', ti_text('AB θ')), False)]
@@ -112,24 +114,27 @@ def synthetic():
     expect('check θ forced alnum fails at 4, B untouched', (m.ans, m.get_real('B')) == (BAD + 4, 0),
            (m.ans, m.get_real('B')))
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='SHOUT')
-    expect('check SHOUT forced ASCII', m.ans == 2 * len(texts[3][1]), m.ans)
+    expect('check SHOUT forced ASCII', m.ans == len(texts[3][1]), m.ans)
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='ODD')
-    expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (2 * len(texts[4][1]), 10),
+    expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (len(texts[4][1]), 10),
            (m.ans, m.get_real('B')))
     every = bytes(range(1, 256))
     allnote = [('ALL', notefolio('ALL', every), False)]
     m = machine(allnote, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='ALL')
     expect('check every byte 1-255: length 255, first non-ASCII at 1',
-           (m.ans, m.get_real('B')) == (2 * 255, 1), (m.ans, m.get_real('B')))
-    # 2*16383+1 is the most Ans can carry; longer is "too long", even with a bad char past it
-    for n, extra, want in ((16383, b'', 2 * 16383 + 1), (16384, b'', 65532), (16384, b'\x96', 65532)):
+           (m.ans, m.get_real('B')) == (255, 1), (m.ans, m.get_real('B')))
+    # lengths stay below 32768 (the error codes); longer is "too long", even with a bad char past it
+    for n, extra, want in ((32767, b'', 32767), (32768, b'', 65532), (32768, b'\x96', 65532)):
         big = [('BIG', notefolio('BIG', b'A' * n + extra), True)]
-        m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='BIG')
+        # a 32 KB archived note: start the archive at 0 so it ends just past 8000h, in RAM
+        # nothing uses, instead of running into L1 (a real one is in flash pages)
+        m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='BIG', arch_at=0)
         expect('check a %d-character note -> %d' % (n + len(extra), want), m.ans == want, m.ans)
     for bad in ('SAVE', 'NOPE', 'TINY', 'FAKE'):
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=bad)
         expect('check %s -> 65535' % bad, m.ans == 65535, m.ans)
 
+    # drawing in auto mode with no check first: the engine decides the mode itself
     count = 0
     for name, tb, _ in texts:
         payload = expected_bytes(tb)
@@ -137,7 +142,7 @@ def synthetic():
         for v in range(1, 12):
             cap = (CAP_ALNUM if alnum else CAP_BYTE)[v - 1]
             for N in sorted({min(len(tb), cap), min(len(tb), cap) // 2}):
-                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO, 'A': int(alnum)}, str2=name)
+                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO}, str2=name)
                 try:
                     check_symbol(m, v, payload[:N], 'alphanumeric' if alnum else 'byte')
                 except AssertionError as e:
@@ -154,7 +159,7 @@ def synthetic():
     m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str2='ODD')
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('ODD encodes θ ⁴ é ñ as C1 F2 96 B5', got == b'Line two \xc1 \xf2 \x96 \xb5', got)
-    m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO, 'A': 0}, str2='ALL')
+    m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO}, str2='ALL')
     got = decode(matrix_from(m, 11))[0].bytes if m.ans == 0 else m.ans
     expect('every byte 1-255 encodes as mapped', got == expected_bytes(every), got)
     # one-to-one except the deliberate merges: wrap space with space, hyphen and negative with -
@@ -268,7 +273,7 @@ def real_file():
     content = data[19:19 + struct.unpack_from('<H', data, 17)[0]]
     notes = [(name, content, archived)]
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
-    expect('TEST.8xv checks as 44 ASCII characters', m.ans == 2 * 44, m.ans)
+    expect('TEST.8xv checks as 44 ASCII characters', m.ans == 44, m.ans)
     m = machine(notes, {'E': NOTE, 'V': 3, 'N': 44, 'M': AUTO}, str2=name)
     got = decode(matrix_from(m, 3))[0].bytes if m.ans == 0 else m.ans
     expect('TEST.8xv decodes to the pangram', got == b'The quick brown fox jumps over the lazy dog.', got)

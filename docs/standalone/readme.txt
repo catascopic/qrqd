@@ -1,33 +1,31 @@
-QR CODE GENERATOR (TI-83+/84+)
+QR CODE GENERATOR
 
-Draws QR codes on the graph screen from a message you type, a NoteFolio note, or a list of bytes. A BASIC program (prgmQR) handles the menus, and an assembly program (prgmθQR) does the encoding, error correction and drawing.
+Draws QR codes on the graph screen from a message you type, a NoteFolio file, or a list of bytes. A BASIC program (prgmQR) handles the menus, and an assembly program (prgmθQR) does the encoding, error correction and drawing.
 
-Works on the TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83 Plus is slightly slower.
+Works on the TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83+ is slightly slower.
 
 SETUP
 
-Keep prgmθQR in RAM (not archived). Running it also needs free RAM at least the size of prgmθQR, because Asm( makes a copy to run. If you get ERR:MEMORY, free up some RAM.
-
-Run prgmQR. If prgmQR stops with an error at Asm(prgmθQR or shows "Error in Asm", make sure prgmθQR exists and isn't archived.
+Run prgmQR. It will call prgmθQR, so keep it unarchived. You will also need free RAM at least the size of prgmθQR, because Asm( makes a copy to run. If you get ERR:MEMORY, free up some RAM.
 
 MAIN MENU
 
-1. Message: type your text at the msg= prompt and press Enter.
-2. NoteFolio: pick a NoteFolio note (in RAM or archived) from a list, 5 per page. "More" shows the next page and "Back" the previous one (or the main menu).
-3. Binary: encodes list BIN, one byte (0-255) per element. Fill in ʟBIN first, for example in the list editor.
-4. Set version: 0 picks the smallest code that fits (the default). 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen.
-5. Mode: Auto, ASCII or Alnum. Press it to cycle. Auto uses alphanumeric mode when every character allows it (it fits more text in the same size) and ASCII otherwise. It applies to messages and notes, not binary.
+1. Message: type your text at the msg= prompt.
+2. NoteFolio: pick a NoteFolio file (in RAM or archived) from a list. "More" shows the next page and "Back" the previous one (or the main menu).
+3. Binary: encodes ʟBIN, one byte (0-255) per element. Fill in ʟBIN first, for example in the list editor.
+4. Set version: 0 for automatic mode (the default), the smallest version that fits. 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen.
+5. Mode: Auto, ASCII or Alnum. Press it to cycle. Auto uses alphanumeric mode when every character allows it (it fits more text in the same size) and ASCII otherwise. It applies to messages and files, but not binary.
 6. Exit
 
 LONG MESSAGES
 
-If a message doesn't fit in one code, it's split into several codes of the same size (version 11, or the version you set). Each one is an ordinary QR code that any scanner reads. A counter like 2/5 shows at the right edge of the screen.
+If a message doesn't fit in one code, it's split into several codes of the same size (automatically chosen, or the version you set). Each one is an ordinary QR code that any scanner reads. A counter like 2/5 shows at the right edge of the screen.
 Usually the program ends right after drawing the QR code. But if there are multiple "pages", it enters a waiting state (in the BASIC program), where you can press one of four keys.
 Enter or right arrow: next code
 Left arrow: previous code
 Clear: stop
 
-The most you can encode at once is 16383 characters.
+The most you can encode at once is 32767 characters.
 
 CHARACTERS
 
@@ -35,12 +33,39 @@ ASCII mode encodes letters (including lowercase), digits and the punctuation on 
 
 Alphanumeric mode only has 0-9, A-Z, space and $%*+-./: (no lowercase). With Mode set to Alnum, anything else gives ERR:NOT ALNUM.
 
-Notes never fail in ASCII mode. If a note has characters outside ASCII (Greek letters, accented letters), you get a warning with the first position, then it's encoded anyway; each character keeps its calculator code. Scanning it may show arbitrary characters (λ shows as Â).
+NoteFolio files never fail in ASCII mode. If a file has characters outside ASCII (Greek letters, accented letters), you get a warning with the first position, then it's encoded anyway; each character keeps its calculator code. Scanning it may show arbitrary characters (λ shows as Â).
 
 VARIABLES USED
 
-prgmQR overwrites these: Str1 (your message), Str2 (the note name), Str3 (the list of note names), L1, and the real variables A, B, C, E, I, J, K, L, M, N, O, P, U, V and W. It also clears the graph screen and turns off functions, plots, axes and the grid.
+prgmQR overwrites these: Str1 (your message), Str2 (the file name), Str3 (the list of file names), L1, and the real variables B, C, D, E, I, J, K, L, M, N, O, P, U, V and W. It also clears the graph screen and turns off functions, plots, axes and the grid.
 
 USING THE ENGINE FROM YOUR OWN PROGRAM
 
-prgmθQR can be called from any BASIC program: set a few variables, run Asm(prgmθQR), and read Ans.
+prgmθQR can be called from any BASIC program: set a few variables, run Asm(prgmθQR), and read Ans. A variable that doesn't exist counts as 0.
+
+Use the E variable to control what input the program uses.
+E=1: the text in Str1
+E=2: ʟBIN
+E=3: the NoteFolio file whose name is in Str2
+E=4: lists the NoteFolio files instead. Ans = how many, Str3 = their names, 8 characters each (padded with spaces)
+
+V: version. V=0 only checks the text (for a string or NoteFolio file), V=1..11 draws a code of that version
+M: encoding mode. M=0: auto, M=1: ASCII, M=2: alphanumeric (used with E=1 and 3 only). With M=0 the engine picks (alphanumeric if every character allows it) and stores its choice, 1 or 2, in M, so later calls for the same text use the same mode
+N: how many characters to encode. It must fit the version; the engine doesn't check
+O: how many characters to skip first (for splitting a long message; use 0 normally)
+
+Ans value:
+0: drawn successfully
+the length: from a check (V=0). The mode goes into M, so set M before calling
+32768+k: character k can't be encoded
+65532: longer than 32767 characters
+65535: bad value for E, V, or M, or the input doesn't exist
+A check of a file (E=3) also stores the first non-ASCII position in B (set B to 0 first).
+
+Before calling it, run FnOff, AxesOff, GridOff, PlotsOff, ClrDraw and DispGraph, or the OS may redraw the graph screen and erase the code. The code is drawn centered on the graph screen.
+
+Example: draw "HELLO WORLD" as a version 1 code in ASCII mode.
+"HELLO WORLD→Str1
+1→E:1→M:1→V:0→O:17→N
+FnOff:AxesOff:GridOff:PlotsOff:ClrDraw:DispGraph
+Asm(prgmθQR

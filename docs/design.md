@@ -182,7 +182,28 @@
    rectangle commands: finder and alignment patterns and the reserved-module map (`RV`, a
    Pxl-On loop, removed) are `Rect(`/`RectI(` calls, faster too. `CW`'s M/B and B-(M^B),
    recomputed per codeword, are now set once before the zigzag (T and U). Both engines.
-   Compiled size not measured here (no Axe on the PC).
+   Result: standalone prgmθQR 6423 → 6267 bytes (156 saved; Axe adds its rectangle routines).
+34. A removed; auto mode's decision travels in M. A was only read by draw calls in auto
+   mode (the check's answer, copied back by prgmQR), so a missing or leftover A gave a code in
+   the wrong mode, silently (a leftover 1 with non-alnum text scanned as the wrong text). Now
+   the check stores 1 or 2 in M itself (only if M exists, like B), and a draw with M=0 (no
+   check) runs the same scan, stores M, and draws; it also catches a bad character. Codes are
+   unchanged (M=1/2 encode like A=0/1). prgmQR keeps the menu setting in D and copies it into
+   M before each check, so the setting survives; ʟBIN sets M=1 for the byte capacity table.
+   Per-piece decisions (each split code picking its own mode) were discussed and not done.
+   Both engines and both prgmQRs.
+35. The check returns just the length (was 2·length+1 if alphanumeric): the mode is in M
+   since item 34, so the bit was redundant, and dropping it doubles the limit to 32767
+   characters (103 version 11 codes; lengths stay below the 32768+k error codes). M must be
+   set before calling (in auto mode it's the only place the choice is reported; the engine
+   doesn't create M). prgmQR takes the length straight from Ans; ERR:TOO LONG says 32767.
+   Tests: the 32 KB archived note needs the simulator's archive moved to address 0 (its
+   default 4000h-7FFFh holds 16 KB).
+36. QRBASIC cleans up its scratch variables: `ClrList L₁,L₂,L₄,L₅` right after the ECC
+   (before interleaving, whose `seq(` builds a second copy of ʟCW, the peak; L₃ still holds
+   the EC tail), and at the end `ClrList L₁,L₂,L₃,L₄,L₅` (L₃ = the row flags, up to 61
+   elements) and `DelVar Str2`. ClrList keeps L1-L5 defined for the STAT editor. Kept:
+   ʟCW (up to ~3.6 KB; Redraw needs it), Str3 (ASCII fix), ʟQROPT, the GF lists.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -194,15 +215,15 @@ scoring instead of fixed mask 0.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
 3. Find the input and its length T: list BIN (E=2, forces F=1), the note named in Str2 (E=3,
    `NF`), or Str1 (E=1; T counts tokens).
-4. Text, check call only (encoding trusts it): read every character through `CH` (Str1
+4. Text, check call or a draw in auto mode (otherwise encoding trusts the check): read every character through `CH` (Str1
    token → ASCII via GDB0, 0 if none; or note character → byte via `MA`) and `AV` (ASCII →
    alphanumeric value, 99 if none). K = first position outside printable ASCII and newline,
    X = first non-alphanumeric. Forced alnum uses X as K; auto becomes alnum if X=0. If K: a
    note in byte mode stores K in OS var B (if B exists) and carries on; otherwise return
-   32768+K. F is now 1 (byte) or 2 (alnum).
-5. V=0: return 2T+F-1, or 65532 if T>16383 (checked before the scan, so 2T+1 and
-   32768+position always fit in Ans). Otherwise read `N`, `O` into θ (count to skip),
-   and for auto mode `A` (F=A+1: the check's decision, from prgmQR).
+   32768+K. F is now 1 (byte) or 2 (alnum); if it was auto, F goes into OS var M (if M
+   exists), so later calls for the same text skip the scan.
+5. V=0: return T (the mode is in M), or 65532 if T>32767 (checked before the scan, so a
+   length can't be mistaken for 32768+position). Otherwise read `N`, `O` into θ (count to skip).
 6. Size `S=4V+17`; offsets `G=31-S/2`, `H=47-S/2` (always centered). Look up M (data
    codewords), R (EC per block), B (blocks). Clamp N to T, and to 468 (only so a bad
    N can't write past L₁: keeping N within the version's capacity is prgmQR's job).
@@ -278,12 +299,13 @@ P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opene
 ## BASIC front end (src/QR.basic.txt)
 
 Main menu: Message (Lbl M), NoteFolio (N), Binary (ʟBIN) (B), Set version (S),
-Mode:Auto/ASCII/Alnum (T; cycles M 0→1→2→0, label via `sub("Auto ASCIIAlnum",5M+1,5`), Exit (X).
-Text goes through a check call first (Lbl C: V=0, B=0); a bad character goes to Lbl F, a home-screen
-error (ERR:BAD CHAR, or ERR:NOT ALNUM when M=2; the character from Str1, and the position),
+Mode:Auto/ASCII/Alnum (T; cycles D 0→1→2→0, label via `sub("Auto ASCIIAlnum",5D+1,5`), Exit (X).
+Text goes through a check call first (Lbl C: M=D, V=0, B=0; in auto the check sets M to 1 or 2,
+and D keeps the setting); a bad character goes to Lbl F, a home-screen
+error (ERR:BAD CHAR, or ERR:NOT ALNUM when D=2; the character from Str1, and the position),
 Pause, then the main menu. A note with non-ASCII characters (B≠0 after the check) shows
 NON-ASCII CHARS and the position, Pause, then goes on to encode. Version selection and splitting live in BASIC (Lbl Q): capacity
-table (alnum when the check says so, else byte; EC L) into L₁; C = capacity per code (the set
+table (alnum when M=2 after the check, else byte; ʟBIN sets M=1; EC L) into L₁; C = capacity per code (the set
 version's, else version 11's); J = max(1,⌈L/C⌉) codes; W = ⌈L/J⌉ per code (even pieces;
 `⁻int(⁻x` rounds up; for full codes first, that line becomes `min(L,C→W`); the version is the
 set one, else the smallest that holds W, the same for every code. A message that fits one
@@ -294,12 +316,12 @@ right-aligned so ones (and tens) line up: a number starts at x=91-4int(log(n)) (
 are 4 px, the last being a blank column; column 95 is reserved), so ink ends at x=93. Bar
 Pxl-On row 31 under J's digits, x up to 93; Text( rows 24 and 32 (ink rows 25-29 and 33-37,
 centered on the bar). Up to 3 digits (from x=83) stay clear of the code's 4-module quiet zone
-(v11 ends at x=77). (It was at the left edge, x=0, before.) The check call allows 16383 characters (51 version 11 codes), so 3-digit
-counts only happen with a small set version. Longer: ERR:TOO LONG (Lbl G), Pause, main menu.
+(v11 ends at x=77). (It was at the left edge, x=0, before.) The check call allows 32767 characters (103 version 11 codes), so 3-digit
+counts happen at version 11 too (they still fit, from x=83). Longer: ERR:TOO LONG (Lbl G), Pause, main menu.
 Keys (Lbl K): Enter/→ next, ← back, Clear stops; ← on the first and → on the last do nothing;
 Enter on the last ends. NoteFolio (Lbl N): `Asm(prgmθNOTES`; Ans=1 → E=3 and the check and
 version flow from Lbl C; anything else → main menu (65534/65535 → the Asm error menu). Scratch:
-U requested version, M mode, L length, A alnum flag, B first non-ASCII, K, L₁, Str1, Str2; split: J
+U requested version, D mode setting, M mode for the engine, L length, B first non-ASCII, K, L₁, Str1, Str2; split: J
 codes, C capacity per code, W per code, P current, O skip.
 
 ## Note picker (prgmθNOTES, src/NOTESSRC.axe.txt)

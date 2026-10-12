@@ -349,4 +349,5 @@ End
 If ʟQROPT(1
 StorePic 1
 "→r₁
+ClrList L₁,L₂,L₃,L₄,L₅
 Lbl X

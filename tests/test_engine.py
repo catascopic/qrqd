@@ -83,11 +83,11 @@ def skipping():
 
 def edge_cases():
     Q, PI, NEG, SIN = b'\x2a', b'\xac', b'\xb0', b'\xc2'
-    # checking text (V=0): 2*length + 1 if it will be alphanumeric, or BAD + position
-    expect('check: auto picks alnum', check_text(alnum_tokens('AB 12'), AUTO) == 2 * 5 + 1)
-    expect('check: auto picks ASCII for lowercase', check_text(ascii_tokens('Hello'), AUTO) == 2 * 5)
-    expect('check: forced ASCII on alnum text', check_text(alnum_tokens('AB'), ASCII) == 2 * 2)
-    expect('check: forced alnum', check_text(alnum_tokens('AB'), ALNUM) == 2 * 2 + 1)
+    # checking text (V=0): the length (the mode goes into M), or BAD + position
+    expect('check: auto picks alnum', check_text(alnum_tokens('AB 12'), AUTO) == 5)
+    expect('check: auto picks ASCII for lowercase', check_text(ascii_tokens('Hello'), AUTO) == 5)
+    expect('check: forced ASCII on alnum text', check_text(alnum_tokens('AB'), ASCII) == 2)
+    expect('check: forced alnum', check_text(alnum_tokens('AB'), ALNUM) == 2)
     expect('check: forced alnum, lowercase at 3', check_text(ascii_tokens('ABc'), ALNUM) == BAD + 3)
     expect('check: forced alnum, first non-alnum wins',
            check_text(ascii_tokens('A!') + [PI], ALNUM) == BAD + 2)
@@ -96,14 +96,38 @@ def edge_cases():
     # two-byte tokens: BB 00 (npv() must not match the second-byte row's zeros; others aren't ASCII
     expect('check: npv( (BB 00) bad', check_text(ascii_tokens('a') + [b'\xbb\x00'], AUTO) == BAD + 2)
     expect('check: [A] (5C 00) bad', check_text([b'\x5c\x00'] + ascii_tokens('a'), AUTO) == BAD + 1)
-    expect('check: empty text', check_text([], AUTO) == 1)
+    expect('check: empty text', check_text([], AUTO) == 0)
     # encoding with a bad character fails before drawing
-    # encoding trusts the check: it doesn't rescan the text, auto mode takes A from prgmQR
-    m = run_engine(TEXT, 1, 3, AUTO, str1=alnum_tokens('ABC'), alnum=0)
-    expect('encode: auto with A=0 uses byte mode, even for alnum text',
-           m.ans == 0 and check_symbol(m, 1, 'ABC', 'byte') is not None)
-    m = run_engine(TEXT, 1, 3, AUTO, str1=alnum_tokens('ABC'), alnum=1)
-    expect('encode: auto with A=1 uses alnum', m.ans == 0 and check_symbol(m, 1, 'ABC', 'alphanumeric') is not None)
+    # auto mode: the check stores its decision in M (1 ASCII, 2 alnum); a set M is kept
+    for label, toks, mode, want in (('auto, alnum text', alnum_tokens('AB 12'), AUTO, ALNUM),
+                                    ('auto, lowercase', ascii_tokens('Hello'), AUTO, ASCII),
+                                    ('forced ASCII', alnum_tokens('AB'), ASCII, ASCII),
+                                    ('forced alnum', alnum_tokens('AB'), ALNUM, ALNUM)):
+        c = run_engine(TEXT, 0, 0, mode, str1=toks)
+        expect('check, %s: M=%d afterwards' % (label, want), c.get_real('M') == want, c.get_real('M'))
+    m = Machine(SRC)
+    for name, val in zip('EV', (TEXT, 0)):
+        m.set_real(name, val)
+    m.set_str(1, b''.join(alnum_tokens('AB')))
+    m.run()
+    expect('check with no M: auto, nothing stored', m.ans == 2 and ('real', 'M') not in m.os, m.ans)
+
+    def draw_auto(toks, **extra):
+        """A draw call in auto mode with no check first (V=1, M=0)."""
+        m = Machine(SRC)
+        for name, val in {'E': TEXT, 'V': 1, 'N': 17, 'M': AUTO, 'O': 0, **extra}.items():
+            m.set_real(name, val)
+        m.set_str(1, b''.join(toks))
+        m.run()
+        return m
+    m = draw_auto(alnum_tokens('ABC'))
+    expect('draw, auto, no check: decides alnum itself and stores M=2',
+           m.ans == 0 and check_symbol(m, 1, 'ABC', 'alphanumeric') is not None and m.get_real('M') == 2)
+    m = draw_auto(ascii_tokens('abc'), A=1)
+    expect('draw, auto, no check: lowercase is ASCII (M=1); a leftover A=1 is ignored',
+           m.ans == 0 and check_symbol(m, 1, 'abc', 'byte') is not None and m.get_real('M') == 1)
+    m = draw_auto(ascii_tokens('a') + [PI])
+    expect('draw, auto, no check: a bad character fails, nothing drawn', m.ans == BAD + 2 and not m.displays, m.ans)
     expect('encode: auto, lowercase -> byte mode', drawn(ascii_tokens('Hi there'), AUTO) == (0, b'Hi there'))
     expect('encode: forced ASCII on alnum text', drawn(alnum_tokens('ABC'), ASCII) == (0, b'ABC'))
     expect('encode: forced alnum', drawn(alnum_tokens('ABC 1'), ALNUM) == (0, b'ABC 1'))
@@ -113,7 +137,7 @@ def edge_cases():
     expect('ascii: real quote token',
            drawn(ascii_tokens('say ') + [Q] + ascii_tokens('hi') + [Q], AUTO) == (0, b'say "hi"'))
     expect('ascii: negative sign -> hyphen', drawn(ascii_tokens('x=') + [NEG] + ascii_tokens('5'), AUTO) == (0, b'x=-5'))
-    expect('alnum: negative sign -> hyphen', check_text(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == 7
+    expect('alnum: negative sign -> hyphen', check_text(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == 3
            and drawn(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == (0, b'A-1'))
     # count larger than the message or the capacity is clamped
     # prgmQR keeps N within capacity; a bad N may give a wrong symbol but stays inside L1
@@ -147,10 +171,10 @@ def edge_cases():
     m = bare()
     expect('no variables at all -> 65535 (E reads as 0)', m.ans == 65535 and not m.displays)
     m = bare(E=TEXT)
-    expect('only E: a check (V=0) in auto mode (M=0)', m.ans == 2 * 4 + 1, m.ans)
+    expect('only E: a check (V=0) in auto mode (M=0)', m.ans == 4, m.ans)
     m = bare(E=TEXT, V=1, N=4)
-    expect('only E, V, N: encodes in byte mode (A=0) from the start (O=0)',
-           m.ans == 0 and check_symbol(m, 1, 'AB12', 'byte') is not None)
+    expect('only E, V, N: auto (M=0) decides alnum itself, from the start (O=0); no M to store in',
+           m.ans == 0 and check_symbol(m, 1, 'AB12', 'alphanumeric') is not None and ('real', 'M') not in m.os)
     m = Machine(SRC)
     for name, val in zip('EVNM', (TEXT, 1, 1, AUTO)):
         m.set_real(name, val)

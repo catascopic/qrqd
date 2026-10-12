@@ -187,6 +187,14 @@ def edge_cases():
         expect('set version %d is drawn as %d' % (v, v), check('set v%d' % v, env, v, 0, 'HELLO 5 AND 9', 'alphanumeric'))
     env = run_qr([ALNUM], ['A' * 300])
     expect('300 alphanumeric chars: version 10 (not 9)', check('auto v10', env, 10, 0, 'A' * 300, 'alphanumeric'))
+    # cleanup: L₁-L₅ emptied (still defined) and Str2 deleted at the end; ʟCW kept for Redraw
+    def cleaned(env):
+        return ([env.lists[k] is not None and len(env.lists[k].data) == 0 for k in range(5)] == [True] * 5
+                and env.strings[1] is None and len(env.user_lists['CW'].data) > 0)
+    for label, choices in (('XOR table off', [ALNUM]), ('XOR table on', [OPTIONS, XOR_TABLE, BACK, ALNUM])):
+        env = run_qr(choices, ['A' * 120])
+        expect('cleanup after drawing (%s): L1-L5 empty, Str2 gone, CW kept' % label, cleaned(env),
+               ([None if l is None else len(l.data) for l in env.lists[:5]], env.strings[1]))
     # Redraw: draws whatever ʟCW holds (the version from its length)
     for v in (2, 7):
         msg = 'REDRAW TEST %d' % v
@@ -194,8 +202,8 @@ def edge_cases():
         cw = [x for x in first.user_lists['CW'].data]
         env = run_qr([REDRAW], [], cw=cw)
         same = all(env.graph.get(r, c) == first.graph.get(r, c) for r in range(64) for c in range(96))
-        expect('Redraw v%d from ʟCW (%d elements): same code' % (v, len(cw)),
-               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric'), same)
+        expect('Redraw v%d from ʟCW (%d elements): same code, cleaned up' % (v, len(cw)),
+               same and check('redraw v%d' % v, env, v, 0, msg, 'alphanumeric') and cleaned(env), same)
     # a bad character: error with the character and position, back to the menu, nothing drawn
     for mode, text, pos, ch in ((ALNUM, 'ABcD', 3, 'c'), (ASCII, 'ab' + 'θ' + 'c', 3, 'θ')):
         try:

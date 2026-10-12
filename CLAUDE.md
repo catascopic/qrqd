@@ -41,10 +41,11 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 ```
 pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow
 python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp (build.bat does the same, for double-clicking)
-python tests/test_engine.py --quick      # drop --quick for the full sweep (a few minutes)
+python tests/run_all.py                  # every suite but test_basic, in parallel (~30 s); --quick, --basic
+python tests/test_engine.py --quick      # drop --quick for the full sweep (~30 s)
 python tests/test_notefolio.py
 python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1
-python tests/test_basic.py --quick       # pure-BASIC set; same needs
+python tests/test_basic.py --quick       # pure-BASIC set; same needs; minutes (see the workflow)
 python tests/test_lorem.py               # the LOREM note maker
 python tests/test_unprot.py              # the UNPROT tool
 python tests/test_engine.py --quick --standalone   # the standalone engine (modes 0-2)
@@ -53,8 +54,10 @@ python tests/test_standalone_frontend.py           # its menus (PYTHONUTF8=1)
 python tools/build.py decompile build/QRSRC.8xp
 ```
 
-Workflow for every change: edit `src/` → build → run the engine suites (and `test_frontend.py`
-for BASIC changes) → give the user `build/*.8xp`.
+Workflow for every change: edit `src/` → build → `python tests/run_all.py` → give the user
+`build/*.8xp`. The user is focused on the Axe/hybrid sets and considers the pure-BASIC set
+stable: run `test_basic.py` (or `run_all.py --basic`) only when `src/QRBASIC.basic.txt` or
+`src/_theta_QRBIT.basic.txt` (or the lists they use) change.
 `build.py` refuses to write QRSRC.8xp if tokenizing changes any code line, and fixes the header
 (product ID byte 0 like TI Connect files; tivars writes 13h).
 
@@ -68,7 +71,8 @@ QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`buil
 prgmθQRBIT) still uses ʟGFL/ʟGFX/ʟCW, plus ʟXOR (nibble XOR table) when the XOR table option
 is on; the build generates GFL.8xl, GFX.8xl and XOR.8xl in `build/` (GFL/GFX are byte-identical
 to the user's, `tests/data/basic/`, apart from the comment), and ʟQROPT (4 options; `SetUpEditor QROPT` creates it, a bare
-`SetUpEditor` then restores the list editor to L1-L6), and overwrites Str2/Str3 and L₁-L₅.
+`SetUpEditor` then restores the list editor to L1-L6), and uses Str2/Str3 and L₁-L₅; at the end it empties L₁-L₅ (ClrList) and deletes Str2, keeping
+ʟCW (Redraw draws it) and Str3 (the ASCII fix option may supply it).
 
 File names spell θ as `_theta_` (TI Connect's convention; it rejects a real θ in a file name):
 `src/_theta_QRBIT.basic.txt` builds `build/_theta_QRBIT.8xp`, program θQRBIT.
@@ -91,15 +95,17 @@ then uses E=3.
 | 3 | text of the Notefolio note named in Str2 (calculator character codes) |
 
 A missing OS variable reads as 0 (subroutine `GV`). For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
-ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
-ASCII. `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
+ʟBIN). `V=0` only checks the text: Ans = the length (0-32767); the mode is in M (see below). `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
 can't write past L₁), draws, and returns 0. The check returns 32768+k if character k can't be encoded
 (a Str1 token with no ASCII equivalent, or not alphanumeric when M=2). A note in byte mode never
 fails: its bytes go out as calculator codes (θ/⁴/Enter swapped with `[`/`$`/newline), and the
 check stores the first non-ASCII position in OS var B, which prgmQR zeroes first. 65532 from the check call if the text is longer
-than 16383 (2·16383+1 is the most Ans can carry), and 65535 for bad parameters or a missing input.
-Auto picks alphanumeric when every character allows it. Always centered, EC level L, mask 0.
+than 32767 (lengths stay below the 32768+k error codes), and 65535 for bad parameters or a missing input.
+Auto picks alphanumeric when every character allows it, and stores its choice (1 or 2) in M
+(if M exists), so the draw calls after a check run in that mode; a draw with M=0 decides
+itself. prgmQR keeps the menu's mode in D and copies it to M before each check. (A, the old
+way of passing the decision back, is gone.) Always centered, EC level L, mask 0.
 The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks
 first, picks the version from the length and mode, then encodes.
 

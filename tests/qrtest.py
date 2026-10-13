@@ -61,19 +61,24 @@ def alnum_tokens(s):
 
 TEXT, BINARY = 1, 2                          # E: Str1 text, list BIN
 AUTO, ASCII, ALNUM = 0, 1, 2                 # M
-BAD = 32768                                  # Ans = BAD + position of the first bad character
+BAD = 65533                                  # Ans for a character that can't be encoded (position in B)
+
+
+def bad(k):
+    """(Ans, B) of a call that fails at character k."""
+    return (BAD, k)
 
 
 def run_engine(source, version, count, mode, str1=None, lst=None, skip=0):
     """Run the engine the way prgmQR calls it (version 0 = check text only). An auto-mode
-    encode runs a check first, which stores its decision in M (1 ASCII, 2 alphanumeric),
-    and draws with that M, as prgmQR does."""
+    encode runs a check first and draws with M set from its Ans (odd: 2 alphanumeric, else
+    1 ASCII), as prgmQR does."""
     if version and mode == AUTO and source == TEXT:
         c = run_engine(source, 0, 0, mode, str1=str1)
-        if c.ans < BAD:
-            mode = c.get_real('M')
+        if c.ans < 65532:
+            mode = 1 + (c.ans & 1)
     m = Machine(SRC)
-    for name, v in zip('EVNMO', (source, version, count, mode, skip)):
+    for name, v in zip('EVNMOB', (source, version, count, mode, skip, 0)):
         m.set_real(name, v)
     if source == BINARY:
         m.set_list('BIN', lst)

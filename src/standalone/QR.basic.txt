@@ -60,9 +60,11 @@ If K≥65534
 Goto Y
 If K=65532
 Goto G
-If K≥32768
+If K=65533
 Goto F
-K→L
+int(K/2→L
+If not(M
+1+K-2L→M
 If not(B
 Goto Q
 ClrHome
@@ -113,7 +115,7 @@ Goto Z
 If K≥65534
 Goto Y
 Lbl F
-K-32768→K
+B→K
 ClrHome
 If D=2
 Then
@@ -131,7 +133,7 @@ ClrHome
 Goto 0
 Lbl G
 ClrHome
-Disp "ERR:TOO LONG","Max 32767 chars
+Disp "ERR:TOO LONG","Max 32765 chars
 Pause 
 ClrHome
 Goto 0

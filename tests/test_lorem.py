@@ -64,7 +64,7 @@ if __name__ == '__main__':
     notes = [('LOREM', content, False)]
     length = 3 * 446 - 1
     m = machine(notes, {'E': 3, 'V': 0, 'M': AUTO}, str2='LOREM')
-    expect('engine checks it as %d ASCII characters' % length, m.ans == length, m.ans)
+    expect('engine checks it as %d ASCII characters' % length, m.ans == 2 * length, m.ans)
     m = machine(notes, {'E': 3, 'V': 11, 'N': 321, 'M': AUTO}, str2='LOREM')
     expect('engine encodes the first 321', decode(matrix_from(m, 11))[0].bytes == TEXT[:321])
     m = machine(notes, {'E': 3, 'V': 1, 'N': 11, 'M': AUTO, 'O': 445}, str2='LOREM')

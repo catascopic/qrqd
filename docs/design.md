@@ -199,6 +199,17 @@
    doesn't create M). prgmQR takes the length straight from Ans; ERR:TOO LONG says 32767.
    Tests: the 32 KB archived note needs the simulator's archive moved to address 0 (its
    default 4000h-7FFFh holds 16 KB).
+37. The mode bit went back into the check's Ans (2·length+1 if alphanumeric), and the bad
+   character's position moved out of it into B: the usual answer is all in Ans, and the
+   exception's details are in a variable. B already held a note's first non-ASCII position, so
+   it is now "the first problem character" either way, and Ans says which (65533 error, or a
+   normal result with B≠0, a warning). Codes: 65533 bad character, 65532 too long, 65535 bad
+   input, 65534 prgmQR's "didn't run". Lengths ≤ 32765 so 2·length+1 ≤ 65531. M is still
+   written in auto mode (the draw calls use it), so the bit in Ans is for sizing.
+38. ...and the engine stopped writing M (it was redundant with the bit, and an engine that
+   changes its inputs is surprising): it writes only Ans, B, and Str3 for E=4. prgmQR sets M
+   itself after the check (`If not(M:1+K-2L→M`); D still keeps the menu setting. A draw with
+   M=0 still decides by reading the text, but each such call reads it again.
 36. QRBASIC cleans up its scratch variables: `ClrList L₁,L₂,L₄,L₅` right after the ECC
    (before interleaving, whose `seq(` builds a second copy of ʟCW, the peak; L₃ still holds
    the EC tail), and at the end `ClrList L₁,L₂,L₃,L₄,L₅` (L₃ = the row flags, up to 61
@@ -219,11 +230,10 @@ scoring instead of fixed mask 0.
    token → ASCII via GDB0, 0 if none; or note character → byte via `MA`) and `AV` (ASCII →
    alphanumeric value, 99 if none). K = first position outside printable ASCII and newline,
    X = first non-alphanumeric. Forced alnum uses X as K; auto becomes alnum if X=0. If K: a
-   note in byte mode stores K in OS var B (if B exists) and carries on; otherwise return
-   32768+K. F is now 1 (byte) or 2 (alnum); if it was auto, F goes into OS var M (if M
-   exists), so later calls for the same text skip the scan.
-5. V=0: return T (the mode is in M), or 65532 if T>32767 (checked before the scan, so a
-   length can't be mistaken for 32768+position). Otherwise read `N`, `O` into θ (count to skip).
+   stores K in OS var B (if B exists); a note in byte mode carries on, anything else returns
+   65533. F is now 1 (byte) or 2 (alnum).
+5. V=0: return 2T+F-1, or 65532 if T>32765 (checked before the scan, so a length can't be
+   mistaken for an error code). Otherwise read `N`, `O` into θ (count to skip).
 6. Size `S=4V+17`; offsets `G=31-S/2`, `H=47-S/2` (always centered). Look up M (data
    codewords), R (EC per block), B (blocks). Clamp N to T, and to 468 (only so a bad
    N can't write past L₁: keeping N within the version's capacity is prgmQR's job).
@@ -316,7 +326,7 @@ right-aligned so ones (and tens) line up: a number starts at x=91-4int(log(n)) (
 are 4 px, the last being a blank column; column 95 is reserved), so ink ends at x=93. Bar
 Pxl-On row 31 under J's digits, x up to 93; Text( rows 24 and 32 (ink rows 25-29 and 33-37,
 centered on the bar). Up to 3 digits (from x=83) stay clear of the code's 4-module quiet zone
-(v11 ends at x=77). (It was at the left edge, x=0, before.) The check call allows 32767 characters (103 version 11 codes), so 3-digit
+(v11 ends at x=77). (It was at the left edge, x=0, before.) The check call allows 32765 characters (103 version 11 codes), so 3-digit
 counts happen at version 11 too (they still fit, from x=83). Longer: ERR:TOO LONG (Lbl G), Pause, main menu.
 Keys (Lbl K): Enter/→ next, ← back, Clear stops; ← on the first and → on the last do nothing;
 Enter on the last ends. NoteFolio (Lbl N): `Asm(prgmθNOTES`; Ans=1 → E=3 and the check and

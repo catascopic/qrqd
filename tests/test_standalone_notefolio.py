@@ -99,32 +99,32 @@ def synthetic():
     expect('list mode finds only the %d real notes (RAM + archived)' % len(texts),
            m.ans == len(texts) and s3b == want, (m.ans, s3b[:40]))
 
-    # checking (V=0): the length, and M=2 if alphanumeric (else 1); a note never fails in byte mode,
+    # checking (V=0): 2*length + 1 if alphanumeric (M left alone); a note never fails in byte mode,
     # B = position of the first non-ASCII character (left alone if none)
     for name, tb, _ in texts:
         alnum = all(chr(c) in ALNUM_SET for c in expected_bytes(tb))
-        want = (len(tb), first_non_ascii(tb), 1 + alnum)
+        want = (2 * len(tb) + alnum, first_non_ascii(tb), AUTO)
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
         got = (m.ans, m.get_real('B'), m.get_real('M'))
         expect('check %s = %d, B=%d, M=%d' % ((name,) + want), got == want, got)
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='NOTES')
-    expect('check NOTES forced alnum: lowercase at 2', m.ans == BAD + 2, m.ans)
+    expect('check NOTES forced alnum: lowercase at 2', (m.ans, m.get_real('B')) == (BAD, 2), m.ans)
     up = [('UP', notefolio('UP', ti_text('AB θ')), False)]
     m = machine(up, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='UP')
-    expect('check θ forced alnum fails at 4, B untouched', (m.ans, m.get_real('B')) == (BAD + 4, 0),
+    expect('check θ forced alnum fails at 4 (in B)', (m.ans, m.get_real('B')) == (BAD, 4),
            (m.ans, m.get_real('B')))
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='SHOUT')
-    expect('check SHOUT forced ASCII', m.ans == len(texts[3][1]), m.ans)
+    expect('check SHOUT forced ASCII', m.ans == 2 * len(texts[3][1]), m.ans)
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='ODD')
-    expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (len(texts[4][1]), 10),
+    expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (2 * len(texts[4][1]), 10),
            (m.ans, m.get_real('B')))
     every = bytes(range(1, 256))
     allnote = [('ALL', notefolio('ALL', every), False)]
     m = machine(allnote, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='ALL')
     expect('check every byte 1-255: length 255, first non-ASCII at 1',
-           (m.ans, m.get_real('B')) == (255, 1), (m.ans, m.get_real('B')))
-    # lengths stay below 32768 (the error codes); longer is "too long", even with a bad char past it
-    for n, extra, want in ((32767, b'', 32767), (32768, b'', 65532), (32768, b'\x96', 65532)):
+           (m.ans, m.get_real('B')) == (2 * 255, 1), (m.ans, m.get_real('B')))
+    # 2*32765+1 stays below the error codes; longer is "too long", even with a bad char past it
+    for n, extra, want in ((32765, b'', 2 * 32765 + 1), (32766, b'', 65532), (32766, b'\x96', 65532)):
         big = [('BIG', notefolio('BIG', b'A' * n + extra), True)]
         # a 32 KB archived note: start the archive at 0 so it ends just past 8000h, in RAM
         # nothing uses, instead of running into L1 (a real one is in flash pages)
@@ -176,7 +176,7 @@ def real_file():
     content = data[19:19 + struct.unpack_from('<H', data, 17)[0]]
     notes = [(name, content, archived)]
     m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
-    expect('TEST.8xv checks as 44 ASCII characters', m.ans == 44, m.ans)
+    expect('TEST.8xv checks as 44 ASCII characters', m.ans == 2 * 44, m.ans)
     m = machine(notes, {'E': NOTE, 'V': 3, 'N': 44, 'M': AUTO}, str2=name)
     got = decode(matrix_from(m, 3))[0].bytes if m.ans == 0 else m.ans
     expect('TEST.8xv decodes to the pangram', got == b'The quick brown fox jumps over the lazy dog.', got)

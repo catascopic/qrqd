@@ -16,8 +16,9 @@ Draws Str1 as one QR code, in the smallest version that holds it:
 1→E:0→M:0→V:0→O
 Asm(prgmθQR
 Ans→K
-If K≥32768:Stop
-K→N
+If K≥65532:Stop
+int(K/2→N
+1+K-2N→M
 {17,32,53,78,106,134,154,192,230,271,321
 If M=2:{25,47,77,114,154,195,224,279,335,395,468
 1+sum(Ans<N→V
@@ -27,9 +28,9 @@ Asm(prgmθQR
 Pause 
 ```
 
-1. The first call (V=0) checks the text. Ans is its length, or 32768 or more for an
-   error. In auto mode (M=0) it stores the mode it chose in M: 1 byte, 2 alphanumeric
-   (with M=1 or 2, M stays as it is).
+1. The first call (V=0) checks the text. Ans is 2·length+1 if it will be encoded
+   alphanumeric, 2·length for byte mode, or 65532 or more for an error. The program sets
+   M from that last bit (1 byte, 2 alphanumeric), so the draw call uses the same mode.
 2. The program then picks the smallest version whose capacity holds the length, from the
    table for that mode (the capacity tables are below).
 3. The second call draws the code on the graph screen.
@@ -43,23 +44,21 @@ Pause
 | --- | --- |
 | E | What to encode: **1** Str1, **2** list ʟBIN (one byte per element, 0-255), **3** the Notefolio note named in Str2, **4** list Notefolio notes (see below) |
 | V | **0** = check only (E=1 or 3); **1-11** = draw a code of that version |
-| M | Text mode for E=1 and 3: **0** auto, **1** byte (ASCII), **2** alphanumeric only. Ignored for ʟBIN. Auto reads the text, uses alphanumeric if every character allows it (else byte), and stores its choice (1 or 2) in M, so later calls for the same text use it. A draw call with M=0 and no check first decides the same way; pick its version by the byte capacity, since the mode isn't known in advance |
+| M | Text mode for E=1 and 3: **0** auto, **1** byte (ASCII), **2** alphanumeric only. Ignored for ʟBIN. Auto uses alphanumeric if every character allows it, else byte; the check's Ans says which (odd = alphanumeric), and the engine never changes M, so set M to 1 or 2 from it before drawing. A draw call with M=0 decides again by reading the text; pick its version by the byte capacity if you haven't checked |
 | N | Number of characters (or list elements) to encode. **Must fit the version's capacity**; the engine doesn't check. It is cut to the input's length |
 | O | Number of characters to skip first (for splitting; 0 = from the start) |
 
-A variable that doesn't exist reads as 0, so you only need to set the ones that matter,
-except M: always set it. In auto mode the check reports its choice only in M, so without M
-you couldn't tell which mode it picked. A draw call also reads N and O; the check call
-reads only E, V and M. (A, which used to carry the check's choice, is no longer read.)
+A variable that doesn't exist reads as 0, so you only need to set the ones that matter.
+A draw call also reads N and O; the check call reads only E, V and M. (A, which used to carry the check's choice, is no longer read.)
 
 ## Return values (Ans)
 
 | Ans | Meaning |
 | --- | --- |
 | 0 | Drawn (V=1-11) |
-| L | Check (V=0): the length, 0-32767 (the mode is in M) |
-| 32768 + k | Character k can't be encoded: a token with no ASCII equivalent (`sin(`, `π`, ...), or a character that isn't alphanumeric when M=2 |
-| 65532 | Check: longer than 32767 characters |
+| 2·L + 1, 2·L | Check (V=0): length L (at most 32765); +1 means it will be encoded alphanumeric |
+| 65533 | A character can't be encoded (its position is in B): a token with no ASCII equivalent (`sin(`, `π`, ...), or a character that isn't alphanumeric when M=2 |
+| 65532 | Check: longer than 32765 characters |
 | 65535 | Bad parameters (E, V or M out of range), or the input doesn't exist (no Str1, no ʟBIN, no such note) |
 
 Tip: store 65534 to Ans right before `Asm(prgmθQR`. If the engine can't run at all, Ans
@@ -73,9 +72,9 @@ stays 65534, and your error check catches it.
   `GridOff`, `PlotsOff`, then `ClrDraw` and `DispGraph`. Otherwise the OS can redraw the graph
   screen later and erase the code.
 - **Variables:** it writes only Ans, plus:
-  - **M**, in auto mode (M=0) with E=1 or 3: the mode it chose, 1 or 2. Only if M exists.
-  - **B**, for a check of a note (E=3) in byte mode (or a draw with M=0): the position of the first non-ASCII
-    character. Left unchanged if there's none, so set B to 0 first.
+  - **B**, the position of the first problem character: the one that can't be encoded
+    (Ans 65533), or, for a note in byte mode, the first non-ASCII character (a warning:
+    the code is still checked or drawn). Left unchanged if there's none, so set B to 0 first.
   - **Str3**, for E=4.
 - **Scratch RAM:** it uses L₁ (saveSScreen) and L₃ (appBackUpScreen), the usual scratch areas.
 
@@ -93,7 +92,7 @@ Version 11 is the largest that fits the 64-pixel screen.
 
 - **Str1** is read token by token. Tokens that are a single ASCII character (letters,
   digits, punctuation, lowercase letters, `"` typed at an Input prompt) encode as that
-  character. The negative sign `⁻` encodes as `-`. Anything else fails with 32768+k.
+  character. The negative sign `⁻` encodes as `-`. Anything else fails with 65533 (position in B).
 - **Alphanumeric mode** holds only `0-9 A-Z`, space and `$%*+-./:`.
 - **Notes** never fail in byte mode. Each calculator character becomes its own byte:
   - θ, ⁴ and the calculator's 0Ah character are swapped with `[`, `$` and Enter;
@@ -105,7 +104,7 @@ Version 11 is the largest that fits the 64-pixel screen.
 
 Use the same version for every piece, encode N characters per call, and step O by N:
 O=0, then N, then 2N, and so on. Each piece is an ordinary QR code. For auto mode, check
-once: the check stores the mode in M, and every piece then uses it. prgmQR's Lbl Q and Lbl H do exactly this.
+once, set M from its Ans, and every piece then uses that mode. prgmQR's Lbl Q and Lbl H do exactly this.
 
 ## Notefolio notes
 

@@ -95,16 +95,18 @@ then uses E=3.
 | 3 | text of the Notefolio note named in Str2 (calculator character codes) |
 
 A missing OS variable reads as 0 (subroutine `GV`). For E=1-3 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric; ignored for
-ʟBIN). `V=0` only checks the text: Ans = the length (0-32767); the mode is in M (see below). `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
+ʟBIN). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
+ASCII (length ≤ 32765). `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
-can't write past L₁), draws, and returns 0. The check returns 32768+k if character k can't be encoded
+can't write past L₁), draws, and returns 0. The check returns 65533, with the position in OS var B, if a character can't be encoded
 (a Str1 token with no ASCII equivalent, or not alphanumeric when M=2). A note in byte mode never
 fails: its bytes go out as calculator codes (θ/⁴/Enter swapped with `[`/`$`/newline), and the
 check stores the first non-ASCII position in OS var B, which prgmQR zeroes first. 65532 from the check call if the text is longer
-than 32767 (lengths stay below the 32768+k error codes), and 65535 for bad parameters or a missing input.
-Auto picks alphanumeric when every character allows it, and stores its choice (1 or 2) in M
-(if M exists), so the draw calls after a check run in that mode; a draw with M=0 decides
-itself. prgmQR keeps the menu's mode in D and copies it to M before each check. (A, the old
+than 32765 (2·32765+1 stays below the error codes), and 65535 for bad parameters or a missing input.
+Auto picks alphanumeric when every character allows it; the engine never writes M: prgmQR
+sets M from the check's Ans bit (`If not(M:1+K-2L→M`) so the draw calls use that mode, and a
+draw with M=0 decides by itself. prgmQR keeps the menu's mode in D and copies it to M before
+each check. (A, the old
 way of passing the decision back, is gone.) Always centered, EC level L, mask 0.
 The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks
 first, picks the version from the length and mode, then encodes.

@@ -25,7 +25,7 @@ Enter or right arrow: next code
 Left arrow: previous code
 Clear: stop
 
-The most you can encode at once is 32767 characters.
+The most you can encode at once is 32765 characters.
 
 CHARACTERS
 
@@ -50,17 +50,17 @@ E=3: the NoteFolio file whose name is in Str2
 E=4: lists the NoteFolio files instead. Ans = how many, Str3 = their names, 8 characters each (padded with spaces)
 
 V: version. V=0 only checks the text (for a string or NoteFolio file), V=1..11 draws a code of that version
-M: encoding mode. M=0: auto, M=1: ASCII, M=2: alphanumeric (used with E=1 and 3 only). With M=0 the engine picks (alphanumeric if every character allows it) and stores its choice, 1 or 2, in M, so later calls for the same text use the same mode
+M: encoding mode. M=0: auto, M=1: ASCII, M=2: alphanumeric (used with E=1 and 3 only). With M=0 the engine picks alphanumeric if every character allows it; a check's Ans tells you which (odd = alphanumeric), so you can set M to 1 or 2 for the drawing calls
 N: how many characters to encode. It must fit the version; the engine doesn't check
 O: how many characters to skip first (for splitting a long message; use 0 normally)
 
 Ans value:
 0: drawn successfully
-the length: from a check (V=0). The mode goes into M, so set M before calling
-32768+k: character k can't be encoded
-65532: longer than 32767 characters
+2*length+1 or 2*length: from a check (V=0); +1 means it will be encoded alphanumeric
+65533: a character can't be encoded; B holds its position
+65532: longer than 32765 characters
 65535: bad value for E, V, or M, or the input doesn't exist
-A check of a file (E=3) also stores the first non-ASCII position in B (set B to 0 first).
+B (set it to 0 first) gets the position of the first problem character: the one that can't be encoded (65533), or, for a file in ASCII mode, the first non-ASCII character (just a warning; the check still succeeds).
 
 Before calling it, run FnOff, AxesOff, GridOff, PlotsOff, ClrDraw and DispGraph, or the OS may redraw the graph screen and erase the code. The code is drawn centered on the graph screen.
 

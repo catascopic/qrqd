@@ -22,7 +22,8 @@ from tivars import TIProgram, TIRealList
 from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
-TI83P = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE'}  # BASIC tokens must exist on a TI-83+
+TI83P = {'TI-82', 'TI-83', 'TI-83+', 'TI-83+SE'}  # BASIC tokens that run on a TI-83+
+TI84P = {'TI-84+', 'TI-84+SE'}                     # allowed, with a warning (TI-84+ only)
 MAX_MODE = {'QRBASIC', 'θQRBIT'}               # BASIC programs tokenized in tivars "max" mode
 BASIC_COMMENTS = {'QR': 'QR code menus (BASIC front end)',
                   'QRBASIC': 'QR code generator, pure BASIC',
@@ -95,6 +96,26 @@ def check_spaces(name, text, mode=None):
             raise SystemExit('%s line %d: %r needs a trailing space' % (name, k, line))
 
 
+def check_letters(name, text, data):
+    """Lowercase letters (tokens BB B0-BB CA) are only valid inside strings. A misspelled
+    command ("checkTimer(" for "checkTmr(") still tokenizes, as letters, and would only fail
+    on the calculator with ERR:SYNTAX, so refuse to build. A string runs from " to the next
+    ", → or end of line."""
+    line, in_string, i = 1, False, 0
+    while i < len(data):
+        b = data[i]
+        if b == 0x3F:                      # newline
+            line, in_string = line + 1, False
+        elif b == 0x2A:                    # "
+            in_string = not in_string
+        elif b == 0x04:                    # →
+            in_string = False
+        elif b == 0xBB and not in_string and 0xB0 <= data[i + 1] <= 0xCA and data[i + 1] != 0xBB:
+            raise SystemExit('%s line %d: lowercase letters outside a string (a misspelled '
+                             'command?): %s' % (name, line, text.split('\n')[line - 1]))
+        i += 2 if b in TWO_BYTE else 1
+
+
 def save_program(name, tokens, path, comment):
     if len(name) > 8:   # tivars would quietly cut it (UNPROTSRC became UNPROTSR)
         raise SystemExit('%s: program names are at most 8 characters' % name)
@@ -149,10 +170,16 @@ def build_programs(srcdir, outdir):
         check_spaces(src.name, text, mode)
         prog = TIProgram(name=name)
         prog.load_string(text, mode=mode)
-        # a TI-84+ command (startTmr), or max munch picking a CE token ("Redraw" -> color Red)
-        if prog.get_min_os().model not in TI83P:
+        check_letters(src.name, text, bytes(prog.data))
+        # a TI-84+ command (startTmr) is allowed with a warning; a color calculator's token
+        # (max munch turned "Redraw" into the CE color Red) fails the build
+        model = prog.get_min_os().model
+        if model in TI84P:
+            print('warning: %s needs a TI-84+ (startTmr or another TI-84+ command), so it won\'t '
+                  'run on a TI-83+' % src.name)
+        elif model not in TI83P:
             raise SystemExit('%s needs a %s token; if max munch picked it, escape it with \\ '
-                             '(like R\\edraw)' % (src.name, prog.get_min_os().model))
+                             '(like R\\edraw)' % (src.name, model))
         save_program(name, bytes(prog.data), outdir / (stem + '.8xp'), BASIC_COMMENTS[name])
         print('%-28s %5d token bytes' % (shown + stem + '.8xp', len(prog.data)))
 

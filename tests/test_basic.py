@@ -187,14 +187,17 @@ def edge_cases():
         expect('set version %d is drawn as %d' % (v, v), check('set v%d' % v, env, v, 0, 'HELLO 5 AND 9', 'alphanumeric'))
     env = run_qr([ALNUM], ['A' * 300])
     expect('300 alphanumeric chars: version 10 (not 9)', check('auto v10', env, 10, 0, 'A' * 300, 'alphanumeric'))
-    # cleanup: L₁-L₅ emptied (still defined) and Str2 deleted at the end; ʟCW kept for Redraw
+    # cleanup: L₁-L₅ emptied (still defined) at the end; ʟCW kept for Redraw, and Str2 kept
+    # (the working table: handy when testing)
     def cleaned(env):
         return ([env.lists[k] is not None and len(env.lists[k].data) == 0 for k in range(5)] == [True] * 5
-                and env.strings[1] is None and len(env.user_lists['CW'].data) > 0)
+                and len(env.user_lists['CW'].data) > 0)
     for label, choices in (('XOR table off', [ALNUM]), ('XOR table on', [OPTIONS, XOR_TABLE, BACK, ALNUM])):
         env = run_qr(choices, ['A' * 120])
-        expect('cleanup after drawing (%s): L1-L5 empty, Str2 gone, CW kept' % label, cleaned(env),
-               ([None if l is None else len(l.data) for l in env.lists[:5]], env.strings[1]))
+        table = str(env.strings[1]) if env.strings[1] is not None else None
+        expect('cleanup after drawing (%s): L1-L5 empty, CW and Str2 (alnum table) kept' % label,
+               cleaned(env) and table is not None and table.startswith('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ '),
+               ([None if l is None else len(l.data) for l in env.lists[:5]], table))
     # Redraw: draws whatever ʟCW holds (the version from its length)
     for v in (2, 7):
         msg = 'REDRAW TEST %d' % v

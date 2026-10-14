@@ -200,16 +200,17 @@ For(J,1,dim(L₃
 L₃(J→ʟCW(QZ+J
 End
 Lbl D
+startTmr→θ
 FnOff 
 AxesOff
 GridOff
 PlotsOff 
 ClrDraw
 17+4V→S
-{0,0,S-8,6,9→L₁
-{0,S-8,0,9,6→L₂
-{9,9,8,1,S-17→L₃
-{9,8,9,S-17,1→L₄
+{6→L₁
+{9→L₂
+{1→L₃
+{S-17→L₄
 If V≥7
 Then
 augment(L₁,{0,S-11→L₁
@@ -234,6 +235,36 @@ augment(L₂,L₆-2→L₂
 augment(L₃,5+0L₅→L₃
 augment(L₄,5+0L₅→L₄
 End
+For(X,1,3
+(S-7)(X=3→K
+(S-7)(X=2→L
+For(T,0,5
+Pxl-On(K,L+T
+Pxl-On(K+T,L+6
+Pxl-On(K+6,L+6-T
+Pxl-On(K+6-T,L
+End
+For(I,K+2,K+4
+For(J,L+2,L+4
+Pxl-On(I,J
+End
+End
+End
+For(T,8,S-9,2
+Pxl-On(6,T
+Pxl-On(T,6
+End
+For(T,0,8
+If T≠3 and T≠6
+Pxl-On(8,T
+If T≠4 and T
+Pxl-On(S-T,8
+End
+Pxl-On(2,8
+Pxl-On(7,8
+Pxl-On(8,S-3
+Pxl-On(8,S-7
+Pxl-On(8,S-8
 For(X,1,dim(L₁
 L₁(X→K
 L₂(X→L
@@ -250,8 +281,9 @@ For(K,0,(S-3)/2
 S-1-2K
 Ans-(Ans≤6→C
 not(fPart(K/2→D
-For(R,0,S-1
-R+D(S-1-2R→I
+9(C≤8 or C≥S-8→U
+S-1-8(C≤8→H
+For(I,U+D(H-U),H-D(H-U),1-2D
 For(J,C,C-1,⁻1
 If not(pxl-Test(I,J
 Then
@@ -270,33 +302,8 @@ End
 End
 End
 End
-For(X,1,3
-(S-7)(X=3→K
-(S-7)(X=2→L
-For(T,0,7
-Pxl-Off(K+7-8(K>0),L-(L>0)+T
-Pxl-Off(K-(K>0)+T,L+7-8(L>0)
-End
-For(T,1,5
-Pxl-Off(K+1,L+T
-Pxl-Off(K+5,L+T
-Pxl-Off(K+T,L+1
-Pxl-Off(K+T,L+5
-End
-End
 For(T,9,S-9,2
 Pxl-Off(6,T
-Pxl-Off(T,6
-End
-Pxl-Off(8,3
-Pxl-Off(S-4,8
-For(I,0,5
-If I≠2
-Pxl-Off(I,8
-End
-For(J,S-6,S-1
-If J≠S-3
-Pxl-Off(8,J
 End
 For(X,A,dim(L₁
 L₁(X)+2→K
@@ -323,6 +330,7 @@ int(B/2→B
 End
 End
 End
+checkTmr(θ→θ
 If ʟQROPT(1
 StorePic 1
 ClrList L₁,L₂,L₃,L₄,L₅,L₆

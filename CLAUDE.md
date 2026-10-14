@@ -71,14 +71,16 @@ QRDRAW and lists ʟGFL/ʟGFX/ʟCW are obsolete for it. The pure-BASIC set (`buil
 prgmθQRBIT) still uses ʟGFL/ʟGFX/ʟCW, plus ʟXOR (nibble XOR table) when the XOR table option
 is on; the build generates GFL.8xl, GFX.8xl and XOR.8xl in `build/` (GFL/GFX are byte-identical
 to the user's, `tests/data/basic/`, apart from the comment), and ʟQROPT (4 options; `SetUpEditor QROPT` creates it, a bare
-`SetUpEditor` then restores the list editor to L1-L6), and uses Str2/Str3 and L₁-L₅; at the end it empties L₁-L₅ (ClrList) and deletes Str2, keeping
-ʟCW (Redraw draws it) and Str3 (the ASCII fix option may supply it).
+`SetUpEditor` then restores the list editor to L1-L6), and uses Str2/Str3 and L₁-L₅; at the end it empties L₁-L₆ (ClrList), keeping
+ʟCW (Redraw draws it), Str2 (the working table, handy when testing) and Str3 (the ASCII fix option may supply it).
 
 File names spell θ as `_theta_` (TI Connect's convention; it rejects a real θ in a file name):
 `src/_theta_QRBIT.basic.txt` builds `build/_theta_QRBIT.8xp`, program θQRBIT.
 
-build.py refuses BASIC tokens a TI-83+ lacks: TI-84+ commands (startTmr) and color calculator
-tokens (max munch turned "Redraw" into the CE token Red; write `R\edraw`).
+build.py warns about TI-84+ commands (startTmr: the program won't run on a TI-83+) and refuses
+color calculator tokens (max munch turned "Redraw" into the CE token Red; write `R\edraw`).
+It also refuses lowercase letters outside a string (`check_letters`): a misspelled command such
+as `checkTimer(` tokenizes as letters and would only fail on the calculator.
 QRBASIC and θQRBIT are tokenized in tivars "max" mode (`MAX_MODE` in build.py; QR uses the default) (tokens inside strings, as the drawing's r₁ strings
 need), so a string wanting single characters escapes them: `<\=>`, `[\\]`, `|~` (the tilde
 token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 can't tokenize.

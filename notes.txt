@@ -1,4 +1,19 @@
-Generating tables...
+NoteFolio+
+
+New/Open/Save/Save As/Review/Exit
+Undo/Cut/Copy/Paste/Find
+Wrap On/Off
+
+Insert special character
+~`!@#$%&=;'|\<>
+Set to hotkey
+Accented
+
+Highlight with 2ND
+
+
+ExprOn/ExprOff
+Get rid of negative sign
 
 C and S are always 1, so just remove them from the logic!
 We might still want to provide an actual row/col offset, either a binary C (centered or not)

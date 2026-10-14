@@ -1,7 +1,7 @@
 SetUpEditor QROPT
 SetUpEditor 
 If 4≠dim(ʟQROPT
-{0,0,0,0→QROPT
+{0,0,0,1→QROPT
 0→V
 Lbl 0
 Menu("QR CODE","ASCII",A,"Alphanumeric",C,"Binary (ʟBIN)",B,"Set version",S,"Options",O,"R\edraw",R,"Exit",X

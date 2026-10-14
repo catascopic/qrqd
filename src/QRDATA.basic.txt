@@ -1,0 +1,15 @@
+ClrHome
+Disp "Building ʟXOR
+{16,8,4,2
+seq(.5sum(Ans*(1=abs(int(2fPart((int(N/16)+16fPart(N/16)𝑖)/Ans))))),N,0,255→ʟXOR
+Disp "Building ʟGFX","and ʟGFL
+255→dim(ʟGFX
+255→dim(ʟGFL
+1→X
+For(I,1,255
+X→ʟGFX(I
+I-1→ʟGFL(X
+2X→X
+If X>255
+16ʟXOR(16int(X/16)-254)+ʟXOR(256fPart(X/16)+14→X
+End

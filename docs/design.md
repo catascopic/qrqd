@@ -215,6 +215,14 @@
    the EC tail), and at the end `ClrList L₁,L₂,L₃,L₄,L₅` (L₃ = the row flags, up to 61
    elements) and `DelVar Str2`. ClrList keeps L1-L5 defined for the STAT editor. Kept:
    ʟCW (up to ~3.6 KB; Redraw needs it), Str3 (ASCII fix), ʟQROPT, the GF lists.
+39. QRBASIC, XOR table on: the remainder is kept split into 4-bit halves (high in L₁, low in
+   L₅, free then since the powers of 2 are only for the table off), so the inner loop never
+   splits or joins bytes: `seq(ʟXOR(L₁(J)+ʟGFXH(L₄(J))),J,1,R→L₁` and the same with L₅/ʟGFXL.
+   ʟGFXH/ʟGFXL are ʟGFX's high/low halves stored as 16·half+1 (ʟXOR's 16a+b+1 indexing, so
+   one addition makes the index); build.py writes GFXH.8xl and GFXL.8xl. Per data byte the
+   codeword byte is split once for the feedback XOR; per block the EC bytes are joined
+   (16L₁+L₅→L₁). Same named-list reads per element (4), but no divisions, int(, fPart( or
+   joins: in tibasic, a v11 run interprets 31% fewer tokens (v1 15%).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty

@@ -200,7 +200,6 @@ For(J,1,dim(L₃
 L₃(J→ʟCW(QZ+J
 End
 Lbl D
-startTmr→θ
 FnOff 
 AxesOff
 GridOff
@@ -330,7 +329,6 @@ int(B/2→B
 End
 End
 End
-checkTmr(θ→θ
 If ʟQROPT(1
 StorePic 1
 ClrList L₁,L₂,L₃,L₄,L₅,L₆

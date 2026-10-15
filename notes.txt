@@ -1,3 +1,7 @@
+ClrHome
+Remove extra Disp
+
+
 NoteFolio+
 
 New/Open/Save/Save As/Review/Exit

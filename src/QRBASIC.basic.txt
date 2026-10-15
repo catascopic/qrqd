@@ -199,6 +199,7 @@ End
 For(J,1,dim(L₃
 L₃(J→ʟCW(QZ+J
 End
+ClrHome
 Lbl D
 FnOff 
 AxesOff

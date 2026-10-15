@@ -52,9 +52,20 @@ BINARY MODE
 
 To use this mode, you must first store your binary data in list BIN (perhaps with the list editor) and then select Binary encoding. Unlike Alphanumeric and ASCII mode, Binary mode does not prompt you to input the data and assumes list BIN has already been set up. Note that only the lower 8 bits are used and the program won't warn you about values higher than 255.
 
+SET VERSION
+
+Tells the program not to automatically determine the version based on the length of the input and instead use the given version. Mostly useful for testing.
+
+OPTIONS
+
+1. StorePic 1 (off by default): Automatically stores the QR code to Pic1 after it finishes drawing.
+2. Alt Punct  (off by default): A weird experimental option; see the Alphanumeric section for details.
+3. ASCII Fix  (off by default): For those who want to fix the ASCII table by hand; see the ASCII section for details.
+4. XOR Table  (on by default):  Speeds up the ECC phase at the expense of requiring a 2,300 byte list in RAM; see the "TEN MINUTES?" section for details.
+
 REDRAW
 
-Tells the program to draw a QR code based on whatever data exists in list CW (codewords). This can be useful if your QR code got erased but the data is still in memory. This is mostly just for testing purposes, though. Remember, you can turn on the "StorePic 1" option to automatically save the code when it finishes drawing.
+Tells the program to draw a QR code based on whatever data exists in list CW (codewords). This can be useful if your QR code got erased but the data is still in memory. (This is mostly just for testing purposes, though; you can avoid having to worry about this by turning on the StorePic 1 option.)
 
 LIMITATIONS
 

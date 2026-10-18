@@ -68,7 +68,7 @@ If not(Ans
 " !π#$%&\'()*+,-./0123456789:;<\=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}|~→Str3
 Str3→Str2
 Else
-"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ "+sub("$%*+-./:?;\',-.!:",1+8ʟQROPT(2),8→Str2
+"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ "+sub("$%*+-./:?!\',-./:",1+8ʟQROPT(2),8→Str2
 End
 For(X,1,N
 If not(inString(Str2,sub(Str1,X,1
@@ -169,7 +169,7 @@ If ʟQROPT(4
 Then
 16ʟXOR(16int(L₁(1)/16)+int(B/16)+1)+ʟXOR(256fPart(L₁(1)/16)+16fPart(B/16)+1→F
 Else
-.5sum(L₅*(1=abs(int(2fPart((L₁(1)+B𝑖)/L₅→F
+.5sum(L₅*(int(2fPart(L₁(1)/L₅)) xor int(2fPart(B/L₅→F
 End
 ΔList(cumSum(L₁→L₁
 0→L₁(R
@@ -180,7 +180,7 @@ Ans-255(Ans>255→L₄
 If ʟQROPT(4
 seq(16ʟXOR(16int(L₁(J)/16)+int(ʟGFX(L₄(J))/16)+1)+ʟXOR(256fPart(L₁(J)/16)+16fPart(ʟGFX(L₄(J))/16)+1),J,1,R→L₁
 If not(ʟQROPT(4
-seq(.5sum(L₅*(1=abs(int(2fPart((L₁(J)+ʟGFX(L₄(J))𝑖)/L₅))))),J,1,R→L₁
+seq(.5sum(L₅*(int(2fPart(L₁(J)/L₅)) xor int(2fPart(ʟGFX(L₄(J))/L₅)))),J,1,R→L₁
 End
 Output(4,1,"     
 Output(4,1,round(100(I-O+1)/(P-O+1),2

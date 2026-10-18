@@ -1,4 +1,5 @@
 SetUpEditor XOR
+SetUpEditor 
 seq(2^K,K,8,1,⁻1→L₅
 Lbl 0
 Menu("XOR SPEED TEST","Complex (abs)",1,"Table (ʟXOR)",2,"Logical xor",3,"Quit",Q
@@ -10,75 +11,42 @@ Ans→M
 ClrHome
 If M=2 and 256≠dim(ʟXOR
 Goto N
-Input "Pairs=",N
-max(1,int(N→N
-augment({0,255,170,204,77,19},randInt(0,255,N→L₁
-augment({0,0,85,170,77,237},randInt(0,255,N→L₂
-dim(L₁→K
-Disp "Timing loop
-startTmr→T
-For(I,1,K
-L₁(I→A
-L₂(I→B
-End
-checkTmr(T→O
+Input "Trials=",N
+randInt(0,255→A
+randInt(0,255→B
+Disp "Running...
 startTmr→T
 If M=1
 Then
-For(I,1,K
-L₁(I→A
-L₂(I→B
+For(I,1,N
 .5sum(L₅*(1=abs(int(2fPart((A+B𝑖)/L₅→C
 End
 End
 If M=2
 Then
-For(I,1,K
-L₁(I→A
-L₂(I→B
+For(I,1,N
 16ʟXOR(16int(A/16)+int(B/16)+1)+ʟXOR(256fPart(A/16)+16fPart(B/16)+1→C
 End
 End
 If M=3
 Then
-For(I,1,K
-L₁(I→A
-L₂(I→B
+For(I,1,N
 .5sum(L₅*(int(2fPart(A/L₅)) xor int(2fPart(B/L₅→C
 End
 End
-checkTmr(T→P
-Disp "Timing seq(
-startTmr→T
-seq(L₁(I)+L₂(I),I,1,K→L₆
-checkTmr(T→R
-startTmr→T
-If M=1
-seq(.5sum(L₅*(1=abs(int(2fPart((L₁(I)+L₂(I)𝑖)/L₅))))),I,1,K→L₆
-If M=2
-seq(16ʟXOR(16int(L₁(I)/16)+int(L₂(I)/16)+1)+ʟXOR(256fPart(L₁(I)/16)+16fPart(L₂(I)/16)+1),I,1,K→L₆
-If M=3
-seq(.5sum(L₅*(int(2fPart(L₁(I)/L₅)) xor int(2fPart(L₂(I)/L₅)))),I,1,K→L₆
-checkTmr(T→S
+checkTmr(T→T
 ClrHome
-If M=1
-Output(1,1,"Complex (abs)
-If M=2
-Output(1,1,"Table (ʟXOR)
-If M=3
-Output(1,1,"Logical xor
-Output(2,1,"Pairs:
-Output(2,8,K
-Output(3,1,"Loop:
-Output(3,7,round(K/max(1,P-O),2
-Output(3,14,"/s
-Output(4,1,"Seq:
-Output(4,7,round(K/max(1,S-R),2
-Output(4,14,"/s
-Output(6,1,"Check:
-Output(6,8,"OK
-If sum(seq(L₆(I),I,1,6)≠{0,255,255,102,0,254
-Output(6,8,"WRONG
+Output(1,1,sub("Complex (abs)Table (ʟXOR) Logical xor  ",13M-12,13
+Output(2,1,"Trials:
+Output(2,10,N
+Output(3,1,"Seconds:
+Output(3,10,T
+Output(5,1,"A:
+Output(5,10,A
+Output(6,1,"B:
+Output(6,10,B
+Output(7,1,"A xor B:
+Output(7,10,C
 Pause 
 Goto 0
 Lbl N
@@ -86,5 +54,4 @@ Disp "No ʟXOR found
 Pause 
 Goto 0
 Lbl Q
-ClrList L₁,L₂,L₅,L₆
-ClrHome
+ClrList L₅

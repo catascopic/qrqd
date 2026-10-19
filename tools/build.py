@@ -62,6 +62,20 @@ def axe_tokenize(text):
     return bytes(out)
 
 
+def strip_axe_comments(name, src):
+    """Drop every comment line except the first (the .NAME header that names Axe's output) and
+    every blank line: comments only cost RAM on the calculator. Comments are whole lines
+    starting with "." (axesim, which runs the sources in the tests, skips the same lines), so
+    they may use any characters; a multi-line "..." comment isn't supported here or in axesim."""
+    lines = src.split('\n')
+    if not lines[0].startswith('.') or lines[0].startswith('..'):
+        raise SystemExit('%s: line 1 must be the .NAME header' % name)
+    for k, line in enumerate(lines, 1):
+        if line.startswith('...'):
+            raise SystemExit('%s line %d: "..." comment blocks are not supported' % (name, k))
+    return '\n'.join([lines[0]] + [s for s in lines[1:] if s.strip() and not s.startswith('.')])
+
+
 def axe_detokenize(data):
     out, i = [], 0
     while i < len(data):
@@ -151,10 +165,10 @@ def build_programs(srcdir, outdir):
     # Axe sources: the engine, the note picker, and test tools (LOREMSRC, SPEEDSRC)
     for path in sorted(srcdir.glob('*.axe.txt')):
         name = path.name.split('.')[0]
-        src = path.read_text(encoding='utf-8').rstrip('\n')
+        src = strip_axe_comments(path.name, path.read_text(encoding='utf-8').rstrip('\n'))
         tokens = axe_tokenize(src)
         back = axe_detokenize(tokens).split('\n')
-        changed = [(a, b) for a, b in zip(src.split('\n'), back) if a != b and not a.startswith('.')]
+        changed = [(a, b) for a, b in zip(src.split('\n'), back) if a != b]
         if changed:
             raise SystemExit('%s: Axe round trip changed code lines: %r' % (path.name, changed[:3]))
         save_program(name, tokens, outdir / (name + '.8xp'), AXE_COMMENTS.get(name, 'Axe source'))

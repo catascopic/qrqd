@@ -1,35 +1,48 @@
 .CODECHAT
-.CODECHAT PROTOTYPE: AES-SIV MESSAGES AS DIGITS
-.KEYRING APPVAR CCKEYS (FROM THE PC SCRIPT),
-.COUNTER CCSTATE, SENT DIGITS TO NOTE CCOUT
-.L₁: HEADER 0-5, TAG 6-21, TEXT 22-321,
-.KEY ENTRY 330 (NAME, SIDE 338, K1 339,
-.K2 355), ROUND KEYS 380, BLOCKS 576-687
-.L₃: TYPED CHARACTERS
+.CodeChat prototype: encrypted messages (AES-SIV) written as
+.digits. Keys come from the keyring appvar CCKEYS (made by
+.tools/codechat.py on the PC); the message counter is in appvar
+.CCSTATE; sent digits go to the NoteFolio note CCOUT, which
+.prgmQR can draw. Design: docs/design.md, "CodeChat".
 .
-.TOKENS FOR ASCII 32-126 (AS IN θQR)
+.Message: header (6 bytes: 10h + flags, key ID, 4-byte counter)
+.+ tag (16) + ciphertext. Flags: bit 0 compact text, bit 1 odd
+.character count (compact only).
+.
+.Memory, L₁: header 0-5, tag 6-21, text 22-321, key entry 330
+.(name 330-337, my side 338, K1 339-354, K2 355-370), round keys
+.380-555, CMAC subkeys 576 and 592, S2V's D 608, CMAC output
+.624, scratch block 640, CTR counter 656, temp 672, a name for
+.display at 690. L₃: the typed characters (ASCII).
+.
+.Tokens for ASCII 32-126, first bytes then second bytes (the
+.same table as prgmθQR's GDB0)
 [292D2ABBBBBBBBAE101182702B713A83303132333435363738393EBB6B6A6CAFBB4142434445464748494A4B4C4D4E4F505152535455565758595A06BB07F0BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB08BB09BB000000D2D3DAD40000000000000000000000000000000000000000D600000000D1000000000000000000000000000000000000000000000000000000D70000D9D5B0B1B2B3B4B5B6B7B8B9BABCBDBEBFC0C1C2C3C4C5C6C7C8C9CA00D800CF]→GDB0
-.TWO-BYTE TOKEN PREFIXES
+.First bytes of two-byte tokens, 0-terminated for inData(
 [5C5D5E606162637EAABBEF00]→GDB1
-.AES S-BOX
+.AES S-box (256 bytes)
 [637C777BF26B6FC53001672BFED7AB76CA82C97DFA5947F0ADD4A2AF9CA472C0B7FD9326363FF7CC34A5E5F171D8311504C723C31896059A071280E2EB27B27509832C1A1B6E5AA0523BD6B329E32F8453D100ED20FCB15B6ACBBE394A4C58CFD0EFAAFB434D338545F9027F503C9FA851A3408F929D38F5BCB6DA2110FFF3D2CD0C13EC5F974417C4A77E3D645D197360814FDC222A908846EEB814DE5E0BDBE0323A0A4906245CC2D3AC629195E479E7C8376D8DD54EA96C56F4EA657AAE08BA78252E1CA6B4C6E8DD741F4BBD8B8A703EB5664803F60E613557B986C11D9EE1F8981169D98E949B1E87E9CE5528DF8CA1890DBFE6426841992D0FB054BB16]→GDB2
-.SHIFTROWS: OLD POSITION OF EACH BYTE
+.ShiftRows: for each byte of the state, where it comes from
 [00050A0F04090E03080D02070C01060B]→GDB3
-.BIT MASKS; AT +8 GETKEYʳ CODES OF 1-6,
-.AT +15 F1-F5 (Y= WINDOW ZOOM TRACE GRAPH)
+.Bit masks 80h..01h (bit k of a byte, highest first). At +8 the
+._GetKey codes of keys 1-6 (8Fh-94h), at +15 those of F1-F5 (Y=
+.WINDOW ZOOM TRACE GRAPH), each list 0-terminated
 [80402010080402018F90919293940049482E5A4400]→GDB4
-.COMPACT VALUES 36-44: SPACE ?!',-./:
+.Compact alphabet values 36-44: space ? ! ' , - . / and colon
 [203F21272C2D2E2F3A00]→GDB5
-.NOTE HEADER: SIGNATURE, 4 BYTES, TITLE
+.First 16 bytes of the CCOUT note: NoteFolio signature, 4 bytes
+.copied from a real note, the 8-byte title CCOUT
 [F347BFAF8010622143434F5554000000]→GDB6
-.APPVAR NAMES: CCKEYS, CCSTATE, CCOUT
+.OP1 names (15h = appvar, name, 0): CCKEYS, CCSTATE, CCOUT
 [1543434B4559530000]→GDB7
 [154343535441544500]→GDB8
 [1543434F55540000]→GDB9
 .
+.15 MHz where the calculator has it
 Full
-.RUN INDICATOR OFF (BCALL _RUNINDICOFF)
+.Run indicator off (bcall _RunIndicOff, 4570h)
 Asm(EF7045)
+.Main menu
 While 1
 ClrHome
 Output(0,0,"CODECHAT")
@@ -38,7 +51,9 @@ Output(0,3,"2 RECEIVE")
 Output(0,4,"3 NEW KEY")
 Output(0,5,"4 QUIT")
 sub(WK)
-.ONE CHOICE PER KEY (θ CHANGES INSIDE)
+.One choice per key press, as an If/Else chain: every choice
+.changes θ, so separate Ifs could run a second one (Send's
+.cancel key once opened Receive)
 If θ=1
 sub(SD)
 Else
@@ -57,8 +72,11 @@ End
 End
 End
 .
-.SEND: PICK A CONTACT, TYPE, ENCRYPT,
-.WRITE THE DIGITS TO NOTE CCOUT
+.Subroutines. They share all variables; see design.md for
+.which letters each one uses.
+.
+.SD, send: pick a contact, type the text, encrypt it, write
+.the digits to the note CCOUT
 Lbl SD
 sub(PK)
 !If X
@@ -69,9 +87,12 @@ Output(0,0,"TO ")
 sub(NM)
 Disp L₁+690
 Output(0,1)
+.input returns a pointer to the typed tokens, their byte count
+.in the 2 bytes before
 input→P
-.TOKENS→CHARACTERS AT L₃ (H OF THEM);
-.F=1 IF LOWERCASE, G=1 IF OUTSIDE THE SET
+.Tokens → ASCII characters at L₃ (H of them), with prgmθQR's
+.lookup. F=1 if there's a lowercase letter, G=1 if a character
+.is outside the compact alphabet (and not lowercase).
 {P-2}ʳ+P→E
 0→H
 0→F
@@ -81,12 +102,14 @@ While P<E
 P+1→P
 0→A
 If inData(Y,GDB1)
+.Two-byte token: only BBh ones have ASCII; BB 00 is npv(, and
+.0 in the second row means a one-byte token
 If Y=187 and ({P}≠0)
 inData({P},GDB0+95,95)→A
 End
 P+1→P
 Else
-.⁻ AS MINUS
+.Treat the negative sign ⁻ (B0h) as minus (71h)
 If Y=176
 113→Y
 End
@@ -96,6 +119,7 @@ End
 sub(ER,"BAD CHARACTER")
 Return
 End
+.Table position 1-95 → ASCII 32-126
 A+31→A
 If H=416
 sub(ER,"TOO LONG")
@@ -103,6 +127,7 @@ Return
 End
 A→{L₃+H}
 H+1→H
+.Unsigned compares: A-97<26 means a-z (lower A wraps around)
 If A-97<26
 1→F
 Else
@@ -111,8 +136,10 @@ Else
 End
 End
 End
-.S=1 COMPACT, 0 8-BIT
+.S=1 compact, 0 8-bit
 1→S
+.Special characters: only 8-bit can carry them; confirm, with
+.the digit count (22 bytes of header and tag + 1 per character)
 If G
 0→S
 ClrHome
@@ -130,6 +157,10 @@ If θ≠1
 Return
 End
 Else
+.Lowercase only: uppercase it (compact) or send it as typed
+.(8-bit). Both digit counts are shown. Compact bytes =
+.(11 bits per pair + 6 for an odd last + 7)/8 rounds the bits
+.up to bytes, left to right; + 22 for header and tag.
 If F
 ClrHome
 Output(0,0,"HAS LOWERCASE")
@@ -150,6 +181,7 @@ End
 If θ=2
 0→S
 Else
+.a-z → A-Z (32 lower in ASCII)
 For(E,0,H-1)
 If {L₃+E}-97<26
 {L₃+E}-32→{L₃+E}
@@ -158,16 +190,20 @@ End
 End
 End
 End
+.8-bit: one version 11 code holds 286 characters
 If S=0 and (H>286)
 sub(ER,"TOO LONG")
 Return
 End
 ClrHome
 Output(0,0,"ENCRYPTING...")
-.TEXT AT L₁+22, L BYTES
+.The plaintext goes to L₁+22, L bytes. D/W/K: AB's output
+.pointer, byte being filled, bits in it.
 L₁+22→D
 0→W
 0→K
+.Compact: pairs as 45·first+second in 11 bits, an odd last in
+.6 bits, then zero bits to a byte boundary
 If S
 0→E
 While E+1<H
@@ -191,6 +227,8 @@ sub(AB)
 End
 D-L₁-22→L
 Else
+.8-bit: calculator character codes, which are ASCII except
+.$ (36 → F2h) and [ (91 → C1h)
 If H
 For(E,0,H-1)
 {L₃+E}→A
@@ -205,8 +243,11 @@ End
 End
 H→L
 End
-.HEADER: VERSION 1 + FLAGS, KEY ID, COUNTER
+.Header byte 0: version 1 in the high nibble (16), flags in
+.the low: compact gives 1, +2 if the count is odd. Read left to
+.right: ((H mod 2)·2+1)·S+16.
 H^2*2+1*S+16→{L₁}
+.Byte 1: key ID; bytes 2-5: the next counter (saved first)
 sub(KI)
 A→{L₁+1}
 sub(CN)
@@ -214,7 +255,8 @@ sub(CN)
 sub(ER,"NO MEMORY")
 Return
 End
-.TAG = S2V(K1; HEADER, TEXT); CTR WITH K2
+.Tag = S2V with K1 over (header, plaintext), into L₁+6; then
+.CTR with K2, started from the tag, encrypts the text in place
 sub(KX,L₁+339)
 sub(SK)
 sub(SV)
@@ -236,8 +278,8 @@ Output(0,2,"IN NOTE CCOUT")
 sub(WK)
 Return
 .
-.RECEIVE: DIGITS (TYPED, OR NOTE CCOUT)
-.→BYTES, THEN TRY EACH MATCHING KEY
+.RC, receive: digits (typed, or from the note CCOUT) → bytes
+.at L₁, then try every keyring key with the message's key ID
 Lbl RC
 ClrHome
 Output(0,0,"RECEIVE")
@@ -247,6 +289,8 @@ sub(YN)
 If θ=255
 Return
 End
+.Typed: read them from the input string (Q, so RB reads RAM),
+.T bytes from O=0
 If θ=1
 ClrHome
 Output(0,0,"TYPE THE DIGITS")
@@ -260,19 +304,25 @@ sub(OP,GDB9)
 sub(ER,"NO NOTE CCOUT")
 Return
 End
-.TEXT FROM 24, BEFORE 00 AND 2 BYTES
+.A note's text runs from byte 24 to before the 00h end and
+.the 2 trailing bytes
 24→O
 T-3→T
 End
-.GROUPS OF 5 DIGITS→2 BYTES, A LAST 3→1
+.Digits → bytes: each group of 5 digits is a big-endian word
+.(00000-65535), a last group of 3 is one byte. Anything that
+.isn't a digit is skipped (spaces, line breaks). B = bytes
+.written, D = digits in the current group, V = its value.
 0→B
 0→D
 0→V
 While O<T
 sub(RB,O)
 O+1→O
+.Digit tokens/characters are 30h-39h either way
 If C-48<10
 C-48→C
+.Fifth digit: V·10+C must stay ≤ 65535
 If D=4
 If V>6553 or (V=6553 and (C>5))
 sub(ER,"BAD DIGITS")
@@ -284,6 +334,7 @@ V^256→{L₁+B+1}
 B+2→B
 0→D
 0→V
+.L₁ holds 22 bytes of header and tag + 300 of text
 If B>320
 sub(ER,"TOO LONG")
 Return
@@ -294,6 +345,7 @@ D+1→D
 End
 End
 End
+.Leftover digits: 3 make the last byte; any other count is bad
 If D=3
 If V>255
 sub(ER,"BAD DIGITS")
@@ -307,6 +359,7 @@ sub(ER,"BAD DIGIT COUNT")
 Return
 End
 End
+.At least header and tag, and format version 1
 If B<22
 sub(ER,"TOO SHORT")
 Return
@@ -315,6 +368,7 @@ If {L₁}/16≠1
 sub(ER,"UNKNOWN FORMAT")
 Return
 End
+.L = ciphertext length
 B-22→L
 ClrHome
 Output(0,0,"DECRYPTING...")
@@ -323,10 +377,13 @@ sub(OP,GDB7)
 sub(ER,"NO KEYRING")
 Return
 End
+.Keyring byte 1 = number of keys (byte 0 is its version)
 sub(RB,1)
 C→G
-.H=1 IF A KEY OF MY OWN SIDE MATCHED,
-.B=1 IF ONE OF THE OTHER SIDE WAS TRIED
+.For each key with the right ID: if its side is the one in the
+.counter's last bit, this side sent the message, so it's only
+.noted (H=1), not opened; otherwise try it (B=1). KI leaves
+.K2's round keys loaded, which TR's first CTR needs.
 0→H
 0→B
 0→E
@@ -347,6 +404,7 @@ End
 End
 E+1→E
 End
+.Only my own side matched: say so rather than "wrong key"
 If H and (B=0)
 sub(ER,"SENT BY YOU")
 Return
@@ -355,9 +413,10 @@ Output(0,6,"CANNOT OPEN IT")
 sub(ER,"WRONG KEY/TYPO?")
 Return
 .
-.TRY THE KEY AT L₁+330 (K2 ROUND KEYS
-.LOADED): CTR, THEN CHECK THE TAG; X=1 IF
-.IT OPENS, ELSE CTR AGAIN TO UNDO IT
+.TR: try the key at L₁+330 (K2's round keys loaded): CTR to
+.decrypt, then recompute the tag with K1 and compare it with
+.the message's. X=1 if it matches; else CTR again (K2 reloaded),
+.which encrypts the text back for the next key.
 Lbl TR
 sub(CT)
 sub(KX,L₁+339)
@@ -375,7 +434,8 @@ sub(CT)
 End
 Return
 .
-.SHOW THE TEXT (COMPACT OR 8-BIT)
+.SH: show the decrypted text, compact or 8-bit. Fix 7 keeps
+.the last cell from scrolling the screen.
 Lbl SH
 ClrHome
 Output(0,0,"FROM ")
@@ -384,6 +444,9 @@ Disp L₁+690
 Output(0,1)
 Fix 7
 0→F
+.Compact (flag bit 0): K = number of 11-bit pairs in the L·8
+.bits; with an odd count (flag bit 1) the last 6 bits are one
+.more character. The rest is zero padding (under 11 bits).
 If {L₁}^2
 L*8→X
 If {L₁}/2^2
@@ -391,6 +454,7 @@ X-6/11→K
 Else
 X/11→K
 End
+.D = bit position for RD
 0→D
 While K
 sub(RD,11)
@@ -407,6 +471,7 @@ sub(VC,A)
 sub(PC,C)
 End
 Else
+.8-bit: the bytes are character codes already
 If L
 For(V,0,L-1)
 sub(PC,{L₁+22+V})
@@ -417,8 +482,9 @@ Fix 6
 sub(WK)
 Return
 .
-.CHARACTER r₁ ON THE HOME SCREEN, ROWS 1-7
-.(112 A PAGE; F ON THIS PAGE)
+.PC: show character r₁ on the home screen, rows 1-7 (112 a
+.page; F counts them on this page), waiting for a key between
+.pages
 Lbl PC
 If F=112
 sub(WK)
@@ -431,7 +497,7 @@ Disp r₁►Char
 F+1→F
 Return
 .
-.NEW KEY: NOT YET
+.NK, new key: not written yet (keys come from the PC script)
 Lbl NK
 ClrHome
 Output(0,0,"NOT YET")
@@ -440,7 +506,9 @@ Output(0,2,"(CODECHAT.PY)")
 sub(WK)
 Return
 .
-.PICK A CONTACT→L₁+330; X=0 IF NONE
+.PK: pick a contact; its keyring entry → L₁+330. X=0 if there
+.is none or the user cancelled. With one key there is no menu;
+.with more, a menu of the first 6 (keys 1-6).
 Lbl PK
 0→X
 sub(OP,GDB7)
@@ -462,6 +530,8 @@ Output(0,0,"SEND TO")
 If G>6
 6→G
 End
+.Entry E's name is 8 bytes at keyring offset E·41+2; shown as
+."1 NAME" (E+49 = the digit's character code)
 For(E,0,G-1)
 For(I,0,7)
 sub(RB,E*41+2+I)
@@ -472,6 +542,7 @@ Output(0,E+1)
 Disp E+49►Char
 Output(2,E+1,L₁+690)
 End
+.Wait for a number 1-G (CLEAR cancels)
 0→E
 While E=0 or (E>G)
 sub(WK)
@@ -486,7 +557,8 @@ sub(KE,E)
 1→X
 Return
 .
-.KEYRING ENTRY r₁→L₁+330 (41 BYTES)
+.KE: keyring entry r₁ → L₁+330: 41 bytes (name 8, my side 1,
+.key 32) from offset 2 (after the version and count bytes)
 Lbl KE
 r₁*41+2→Y
 For(I,0,40)
@@ -495,19 +567,23 @@ C→{L₁+330+I}
 End
 Return
 .
-.NAME AT L₁+330→L₁+690, 0-ENDED
+.NM: the entry's name → L₁+690, 0-terminated for Disp
 Lbl NM
 Copy(L₁+330,L₁+690,8)
 0→{L₁+698}
 Return
 .
-.NEXT COUNTER WITH MY SIDE AS ITS LAST
-.BIT, SAVED (ARCHIVED) BEFORE USE→L₁+2-5
+.CN: the next counter value whose last bit is my side → L₁+2..5.
+.It's saved in CCSTATE (and archived) before it is used, so a
+.counter is never used twice, even if something fails later. CCSTATE is 4 bytes,
+.big-endian: V = high word, G = low word. X=0 if no memory.
 Lbl CN
 0→X
+.GetCalc returns 0 for an archived appvar, so unarchive first
 UnArchive GDB8
 GetCalc(GDB8)→R
 !If R
+.No CCSTATE yet: make one, counter 0
 GetCalc(GDB8,4)→R
 !If R
 Return
@@ -517,10 +593,12 @@ End
 End
 {R}*256+{R+1}→V
 {R+2}*256+{R+3}→G
+.+1, carrying into the high word when G wraps to 0
 G+1→G
 !If G
 V+1→V
 End
+.+1 more if the last bit isn't my side
 If G^2≠{L₁+338}
 G+1→G
 !If G
@@ -536,22 +614,27 @@ Archive GDB8
 1→X
 Return
 .
-.MESSAGE (L+22 BYTES)→G DIGITS IN NOTE
-.CCOUT; X=0 IF NO MEMORY
+.WN: write the message (L+22 bytes at L₁) as G digits into the
+.note CCOUT (replacing an old one). X=0 if no memory.
 Lbl WN
 0→X
 L+22→B
 sub(DG,B)
 A→G
+.Note size: header 24 + digits + 00h end + 2 trailing bytes
 GetCalc(GDB9,G+27)→R
 !If R
 Return
 End
+.Header: the 16 bytes at GDB6, then the words textlen+24, 18h,
+.textlen+24, 1 (as NoteFolioEdit writes them)
 Copy(GDB6,R,16)
 G+24→{R+16}ʳ
 24→{R+18}ʳ
 G+24→{R+20}ʳ
 1→{R+22}ʳ
+.Each 2 bytes (a big-endian word) → 5 digits, written from the
+.last digit back (V mod 10, then V/10); 48 = "0"
 R+24→D
 0→E
 While E+1<B
@@ -563,6 +646,7 @@ End
 D+5→D
 E+2→E
 End
+.An odd last byte → 3 digits
 If B^2
 {L₁+E}→V
 For(I,0,2)
@@ -571,18 +655,21 @@ V/10→V
 End
 D+3→D
 End
+.The 00h end and the 2 trailing bytes
 0→{D}
 0→{D+1}
 0→{D+2}
 1→X
 Return
 .
-.DIGITS FOR r₁ BYTES→A
+.DG: number of digits for r₁ bytes → A (5 per 2 bytes, 3 for
+.an odd last one)
 Lbl DG
 r₁/2*5+(r₁^2*3)→A
 Return
 .
-.ASCII r₁→COMPACT VALUE A
+.VA: ASCII r₁ → compact value A: 0-9, A-Z 10-35, the
+.punctuation in GDB5 36-44 (r₁ must be in the alphabet)
 Lbl VA
 r₁-48→A
 If r₁-65<26
@@ -593,7 +680,7 @@ inData(r₁,GDB5)+35→A
 End
 Return
 .
-.COMPACT VALUE r₁→CHARACTER C
+.VC: compact value r₁ → character C (the reverse of VA)
 Lbl VC
 r₁+48→C
 If r₁≥10
@@ -604,8 +691,9 @@ If r₁≥36
 End
 Return
 .
-.APPEND THE LOW Z BITS OF A AT D
-.(W HOLDS K BITS)
+.AB: append the low Z bits of A at D, highest first. X = 2^(Z-1)
+.is the first bit's mask; W collects bits and goes to D when it
+.has 8 (K counts them). Same as prgmθQR's AB.
 Lbl AB
 1→X
 While Z>1
@@ -613,6 +701,7 @@ X*2→X
 Z-1→Z
 End
 While X
+.· is a 16-bit and (Axe's and only uses the low 8 bits)
 W*2+(A·X≠0)→W
 K+1→K
 If K=8
@@ -625,7 +714,9 @@ X/2→X
 End
 Return
 .
-.READ r₁ BITS AT BIT D OF THE TEXT→A
+.RD: read r₁ bits of the text, starting at bit D (highest bit
+.of each byte first) → A. Bit D is in byte D/8, mask GDB4+(D mod
+.8).
 Lbl RD
 0→A
 For(I,1,r₁)
@@ -634,9 +725,12 @@ D+1→D
 End
 Return
 .
-.WAIT FOR A KEY WITH THE OS GETKEY (AUTO
-.POWER-DOWN, 2ND+ON TURNS IT OFF). θ = 1-6
-.FOR 1-6 OR F1-F5, 255 FOR CLEAR, ELSE 0
+.WK: wait for a key with the OS's _GetKey (getKeyʳ) rather than
+.a getKey loop: it runs the auto power-down, 2nd+ON turns the
+.calculator off, and the CPU sleeps between interrupts. Its key
+.codes are the OS's (k... in ti83plus.inc): θ = 1-6 for keys 1-6
+.or F1-F5, 255 for CLEAR (09h), 0 for anything else (including
+.two-byte codes over 255).
 Lbl WK
 getKeyʳ→θ
 If θ>255
@@ -653,7 +747,7 @@ End
 End
 Return
 .
-.WAIT FOR 1 OR 2 (OR F1, F2), OR CLEAR→θ
+.YN: wait for 1 or 2 (or F1, F2) or CLEAR → θ
 Lbl YN
 0→θ
 While θ=0 or (θ>2 and (θ≠255))
@@ -661,14 +755,15 @@ sub(WK)
 End
 Return
 .
-.r₁ ON THE LAST LINE, THEN WAIT
+.ER: show the message r₁ on the last line, then wait for a key
 Lbl ER
 Output(0,7,r₁)
 sub(WK)
 Return
 .
-.OPEN APPVAR NAMED r₁: X=1 IF FOUND;
-.Q=RAM DATA, OR Q=0 AND FILE Y₁; T=SIZE
+.OP: open the appvar named r₁ (OP1 name). X=1 if found; Q = its
+.data in RAM, or Q=0 and the archived copy opened as file Y₁;
+.T = its size
 Lbl OP
 0→X
 GetCalc(r₁)→Q
@@ -684,7 +779,7 @@ End
 1→X
 Return
 .
-.BYTE r₁ OF THE OPEN APPVAR→C
+.RB: byte r₁ of the open appvar → C (RAM at Q, or file Y₁)
 Lbl RB
 If Q
 {Q+r₁}→C
@@ -693,8 +788,8 @@ End
 {Y₁+r₁}→C
 Return
 .
-.KEY ID: FIRST BYTE OF AES(K2, ZEROS)→A
-.(LEAVES K2'S ROUND KEYS LOADED)
+.KI: key ID = the first byte of AES(K2, 16 zero bytes) → A.
+.Leaves K2's round keys loaded.
 Lbl KI
 sub(KX,L₁+355)
 For(I,0,15)
@@ -704,8 +799,8 @@ sub(AE,L₁+640)
 {L₁+640}→A
 Return
 .
-.CMAC SUBKEYS (K1 LOADED): L₁+576 =
-.DBL(AES(0)), L₁+592 = DBL OF THAT
+.SK: CMAC subkeys (RFC 4493) for the loaded key (K1):
+.L₁+576 = dbl(AES(0)), L₁+592 = dbl of that
 Lbl SK
 For(I,0,15)
 0→{L₁+576+I}
@@ -716,8 +811,11 @@ Copy(L₁+576,L₁+592,16)
 sub(DB,L₁+592)
 Return
 .
-.S2V (RFC 5297) OF HEADER (6) AND TEXT
-.(L BYTES)→L₁+624. D AT L₁+608
+.SV: S2V (RFC 5297) of the header (6 bytes at L₁) and the text
+.(L bytes at L₁+22) → L₁+624, with the loaded key (K1).
+.D (at L₁+608) = CMAC(zero block), then D = dbl(D) xor
+.CMAC(header). Last: CMAC(text xorend D) if the text has 16
+.bytes or more, else CMAC(dbl(D) xor text padded with 80h 00..).
 Lbl SV
 For(I,0,15)
 0→{L₁+640+I}
@@ -730,7 +828,8 @@ For(I,0,15)
 {L₁+608+I} xor {L₁+624+I}→{L₁+608+I}
 End
 If L≥16
-.TEXT XOREND D: XOR, CMAC, XOR BACK
+.xorend: D goes into the text's last 16 bytes. Done in place:
+.xor, CMAC, xor back
 For(I,0,15)
 {L₁+22+L-16+I} xor {L₁+608+I}→{L₁+22+L-16+I}
 End
@@ -739,7 +838,8 @@ For(I,0,15)
 {L₁+22+L-16+I} xor {L₁+608+I}→{L₁+22+L-16+I}
 End
 Else
-.DBL(D) XOR THE PADDED TEXT
+.Short text: build the block at L₁+640. Byte I is the text
+.byte if I<L, 80h at I=L ((I=L)·128), else 0.
 sub(DB,L₁+608)
 For(I,0,15)
 I=L*128→C
@@ -752,19 +852,21 @@ sub(CM,L₁+640,16)
 End
 Return
 .
-.CMAC (RFC 4493) OF r₂ BYTES AT r₁
-.→L₁+624. USES P N K O M C I
+.CM: CMAC (RFC 4493) of r₂ bytes at r₁ → L₁+624, with the
+.loaded key and its subkeys (SK). Uses P N K O M C I.
 Lbl CM
 r₁→P
 r₂→N
 For(I,0,15)
 0→{L₁+624+I}
 End
-.K BLOCKS BEFORE THE LAST
+.K = blocks before the last: ceil(N/16)-1, read left to right
+.as ((N+15)/16)-1; 0 when N=0
 0→K
 If N
 N+15/16-1→K
 End
+.CBC over those blocks; O = offset of the next block
 0→O
 While K
 For(I,0,15)
@@ -774,6 +876,9 @@ sub(AE,L₁+624)
 O+16→O
 K-1→K
 End
+.The last block: M bytes. A full one is xored with subkey 1;
+.a short one (or none) is padded with 80h 00.. and xored with
+.subkey 2.
 N-O→M
 If M=16
 For(I,0,15)
@@ -791,7 +896,9 @@ End
 sub(AE,L₁+624)
 Return
 .
-.DOUBLE 16 BYTES AT r₁ IN GF(2^128)
+.DB: double the 16 bytes at r₁ in GF(2^128) (big-endian): shift
+.left one bit; if the top bit fell off, xor 87h (135) into the
+.last byte. {Y+I}*2^256 = (byte·2) mod 256, left to right.
 Lbl DB
 r₁→Y
 {Y}/128→C
@@ -801,15 +908,17 @@ End
 {Y+15}*2^256 xor (C*135)→{Y+15}
 Return
 .
-.CTR (RFC 5297, K2 LOADED) OVER THE L
-.TEXT BYTES, FROM THE TAG WITH BITS 63
-.AND 31 CLEARED. USES O K C I
+.CT: CTR mode (RFC 5297) with the loaded key (K2) over the L
+.text bytes at L₁+22, in place (encrypts and decrypts). The
+.counter block starts as the tag with bits 63 and 31 cleared
+.(the top bits of bytes 8 and 12). Uses O K C I.
 Lbl CT
 Copy(L₁+6,L₁+656,16)
 {L₁+664} and 127→{L₁+664}
 {L₁+668} and 127→{L₁+668}
 0→O
 While O<L
+.Keystream block = AES(counter), xored into up to 16 bytes
 Copy(L₁+656,L₁+640,16)
 sub(AE,L₁+640)
 For(I,0,15)
@@ -817,6 +926,8 @@ If O+I<L
 {L₁+22+O+I} xor {L₁+640+I}→{L₁+22+O+I}
 End
 End
+.Counter + 1 (128-bit big-endian): from the last byte, while
+.a byte wraps to 0 (C = carry)
 16→K
 1→C
 While C
@@ -828,7 +939,12 @@ O+16→O
 End
 Return
 .
-.AES-128 KEY SCHEDULE OF r₁→L₁+380
+.KX: AES-128 key schedule of the key at r₁ → L₁+380: 44 words
+.of 4 bytes, word J at L₁+380+4J. The first 4 are the key. For
+.the rest, temp (L₁+672) = the previous word, or for J mod 4 = 0
+.that word rotated left one byte, put through the S-box, with
+.the round constant Z xored into its first byte; word J = word
+.J-4 xor temp.
 Lbl KX
 Copy(r₁,L₁+380,16)
 1→Z
@@ -841,6 +957,8 @@ Else
 {{W-2}+GDB2}→{L₁+673}
 {{W-1}+GDB2}→{L₁+674}
 {{W-4}+GDB2}→{L₁+675}
+.Next round constant: Z·2 in GF(2^8), xor 1Bh (27) if the top
+.bit was set
 Z*2^256 xor (Z/128*27)→Z
 End
 For(I,0,3)
@@ -849,20 +967,25 @@ End
 End
 Return
 .
-.AES-128 ENCRYPT 16 BYTES AT r₁ IN PLACE
-.USES W U I J Z r₂-r₆
+.AE: AES-128 encryption of the 16 bytes at r₁, in place, with
+.the round keys at L₁+380 (KX). Uses W U I J Z r₂-r₆.
 Lbl AE
 r₁→W
+.Round 0: add the first round key
 For(I,0,15)
 {W+I} xor {L₁+380+I}→{W+I}
 End
 For(U,1,10)
-.SUBBYTES AND SHIFTROWS
+.SubBytes and ShiftRows in one step: new byte I = S-box of old
+.byte GDB3(I), built at L₁+672 and copied back
 For(I,0,15)
 {{{GDB3+I}+W}+GDB2}→{L₁+672+I}
 End
 Copy(L₁+672,W,16)
-.MIXCOLUMNS (NOT IN THE LAST ROUND)
+.MixColumns (not in the last round), column by column (4
+.bytes a0-a3 at Z): with t = a0^a1^a2^a3, each
+.ai ^= t ^ xtime(ai ^ ai+1), where xtime(x) = x·2 mod 256,
+.xor 1Bh (27) if x's top bit was set
 If U≠10
 For(J,0,3)
 J*4+W→Z
@@ -881,6 +1004,7 @@ r₅ xor r₂→I
 r₅ xor r₆ xor (I*2^256) xor (I/128*27)→{Z+3}
 End
 End
+.Add round key U
 For(I,0,15)
 {W+I} xor {U*16+L₁+380+I}→{W+I}
 End

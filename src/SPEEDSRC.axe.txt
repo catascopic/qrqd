@@ -1,33 +1,33 @@
 .SPEED
-.SPEED TEST FOR 15 MHZ MODE (TI-84+).
-.A BAR SWEEPS ACROSS THE SCREEN. MODE
-.TOGGLES FULL (15 MHZ) AND NORMAL
-.(6 MHZ). CLEAR EXITS WITHOUT CHANGING
-.THE SPEED, SO THE NEXT RUN SHOWS IF IT
-.STAYED. TOP: THE SPEED AT START.
-.BOTTOM: SPEED NOW, FRAMES PER SECOND.
+.Test tool for 15 MHz mode (TI-84+): a bar sweeps across the
+.screen. MODE toggles Full (15 MHz) and Normal (6 MHz). CLEAR
+.exits without changing the speed, so the next run shows if it
+.stayed. Top line: the speed at start. Bottom: the speed now,
+.and frames per second.
 .
-.PORT 20H BIT 0 IS THE CPU SPEED
-.(1 = 15 MHZ). INA,(20H) AND 1, STORE
-.IT AT L1 (86ECH)
+.Port 20h bit 0 is the CPU speed (1 = 15 MHz). The Asm( bytes:
+.in a,(20h) / and 1 / ld (86ECh),a, which stores it at L₁
 Asm(DB20E60132EC86)
 {L₁}→S
-.PORT 45H IS THE LOW BYTE OF THE CLOCK
-.SECONDS. STORE IT AT L1+1 (86EDH)
+.Port 45h is the low byte of the clock's seconds counter (84+
+.only): in a,(45h) / ld (86EDh),a stores it at L₁+1
 Asm(DB4532ED86)
 {L₁+1}→T
+.X = bar position, D = its direction (+1 or -1 as 65535),
+.F = frames this second, R = frames in the last full second,
+.P = MODE key state on the previous frame
 0→X
 1→D
 0→F
 0→R
 0→P
-.TEXT GOES TO THE BUFFER
+.Text( draws to the buffer, so it shows with DispGraph
 Fix 5
 Repeat getKey(15)
 Asm(DB20E60132EC86)
 Asm(DB4532ED86)
 {L₁}→C
-.COUNT FRAMES UNTIL THE SECOND CHANGES
+.Count frames until the clock's second changes
 F+1→F
 If {L₁+1}≠T
 {L₁+1}→T
@@ -49,11 +49,11 @@ End
 Text(60,57,"FPS ")
 Text(76,57,R►Dec)
 DispGraph
-.SOME MATH EACH FRAME, LIKE THE ENGINE
+.Some math each frame, like the engine does
 For(I,0,399)
 I*I/7→A
 End
-.MODE: TOGGLE ONCE PER PRESS
+.MODE (key 55): toggle once per press, on the frame it goes down
 getKey(55)→K
 If K>P
 If C
@@ -63,13 +63,15 @@ Full
 End
 End
 K→P
+.Move the bar; turn around at either edge (0-D negates D)
 X+D→X
 If X=0 or (X=92)
 0-D→D
 End
 End
-.WAIT FOR CLEAR TO BE RELEASED
+.Wait for CLEAR to be released, so it doesn't reach the OS
 While getKey(0)
 End
+.Text back to the screen, and a clean home screen
 Fix 4
 ClrHome

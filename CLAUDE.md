@@ -62,7 +62,8 @@ Workflow for every change: edit `src/` → build → `python tests/run_all.py` �
 `build/*.8xp`. The user is focused on the Axe/hybrid sets and considers the pure-BASIC set
 stable: run `test_basic.py` (or `run_all.py --basic`) only when `src/QRBASIC.basic.txt` or
 `src/_theta_QRBIT.basic.txt` (or the lists they use) change.
-`build.py` refuses to write QRSRC.8xp if tokenizing changes any code line, and fixes the header
+`build.py` strips the Axe sources' comments (all but the `.NAME` line) and blank lines, refuses
+to write QRSRC.8xp if tokenizing changes any code line, and fixes the header
 (product ID byte 0 like TI Connect files; tivars writes 13h).
 
 ## How the user runs it
@@ -126,12 +127,17 @@ first, picks the version from the length and mode, then encodes.
 - `{P}` byte, `{P}ʳ` little-endian word. `Pxl-On(X,Y)ʳ`/`pxl-Test(X,Y)ʳ` = back buffer (L₃).
 - `For(V,A,B)` checks the bound before the first pass; `Return` outside a subroutine ends the
   program; Returning from inside `For(V,..)`/`While` is fine. Subroutines share all globals.
-- Comments start with `.`; a line starting with `...` opens a multi-line comment.
+- Comments start with `.`; a line starting with `...` opens a multi-line comment. In this
+  project comments are whole lines only (axesim skips lines starting with `.`; build.py refuses
+  `...` blocks), and build.py strips them all, plus blank lines, except line 1 (the `.NAME`
+  header that names Axe's output). So comments cost nothing on the calculator and can use any
+  characters.
 - Write names as their tokens: `GDB1`, `Str1`, `L₁`, `"varE"` (`var` is the u token). The
   tokenizer does this from the spellings; plain letters in code would be variables.
 - Comments too (the user's preference): `Str1`, `ʟBIN`, `L₁`, `r₁`, `Y₁`, `Ans`, `prgmQR`, `→`,
-  `⁻` rather than spelling them out (STR1, L1, R1). Keep comments short: details belong in
-  docs/design.md.
+  `⁻` rather than spelling them out (STR1, L1, R1). Normal sentence case, not all caps. Explain
+  the cryptic parts (unsigned wraparound tricks, left-to-right expressions, table layouts,
+  memory offsets, the algorithm a loop implements); the full history belongs in docs/design.md.
 - OS names for GetCalc are OP1 bytes: type, name, 0 (e.g. `[015D42494E00]` = list BIN).
   `GetCalc` returns 0 for archived vars; archived data is read via `GetCalc(name,Y₁)` and `{Y₁+k}`.
 - Free RAM: L₁ 714 bytes, L₃ 768 (back buffer), L₆ = graph buffer. See design.md for the map.

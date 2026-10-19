@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 import codechat as cc                                          # noqa: E402
 
 SRC = (ROOT / 'src' / 'CHATSRC.axe.txt').read_text(encoding='utf-8')
+CODE = '\n'.join(s for s in SRC.split('\n') if not s.startswith('.'))   # without the comments
 K1, K2, K3, K4, CLEAR, ENTER = 0x8F, 0x90, 0x91, 0x92, 9, 5  # the OS _GetKey codes (getKeyʳ)
 F1, F2, F3, F4 = 0x49, 0x48, 0x2E, 0x5A                     # Y= WINDOW ZOOM TRACE
 SEND, RECEIVE, NEWKEY, QUIT = K1, K2, K3, K4
@@ -208,7 +209,7 @@ def qr_engine_reads_ccout():
 
 def menus():
     expect('every key wait is the OS getKey (auto power-down, 2nd+ON)',
-           SRC.count('getKey') == SRC.count('getKeyʳ') > 0)
+           CODE.count('getKey') == CODE.count('getKeyʳ') > 0)
     m = machine([F1, ENTER, F4], ['HI'], entries=[('BOB', 0, KEY)])
     expect('F1 sends and F4 quits, like 1 and 4', 'CCOUT' in m.appvars and m.home == {}, shown(m))
     m = machine([F2, F2, ENTER, F4], [], note=None)

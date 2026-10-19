@@ -1,16 +1,17 @@
 .UNPROT
-.UNPROTECTS THE PROGRAM NAMED IN Str1
-.(TYPE 06h→05h IN THE VAT) SO TI CONNECT
-.CAN COPY IT. "θQR"→Str1:Asm(prgmUNPROT
-.prgm IN FRONT IS ALLOWED. IT MUST BE IN
-.RAM. RECOMPILING PROTECTS IT AGAIN.
+.Tool: unprotects the program named in Str1 (VAT type 06h,
+.protected program → 05h, program) so TI Connect will copy it
+.off the calculator. Usage: "θQR"→Str1:Asm(prgmUNPROT
+.A prgm token in front of the name is allowed. The program must
+.be in RAM. Recompiling it with Axe protects it again.
 .
+.S = the name's tokens, N = their count (the size word)
 GetCalc("Str1")→S
 0→N
 If S
 {S-2}ʳ→N
 End
-.SKIP A LEADING prgm TOKEN
+.Skip a leading prgm token (5Fh = 95)
 If N≠0 and ({S}=95)
 S+1→S
 N-1→N
@@ -19,12 +20,18 @@ End
 Disp "PUT NAME IN STR1"
 Return
 End
-.VAT: TYPE AT P, NAME LENGTH AT P-6,
-.NAME FROM P-7 DOWN, PAGE AT P-5
+.Walk the program VAT, from progPtr (word at 9830h) down to
+.pTemp (982Eh). Entry at P: type in the low 5 bits of {P},
+.archive page at P-5 (0 = in RAM), name length at P-6, name from
+.P-7 downward; the next entry starts at P-7-length.
 {ᴇ9830}ʳ→P
 While P>{ᴇ982E}ʳ
 {P-6}→L
+.A program (05h) or protected program (06h) with a name as
+.long as ours
 If {P} and 31≥5 and ({P} and 31≤6) and (L=N)
+.Compare the names (the name bytes are the same as the tokens
+.for A-Z, 0-9 and θ)
 1→X
 For(I,0,L-1)
 If {P-7-I}≠{S+I}
@@ -40,6 +47,7 @@ If {P} and 31=5
 Disp "NOT PROTECTED"
 Return
 End
+.Keep the top 3 flag bits (224 = E0h), set the type to 05h
 {P} and 224 or 5→{P}
 Disp "UNPROTECTED"
 Return

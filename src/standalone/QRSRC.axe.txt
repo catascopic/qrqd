@@ -1,48 +1,78 @@
 .θQR
-.QR ENGINE FOR prgmQR: V1-11, EC L, MASK 0
-.E=1 Str1, 2 ʟBIN, 3 NOTE NAMED IN Str2,
-.  4 LIST NOTES INTO Str3 (Ans=COUNT)
-.V=VERSION, 0 TO CHECK ONLY
-.M=0 AUTO, 1 ASCII, 2 ALNUM. AFTER AN
-.  AUTO CHECK, SET M FROM THE Ans BIT
-.N=COUNT, O=COUNT TO SKIP FIRST
-.Ans: CHECK 2*LENGTH+1 ALNUM, +0 ASCII
-.  0 DRAWN, 65533 BAD CHAR (POSITION IN
-.  B), 65532 TOO LONG, 65535 BAD INPUT
-.B: FIRST PROBLEM CHARACTER (A NOTE IN
-.  BYTE MODE ONLY WARNS)
+.QR code engine for prgmQR (standalone release): versions 1-11,
+.EC level L, mask 0.
+.Called from BASIC with Asm(prgmθQR); inputs are OS variables
+.(a missing one reads as 0), the answer comes back in Ans.
+.Comments are stripped by tools/build.py, so they cost nothing
+.on the calculator. Details: docs/design.md, docs/standalone/API.md.
 .
-.TWO-BYTE TOKEN PREFIXES
+.Inputs:
+.  E  source: 1 text in Str1 (tokens), 2 bytes in ʟBIN,
+.     3 text of the NoteFolio note named in Str2,
+.     4 list the NoteFolio notes into Str3 (Ans = how many)
+.  V  version 1-11, or 0 to only check the text
+.  M  mode: 0 auto, 1 ASCII (byte mode), 2 alphanumeric.
+.     After an auto check, prgmQR sets M from the Ans bit.
+.  N  number of characters to encode
+.  O  number of characters to skip first (split messages)
+.Ans:
+.  check: 2·length+1 if alphanumeric, 2·length if byte mode
+.  draw: 0 (the code is in the graph buffer, shown)
+.  65533 bad character (its position in B)
+.  65532 too long (over 32765 characters)
+.  65535 bad input (bad E/V/M, or the input doesn't exist)
+.  list (E=4): the number of notes
+.B: position of the first problem character (a note in byte
+.  mode only warns: Ans is a normal result with B≠0)
+.
+.Static data. inData( searches up to a 0 byte, so the
+.tables searched that way end in 00.
+.
+.First bytes of two-byte tokens (Str1 holds tokens)
 [5C5D5E606162637EAABBEF00]→GDB1
-.OS NAME OF ʟBIN
+.OS name of ʟBIN for GetCalc: type 01h (list), 5Dh (named
+.list prefix), "BIN", 0
 [015D42494E00]→GDB2
-.DATA CODEWORDS PER VERSION
+.Data codewords per version at EC L (words, v1 first)
 [13002200370050006C0088009C00C200E80012014401]→GDB3
-.EC CODEWORDS PER BLOCK
+.EC codewords per block, v1-11
 [070A0F141A1214181E1214]→GDB4
-.BLOCKS; AT +11 COUNT BITS: BYTE V1-9,
-.V10+, ALNUM V1-9, V10+
+.Number of blocks, v1-11; at +11 the character count field
+.widths: byte mode v1-9 and v10+ (8, 16), alphanumeric v1-9
+.and v10+ (9, 11)
 [01010101010202020204040810090B]→GDB5
-.VERSION INFO, V7-11
+.Version information for v7-11 (words; 18-bit BCH codes whose
+.top 2 bits are 0 for versions below 16, so 16 bits suffice)
 [947CBC85999AD3A4F6BB]→GDB6
-.DARK FORMAT MODULES: 9 X,Y, THEN K
-.FOR (S-K,8) (3) AND (8,S-K) (7)
+.Dark modules of the format information. EC L and mask 0 always
+.give 77C4h, so only the dark ones are listed, as (column,row):
+.9 pairs near the top left finder, then 3 values k drawn at
+.(S-k,8) and 7 values k drawn at (8,S-k); the last of these is
+.the dark module that every QR code has, at (8,S-8)
 [08020807080807080508040802080108000803070807060503020108]→GDB7
-.NOTEFOLIO SIGNATURE
+.First 4 bytes of every NoteFolio appvar
 [F347BFAF]→GDB8
-.ALNUM PUNCTUATION (36-44); AT +10 NOTE
-.CHARACTERS THAT CHANGE, AT +20 TO WHAT
+.Alphanumeric punctuation in value order, values 36-44 (space,
+.$ % * + - . / and colon), 0-terminated. At +10: note characters
+.that change on
+.the way out ([ θ $ ⁴ Enter 0Ah, wrapped-line space, two kinds of
+.hyphen), at +20 what each becomes (see Lbl MA)
 [2024252A2B2D2E2F3A00C15BF224D60AF1D21A005BC124F20AD6202D2D]→GDB9
-.TOKENS FOR ASCII 32-126: FIRST BYTES,
-.THEN SECOND BYTES (0 IF ONE BYTE)
+.The token for each ASCII character 32-126, as two 95-byte rows:
+.first bytes, then second bytes (0 for a one-byte token). Every
+.two-byte one starts with BBh (lowercase letters and some
+.punctuation). Position in a row + 31 = the ASCII code.
 [292D2ABBBBBBBBAE101182702B713A83303132333435363738393EBB6B6A6CAFBB4142434445464748494A4B4C4D4E4F505152535455565758595A06BB07F0BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB08BB09BB000000D2D3DAD40000000000000000000000000000000000000000D600000000D1000000000000000000000000000000000000000000000000000000D70000D9D5B0B1B2B3B4B5B6B7B8B9BABCBDBEBFC0C1C2C3C4C5C6C7C8C9CA00D800CF]→GDB0
 .
-.15 MHZ (84+, SE); THE OS RESETS IT
+.15 MHz on the 84+ and Silver Editions (nothing on a plain 83+).
+.The OS goes back to 6 MHz by itself when the program ends.
 Full
 .
-.PARAMETERS (MISSING = 0)
+.Read the parameters (GV gives 0 for a missing variable). The
+.mode goes into F, because M is used for the codeword count.
 sub(GV,"varE")
 r₁→E
+.E=4 is a separate job: list the notes and return
 If E=4
 sub(LS)
 Return
@@ -51,12 +81,14 @@ sub(GV,"varV")
 r₁→V
 sub(GV,"varM")
 r₁→F
+.E-1>2 rejects E=0 too: 0-1 wraps around to 65535
 If V>11 or (E-1>2) or (F>2)
 65535→Ans
 Return
 End
 .
-.FIND THE INPUT, LENGTH T
+.Find the input: P points at it, T = its length in characters
+.ʟBIN: P = the first element (9-byte floats), byte mode only
 If E=2
 GetCalc(GDB2)→P
 !If P
@@ -66,6 +98,7 @@ End
 {P-2}ʳ→T
 1→F
 End
+.Note: NF opens it (Q or Y₁) and sets T, X=0 if not found
 If E=3
 sub(NF)
 !If X
@@ -73,6 +106,8 @@ sub(NF)
 Return
 End
 End
+.Str1: the size word gives bytes, but a character can be a
+.two-byte token, so count tokens: X = end, Z walks the string
 If E=1
 GetCalc("Str1")→P
 !If P
@@ -91,23 +126,29 @@ T+1→T
 End
 End
 .
-.2*32765+1 STAYS BELOW THE ERROR CODES
+.The check's answer is 2T+1 at most, so T≤32765 keeps it below
+.the error codes (65532 and up). Tested before the scan, which
+.would take long on a huge note.
 If V=0 and (T>32765)
 65532→Ans
 Return
 End
-.CHECK (V=0, OR AUTO): K FIRST
-.NON-ASCII, X FIRST NON-ALNUM POSITION
+.Scan the text: always for a check (V=0), and for a draw in auto
+.mode (M=0: no check told us the mode). Otherwise the draw trusts
+.the earlier check. O = position of the character just read,
+.K = first character outside printable ASCII and newline,
+.X = first character that alphanumeric mode can't encode.
 If E≠2 and (V=0 or (F=0))
 0→O
 0→K
 0→X
 While O<T
 sub(CH)
+.A-32>94: below 32 wraps around, so this means A<32 or A>126
 If A-32>94 and (A≠10) and (K=0)
 O→K
 End
-.STOP TESTING ALNUM AFTER A FAILURE
+.Stop testing alphanumeric after the first failure
 !If X
 sub(AV)
 If J=99
@@ -115,15 +156,18 @@ O→X
 End
 End
 End
+.Forced alphanumeric: the first non-alphanumeric is the problem
 If F=2
 X→K
 End
-.AUTO: ALNUM IF EVERY CHARACTER IS
+.Auto: alphanumeric (2) if no character failed, else byte (1);
+.read as (X=0)+1, strictly left to right
 !If F
 X=0+1→F
 End
-.POSITION IN B; A NOTE IN BYTE MODE
-.ONLY WARNS, ANYTHING ELSE FAILS
+.Report the position in B (only if B exists). A note in byte
+.mode just warns (its bytes go out as calculator codes);
+.anything else fails.
 If K
 GetCalc("varB")→Z
 If Z
@@ -135,6 +179,7 @@ Return
 End
 End
 End
+.Check only: 2T+1 if alphanumeric (F=2), 2T if byte (F=1)
 !If V
 T*2+F-1→Ans
 Return
@@ -143,16 +188,20 @@ sub(GV,"varN")
 r₁→N
 sub(GV,"varO")
 r₁→θ
-.F: 1 BYTE, 2 ALNUM
+.From here F is 1 (byte) or 2 (alphanumeric).
+.S = size in modules; G, H = top and left offsets that center
+.the symbol on the 96×64 screen (row 31, column 47 in the middle)
 V*4+17→S
 31-(S/2)→G
 47-(S/2)→H
+.M data codewords, R EC codewords per block, B blocks
 {V*2+GDB3-2}ʳ→M
 {V+GDB4-1}→R
 {V+GDB5-1}→B
 .
-.CLAMP θ AND N TO THE LENGTH; 468 KEEPS
-.A BAD N FROM WRITING PAST L₁
+.Clamp θ and N to the text. N≤468 only keeps a bad N from
+.writing past L₁; keeping N within the version's capacity is
+.the caller's job.
 If θ>T
 T→θ
 End
@@ -163,22 +212,26 @@ If N>468
 468→N
 End
 .
-.DATA CODEWORDS AT L₁
+.Bit-pack the data codewords into L₁ with AB: D = output
+.pointer, W = byte being filled, K = bits in W
 0→O
 L₁→D
 0→W
 0→K
-.MODE INDICATOR 4 BYTE, 2 ALNUM; COUNT
+.Mode indicator, 4 bits: 0100 byte (F=1), 0010 alphanumeric
+.(F=2); then the character count, its width from GDB5+11..14
 6-(F*2)→A
 4→Z
 sub(AB)
 N→A
 {F*2+(V≥10)+GDB5+9}→Z
 sub(AB)
+.CH reads Str1 through P, so point P at it again
 If E=1
 GetCalc("Str1")→P
 End
-.SKIP θ BYTES OR CHARACTERS
+.ʟBIN: skip θ elements (9 bytes each), then 8 bits per element
+.(float{ turns the OS float into an integer)
 If E=2
 P+(θ*9)→P
 1→I
@@ -190,8 +243,9 @@ sub(AB)
 I+1→I
 End
 Else
-.STEP OVER TOKENS BY LENGTH; A NOTE
-.STARTS AT θ
+.Skip θ characters. Str1: step over tokens by their length
+.(no table lookup needed); a note: CH reads byte O+24 next, so
+.just set O
 If E=1
 While O<θ
 If inData({P},GDB1)
@@ -203,6 +257,7 @@ End
 Else
 θ→O
 End
+.Byte mode: 8 bits per character
 If F=1
 1→I
 While I≤N
@@ -212,6 +267,7 @@ sub(AB)
 I+1→I
 End
 Else
+.Alphanumeric: each pair as 45·first+second in 11 bits...
 1→I
 While I≤(N/2)
 sub(CH)
@@ -224,6 +280,7 @@ L+J→A
 sub(AB)
 I+1→I
 End
+.and an odd last character in 6 bits (N^2 = N mod 2)
 If N^2
 sub(CH)
 sub(AV)
@@ -233,7 +290,8 @@ sub(AB)
 End
 End
 End
-.TERMINATOR, BYTE ALIGN, PAD BYTES
+.Terminator: up to 4 zero bits, fewer if the data is full.
+.Z = bits left = 8M - bits written so far ((D-L₁)·8+K)
 M*8-(D-L₁*8+K)→Z
 If Z>4
 4→Z
@@ -242,11 +300,14 @@ If Z
 0→A
 sub(AB)
 End
+.Zero bits up to the next byte boundary
 If K
 0→A
 8-K→Z
 sub(AB)
 End
+.Fill the rest with pad bytes 236 (ECh) and 17 (11h), in turn:
+.236 xor 253 = 17 and 17 xor 253 = 236
 236→A
 While D<(L₁+M)
 A→{D}
@@ -254,18 +315,26 @@ D+1→D
 A xor 253→A
 End
 .
-.GF(256) EXP AT L₃, LOG AT L₃+512
+.GF(256) tables in L₃ (field polynomial 11Dh): exp at L₃+0..509,
+.written twice so exp(a+b) needs no mod 255 for a,b≤254; log of
+.x (1-255) at L₃+512+x
 1→X
 For(I,0,254)
 X→{I+L₃}
 X→{I+L₃+255}
 I→{X+L₃+512}
 X*2→X
+.Overflow past 8 bits: drop bit 8 and xor with 1Dh (the low
+.byte of 11Dh)
 If X>255
 X-256 xor 29→X
 End
 End
-.GENERATOR POLY AT L₁+420 AS LOGS
+.Generator polynomial (x-2⁰)(x-2¹)...(x-2^(R-1)), coefficients
+.at L₁+420.. from the highest power down; L₁+420 stays 1.
+.Start with 1, then multiply by (x+2^I) for each I: from the
+.top down, coefficient J ^= coefficient J-1 · 2^I (that product
+.done with logs: exp(log C + I))
 1→{L₁+420}
 For(J,1,R)
 0→{J+L₁+420}
@@ -280,10 +349,14 @@ End
 J-1→J
 End
 End
+.Store coefficients 1..R as logs, which is what RS uses (none
+.of them is 0 for R≤30, so every log exists)
 For(J,1,R)
 {{J+L₁+420}+L₃+512}→{J+L₁+420}
 End
-.EC BYTES FOR EACH BLOCK AT L₁+330
+.EC codewords for each block, R per block, from L₁+330. Blocks
+.are Y long; the last U (= M mod B) are one byte longer.
+.A = the block's data, L = its length, Z = where its EC goes.
 M/B→Y
 M^B→U
 L₁→A
@@ -295,7 +368,12 @@ A+L→A
 Z+R→Z
 End
 .
-.RESERVED MODULES IN BACK BUFFER
+.Map of the function patterns in the back buffer (ʳ), one pixel
+.per module, not offset: a set pixel = not a data module. Rect(
+.X,Y,W,H) with X the column. The three finders with separators
+.and format areas, the timing row and column, and for v7+ the
+.two version information blocks. Alignment patterns are added
+.by AP below. The main buffer is cleared for the drawing.
 ClrDraw
 ClrDrawʳ
 Rect(0,0,9,9)ʳ
@@ -307,7 +385,7 @@ If V≥7
 Rect(S-11,0,3,6)ʳ
 Rect(0,S-11,6,3)ʳ
 End
-.FINDER PATTERNS
+.Finder patterns at the top left, top right and bottom left
 0→X
 0→Y
 sub(FP)
@@ -316,17 +394,22 @@ sub(FP)
 0→X
 S-7→Y
 sub(FP)
-.TIMING PATTERNS
+.Timing patterns: row 6 and column 6, dark at even positions,
+.between the finders' separators
 For(K,8,S-9)
 !If K^2
 Pxl-On(K+H,6+G)
 Pxl-On(6+H,K+G)
 End
 End
-.ALIGNMENT PATTERNS
+.Alignment patterns (v2+). Center coordinates in L₁+500..:
+.v2-6 {6, S-7}; v7-11 {6, middle, S-7}, A of them. Every pair
+.gets a pattern except those that would overlap a finder.
+.W = the middle coordinate (0 for v2-6, when there is none).
 If V≥2
 6→{L₁+500}
 If V≥7
+.(S-1)/2, as Axe reads it left to right
 S-1/2→W
 W→{L₁+501}
 S-7→{L₁+502}
@@ -340,13 +423,18 @@ For(U,0,A-1)
 For(Z,0,A-1)
 {U+L₁+500}→X
 {Z+L₁+500}→Y
+.Skip a center on row or column 6 unless the other coordinate
+.is the middle: v2-6 keep only (S-7,S-7); v7+ drop the three at
+.the finders, (6,6), (6,S-7) and (S-7,6)
 !If X=6 and (Y≠W) or (Y=6 and (X≠W))
 sub(AP)
 End
 End
 End
 End
-.FORMAT BITS (EC L, MASK 0), DARK MODULE
+.Format information (always EC L, mask 0) and the dark module,
+.from GDB7: 9 near the top left finder, 3 along row 8 at the
+.top right, 7 down column 8 at the bottom left
 For(I,0,8)
 Pxl-On({I*2+GDB7}+H,{I*2+GDB7+1}+G)
 End
@@ -356,7 +444,10 @@ End
 For(I,21,27)
 Pxl-On(8+H,S-{I+GDB7}+G)
 End
-.VERSION INFO (V7+)
+.Version information (v7+): 18 bits, lowest first. Bit I goes
+.to column S-11+(I mod 3), row I/3 (top right block) and to the
+.transposed place (bottom left block). A/2 shifts the next bit
+.down; bits 16 and 17 are 0, as the word runs out.
 If V≥7
 {V*2+GDB6-14}ʳ→A
 For(I,0,17)
@@ -370,31 +461,43 @@ A/2→A
 End
 End
 .
-.DATA MODULES, ZIGZAG. FOR CW: T SHORT
-.BLOCK LENGTH, U SHORT BLOCKS
+.Data modules in the standard zigzag: column pairs from the
+.right edge, the first going up, then down, and so on. The
+.codewords come one at a time from CW (Q = index, D = codeword,
+.Z = mask of the next bit, from the top). T and U are set once
+.here for CW: T short block length, U number of short blocks.
 M/B→T
 B-(M^B)→U
 0→Q
 sub(CW)
 128→Z
 0→K
+.K = column pair; X = its right column, moved left past the
+.timing column 6 once the pairs reach it
 While K<(S/2)
 S-1-(K*2)→X
 If X≤6
 X-1→X
 End
+.Odd pairs go down, even pairs go up
 For(I,0,S-1)
 If K^2
 I→Y
 Else
 S-1-I→Y
 End
+.Right column, then left (C = the module's column)
 For(J,0,1)
 X-J→C
+.Skip function modules (set in the back buffer map)
 !If pxl-Test(C,Y)ʳ
+.Mask 0 inverts a bit where (column+row) is even, so a module
+.is dark iff its bit equals (C+Y) mod 2. Read left to right:
+.((D and Z)≠0)=((C+Y) mod 2)
 If D and Z≠0=(C+Y^2)
 Pxl-On(C+H,Y+G)
 End
+.Next bit; after 8, the next codeword
 Z/2→Z
 !If Z
 128→Z
@@ -410,30 +513,43 @@ DispGraph
 0→Ans
 Return
 .
-.CODEWORD Q IN INTERLEAVED ORDER→D:
-.DATA, LONG BLOCKS' LAST BYTES, EC, 0
+.Subroutines. They share all variables with the main code.
+.
+.CW: codeword Q of the final (interleaved) sequence → D, read
+.in place. The order is: data byte 0 of every block, byte 1 of
+.every block, ...; then the last byte of each long block; then
+.EC byte 0 of every block, byte 1, ...; then 0 (the remainder
+.bits after the last codeword).
+.Uses T short block length, U number of short blocks (set
+.before the zigzag).
 Lbl CW
 0→D
 If Q<M
+.L = block, O = index in the block
 If Q<(T*B)
 Q^B→L
 Q/B→O
 Else
+.Past T·B: the extra last bytes of the long blocks (U..B-1)
 Q-(T*B)+U→L
 T→O
 End
-.BLOCK L AT L*T, +1 PER LONG ONE BEFORE
+.Block L starts at L·T, plus 1 for each long block before it:
+.((L>U)·(L-U))+L·T+O+L₁, left to right
 L>U*(L-U)+(L*T)+O+L₁→O
 {O}→D
 Return
 End
+.EC byte O/B of block O mod B; blocks' EC are R bytes apart
 Q-M→O
 If O<(R*B)
 {O^B*R+(O/B)+L₁+330}→D
 End
 Return
 .
-.APPEND LOW Z BITS OF A
+.AB: append the low Z bits of A to the data, highest first.
+.X = 2^(Z-1) is the mask of the first bit; W collects bits and
+.is stored at D when it has 8 (K counts them).
 Lbl AB
 1→X
 While Z>1
@@ -441,6 +557,7 @@ X*2→X
 Z-1→Z
 End
 While X
+.· is a 16-bit and (Axe's and only uses the low 8 bits)
 W*2+(A·X≠0)→W
 K+1→K
 If K=8
@@ -453,7 +570,10 @@ X/2→X
 End
 Return
 .
-.NEXT CHARACTER→ASCII A (0 IF NONE)
+.CH: next character → ASCII code A, 0 if it has none. O counts
+.the characters read (1 = first).
+.A note: the text starts at byte 24 of the appvar, then MA maps
+.the calculator character code.
 Lbl CH
 O+1→O
 If E=3
@@ -461,29 +581,34 @@ sub(RB,O+23)
 sub(MA)
 Return
 End
+.Str1: Y = the token's first byte, P moves past it
 {P}→Y
 P+1→P
 0→A
 If inData(Y,GDB1)
-.TWO-BYTE TOKEN: ONLY BB ONES ARE ASCII
+.Two-byte token: only BBh ones have ASCII (lowercase letters
+.etc.); look up the second byte in GDB0's second row. BB 00 is
+.npv(, never a character: 0 in that row means "one-byte token".
 If Y=187 and ({P}≠0)
 inData({P},GDB0+95,95)→A
 End
 P+1→P
 Else
-.⁻ AS MINUS
+.Treat the negative sign ⁻ (B0h) as minus (71h)
 If Y=176
 113→Y
 End
 inData(Y,GDB0,95)→A
 End
-.TABLE POSITION→ASCII
+.Table position 1-95 → ASCII 32-126
 If A
 A+31→A
 End
 Return
 .
-.ASCII A→ALNUM VALUE J (99 IF NONE)
+.AV: ASCII A → alphanumeric value J (0-9 digits, 10-35 A-Z,
+.36-44 punctuation), 99 if none. A-48<10 means 48≤A≤57 (below
+.48 wraps around to a large number).
 Lbl AV
 99→J
 If A-48<10
@@ -497,7 +622,13 @@ inData(A,GDB9)+35→J
 End
 Return
 .
-.EC BYTES: DATA A, LENGTH L, OUT Z
+.RS: Reed-Solomon EC codewords for one block: data at A, length
+.L, the R EC bytes written to Z. Polynomial division done like a
+.shift register: the remainder (R bytes, plus a 0 byte that
+.shifts in) at L₁+460. For each data byte: C = byte xor the
+.remainder's first byte; shift the remainder left one byte;
+.then remainder ^= C · generator (coefficients 1..R, as logs at
+.L₁+421..: C·g = exp(log C + log g)).
 Lbl RS
 For(J,0,R)
 0→{J+L₁+460}
@@ -515,16 +646,19 @@ End
 Copy(L₁+460,Z,R)
 Return
 .
-.FINDER PATTERN AT X,Y: 7×7 DARK, 5×5
-.CLEARED (INVERTED), 3×3 DARK
+.FP: finder pattern with its top left module at X,Y: a 7×7 dark
+.square, the 5×5 inside inverted (cleared), a 3×3 dark center
 Lbl FP
 Rect(X+H,Y+G,7,7)
 RectI(X+H+1,Y+G+1,5,5)
 Rect(X+H+2,Y+G+2,3,3)
 Return
 .
-.ALIGNMENT PATTERN AT X,Y (RESERVED TOO):
-.5×5 DARK, 3×3 CLEARED, CENTER DARK
+.AP: alignment pattern centered at X,Y: marked in the back
+.buffer map (ʳ, no offset), then drawn: 5×5 dark, the 3×3
+.inside cleared, the center dark. It draws its own light
+.modules, so it doesn't matter that the timing pattern was
+.drawn first.
 Lbl AP
 Rect(X-2,Y-2,5,5)ʳ
 Rect(X-2+H,Y-2+G,5,5)
@@ -532,7 +666,12 @@ RectI(X-1+H,Y-1+G,3,3)
 Pxl-On(X+H,Y+G)
 Return
 .
-.CALC CHARACTER C→BYTE A (GDB9+10 MAP)
+.MA: calculator character code C → output byte A. Most go out
+.unchanged; the calculator's swaps are undone so a character
+.never poses as another ASCII one: θ (5Bh) and [ (C1h) swap,
+.⁴ (24h) and $ (F2h) swap, Enter (D6h) and 0Ah swap, F1h (the
+.space where a line wrapped) → space, D2h/1Ah (hyphen, negative)
+.→ -. U = position in the list at GDB9+10 (1-based).
 Lbl MA
 C→A
 inData(C,GDB9+10)→U
@@ -541,14 +680,22 @@ If U
 End
 Return
 .
-.LIST NOTES INTO Str3
+.LS: list the NoteFolio notes into Str3 for prgmQR's pager:
+.8 characters per name, padded with spaces, then 48 more spaces
+.so a page of 5 names read past the last one stays inside Str3.
+.Names are gathered at L₁+8K first (at most 80, L₁+0..639).
+.VAT walk: entries go down from progPtr (word at 9830h) to pTemp
+.(982Eh); type in the low 5 bits at P, name length at P-6, name
+.from P-7 downward, next entry at P-7-length.
 Lbl LS
 {ᴇ9830}ʳ→P
 0→K
 While P>{ᴇ982E}ʳ
 {P-6}→L
+.An appvar (15h) with a name of 1-8 characters
 If {P} and 31=21 and (L-1<8)
 sub(NC)
+.NC: a name we can open by name; NH: really a note
 If X and (K<80)
 sub(NH)
 If X
@@ -562,6 +709,7 @@ End
 End
 P-7-L→P
 End
+.8 bytes a name plus the 48 padding spaces (41 = space token)
 GetCalc("Str3",K*8+48)→W
 !If W
 65535→Ans
@@ -576,7 +724,10 @@ End
 K→Ans
 Return
 .
-.VAT NAME AT P, LENGTH L→L₁+700
+.NC: copy the VAT name at P (length L) to L₁+700 as an OP1
+.name (15h, name, 0). X=0 unless every character is 0-9, A-Z
+.or θ (5Bh, the 27th "letter"): those are also their own
+.tokens, so prgmQR can show the name and pass it back in Str2.
 Lbl NC
 21→{L₁+700}
 1→X
@@ -590,8 +741,11 @@ End
 0→{L+L₁+701}
 Return
 .
-.IS L₁+700 A NOTEFOLIO? X=1 IF SO;
-.DATA AT Q, OR Q=0 AND FILE Y₁
+.NH: is the appvar named at L₁+700 (OP1 style: 15h, name, 0) a
+.NoteFolio note? X=1 if so. GetCalc gives a RAM pointer (Q), or
+.0 when the appvar is archived; then it is opened as the file
+.Y₁ (Q stays 0, and RB reads through Y₁). U = appvar size, at
+.least 27 for an empty note (header 24, the 00 end, 2 bytes).
 Lbl NH
 0→X
 GetCalc(L₁+700)→Q
@@ -606,6 +760,7 @@ End
 If U<27
 Return
 End
+.The first 4 bytes must be the NoteFolio signature
 For(J,0,3)
 sub(RB,J)
 If C≠{J+GDB8}
@@ -615,8 +770,10 @@ End
 1→X
 Return
 .
-.OPEN THE NOTE NAMED IN Str2:
-.X=1 IF FOUND, T=TEXT LENGTH
+.NF: open the note named in Str2. X=1 if found, T = text
+.length. The name is copied to L₁+701 as tokens, which for A-Z,
+.0-9 and θ are the same bytes as in a VAT name. A space (29h)
+.ends it, so a name padded with spaces (from Str3) works too.
 Lbl NF
 0→X
 GetCalc("Str2")→Z
@@ -633,15 +790,19 @@ Else
 L+1→L
 End
 End
+.1-8 characters (L=0 wraps around, so it fails too)
 If L-1>7
 Return
 End
+.Make the OP1 name: type 15h (appvar), the name, 0
 21→{L₁+700}
 0→{L+L₁+701}
 sub(NH)
 !If X
 Return
 End
+.The text runs from byte 24 to a 00h; the appvar size bounds
+.the scan (U-24 bytes at most)
 0→T
 U-24→U
 While T<U
@@ -654,7 +815,8 @@ End
 End
 Return
 .
-.OS REAL NAMED r₁ ("VARN")→r₁, 0 IF NONE
+.GV: the OS real variable named by the string r₁ ("varN") →
+.r₁ as an integer, 0 if it doesn't exist
 Lbl GV
 GetCalc(r₁)→r₁
 If r₁
@@ -662,7 +824,8 @@ float{r₁}→r₁
 End
 Return
 .
-.BYTE r₁ OF THE NOTE→C
+.RB: byte r₁ of the open note → C: from RAM at Q, or from the
+.archived file Y₁ when Q=0
 Lbl RB
 If Q
 {Q+r₁}→C

@@ -1,30 +1,34 @@
 .θNOTES
-.NOTEFOLIO PICKER, FOR PRGMQR OR ANY
-.PROGRAM. A MENU OF THE NOTES, SORTED, IN
-.COLUMNS OF 8 (SMALL FONT). ARROWS MOVE,
-.ENTER PICKS, CLEAR CANCELS. ON EXIT THE
-.HOME SCREEN IS REDRAWN AS IT WAS
-.OUT ANS=1 PICKED: ITS NAME IN STR2
-.    ANS=0 CANCELLED (STR2 UNCHANGED)
-.    ANS=2 NO NOTES (AFTER A MESSAGE)
-.    ANS=65535 NO RAM FOR STR2
-.USES L1 (NAMES) AND THE GRAPH BUFFER
+.NoteFolio note picker, for prgmQR or any program: a sorted
+.menu of the notes in columns of 8 (small font). Arrows move,
+.ENTER picks, CLEAR cancels. On exit the home screen is redrawn
+.as it was.
+.Ans out: 1 picked (its name in Str2)
+.         0 cancelled (Str2 unchanged)
+.         2 no notes (after a message)
+.         65535 no RAM for Str2
+.Uses L₁ (the names) and the graph buffer (left clear).
 .
-.NOTEFOLIO SIGNATURE
+.First 4 bytes of every NoteFolio appvar
 [F347BFAF]→GDB8
-."Choose a NoteFolio file:" IN ASCII
-.(LOWERCASE), 75 PIXELS IN SMALL FONT;
-.CENTERED IN X=0-94 (95 IS RESERVED)
+.Title "Choose a NoteFolio file:" as ASCII bytes, so the
+.lowercase comes out exactly (Text( draws character codes).
+.75 pixels wide in the small font: drawn at x=10, it is centered
+.in x=0-94 (column 95 is left blank, as in prgmQR).
 [43686F6F73652061204E6F7465466F6C696F2066696C653A00]→GDB1
 .
-.RUN INDICATOR OFF (BCALL _RUNINDICOFF)
+.Run indicator off (bcall _RunIndicOff, 4570h): the OS draws it
+.in the top right corner, over the title bar
 Asm(EF7045)
+.Collect the names: K = how many
 sub(LS)
+.Text( draws to the buffer from here on
 Fix 5
 !If K
 ClrDraw
 Text(0,0,"NO NOTEFOLIO FILES")
 DispGraph
+.Wait for any key
 0→Z
 While Z=0
 getKey→Z
@@ -33,7 +37,9 @@ sub(EX)
 2→Ans
 Return
 End
-.SORT THE NAMES (SELECTION SORT)
+.Sort the names (selection sort): for each slot I, find the
+.smallest name S from there on and swap it into I, through the
+.8-byte buffer at L₁+690
 If K>1
 For(I,0,K-2)
 I→S
@@ -50,15 +56,18 @@ Copy(L₁+690,S*8+L₁,8)
 End
 End
 End
-.MENU: TITLE BAR (CENTERED), COLUMNS OF
-.8 NAMES 7 PIXELS APART, 2 SHOWN.
-.S CHOSEN, T LEFT COLUMN
+.The menu: the title in an inverted bar, then columns of 8
+.names 7 pixels apart, 2 columns on screen. S = selected name,
+.T = the leftmost column shown.
 0→S
 0→T
 While 1
 ClrDraw
 Text(10,0,GDB1)
 RectI(0,0,95,7)
+.Up to 16 names: name J = T·8+I goes in screen column I/8 (x
+.48 apart) and row I mod 8 (y from 8, 7 apart). L₁+690 holds a
+.0-terminated copy for Text( (a full 8-character name has no 0).
 For(I,0,15)
 T*8+I→J
 If J<K
@@ -67,6 +76,7 @@ Copy(J*8+L₁,L₁+690,8)
 Text(I/8*48+2,I^8*7+8,L₁+690)
 End
 End
+.Invert the selected name: 47×7 from one row above its ink
 S-(T*8)→J
 RectI(J/8*48,J^8*7+8,47,7)
 DispGraph
@@ -74,11 +84,13 @@ DispGraph
 While Z=0
 getKey→Z
 End
+.getKey codes: 1 down, 2 left, 3 right, 4 up, 9 ENTER, 15 CLEAR
 If Z=15
 sub(EX)
 0→Ans
 Return
 End
+.ENTER: Str2 = the name without its 0 padding (L characters)
 If Z=9
 sub(EX)
 8→L
@@ -94,13 +106,16 @@ Copy(S*8+L₁,W,L)
 1→Ans
 Return
 End
+.Up and down move by one, on into the next column
 If Z=1 and (S+1<K)
 S+1→S
 End
 If Z=4 and (S>0)
 S-1→S
 End
-.RIGHT INTO A SHORT LAST COLUMN: ITS END
+.Right moves a column (8 names). If that runs past the end
+.and we're not in the last column yet ((K-1)/8, left to right),
+.go to the last name.
 If Z=3
 If S+8<K
 S+8→S
@@ -113,6 +128,7 @@ End
 If Z=2 and (S>7)
 S-8→S
 End
+.Scroll a column at a time to keep column S/8 on screen
 If S/8<T
 S/8→T
 End
@@ -121,11 +137,16 @@ S/8-1→T
 End
 End
 .
-.ERASE THE MENU (CLEAR THE BUFFER, SHOW
-.IT) AND REDRAW THE HOME SCREEN FROM THE
-.OS COPY OF ITS TEXT (TEXTSHADOW, 8508H,
-.16X8). CURROW/CURCOL (844BH) PUT BACK.
-.FIX 7 SO THE LAST CELL CAN'T SCROLL
+.Subroutines
+.
+.EX: leave cleanly. An assembly program returning to the home
+.screen doesn't make the OS redraw it, so: clear the buffer and
+.show it (a blank LCD), then redraw the home screen's text from
+.the OS's copy, textShadow (8508h, 16×8 character codes), one
+.cell at a time. curRow/curCol (the word at 844Bh) are saved and
+.put back so the OS prints the result where it would have. Fix 4
+.sends text to the screen again; Fix 7 keeps the last cell from
+.scrolling the screen; Fix 6 turns scrolling back on.
 Lbl EX
 ClrDraw
 DispGraph
@@ -140,7 +161,8 @@ Z→{ᴇ844B}ʳ
 Fix 6
 Return
 .
-.X=1 IF NAME R1 SORTS BEFORE NAME R2
+.LT: X=1 if name r₁ sorts before name r₂ (byte by byte; the 0
+.padding makes a shorter name come first)
 Lbl LT
 0→X
 For(U,0,7)
@@ -153,14 +175,19 @@ End
 End
 Return
 .
-.COLLECT NOTEFOLIO NAMES AT L1, 8 BYTES
-.EACH, 0-PADDED (AT MOST 80). COUNT IN K
+.LS: collect the NoteFolio notes' names at L₁+8K, 8 bytes each,
+.0-padded, at most 80 (L₁+0..639). K = how many.
+.VAT walk: entries go down from progPtr (word at 9830h) to pTemp
+.(982Eh); type in the low 5 bits at P, name length at P-6, name
+.from P-7 downward, next entry at P-7-length.
 Lbl LS
 {ᴇ9830}ʳ→P
 0→K
 While P>{ᴇ982E}ʳ
 {P-6}→L
+.An appvar (15h) with a name of 1-8 characters (L=0 wraps)
 If {P} and 31=21 and (L-1<8)
+.NC: a name we can open by name; NH: really a note
 sub(NC)
 If X and (K<80)
 sub(NH)
@@ -177,9 +204,10 @@ P-7-L→P
 End
 Return
 .
-.VAT NAME AT P, LENGTH L, TO L1+700.
-.X=1 IF IT'S ONLY A-Z, 0-9, θ (OTHERS
-.CAN'T BE TYPED INTO STR2)
+.NC: copy the VAT name at P (length L) to L₁+700 as an OP1 name
+.(15h, name, 0). X=1 if it's only A-Z, 0-9 and θ (5Bh, right
+.after Z, hence C-65<27): those are their own tokens, so the name
+.can go into Str2 and be opened again.
 Lbl NC
 21→{L₁+700}
 1→X
@@ -193,8 +221,11 @@ End
 0→{L+L₁+701}
 Return
 .
-.IS L1+700 A NOTEFOLIO? X=1 IF SO
-.RAM DATA AT Q, OR Q=0 AND FILE Y1
+.NH: is the appvar named at L₁+700 a NoteFolio note? X=1 if
+.so. GetCalc gives a RAM pointer (Q), or 0 when it's archived;
+.then it's opened as the file Y₁ (Q stays 0). U = appvar size,
+.at least 27 for an empty note. The first 4 bytes must be the
+.signature. (The same code is in prgmθQR.)
 Lbl NH
 0→X
 GetCalc(L₁+700)→Q
@@ -218,7 +249,7 @@ End
 1→X
 Return
 .
-.BYTE AT OFFSET R1 OF NOTE TO C
+.RB: byte r₁ of the open note → C (RAM at Q, or file Y₁ if Q=0)
 Lbl RB
 If Q
 {Q+r₁}→C

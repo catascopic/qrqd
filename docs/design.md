@@ -237,6 +237,13 @@
    the design outline is https://claude.ai/code/artifact/e83e8ff0-6022-4cb1-bc10-3243f1360518).
    Menu: Send, Receive, New key (a stub: keys come from `tools/codechat.py`), Quit. No QR yet:
    Send writes the digits to note CCOUT, which prgmQR can draw. See the CodeChat section.
+43. Axe comments stripped at build time: `build.py` (`strip_axe_comments`) drops every comment
+   line except line 1 (the `.NAME` header, which names Axe's output) and every blank line, so
+   comments no longer cost RAM on the calculator, and the sources' comments were rewritten in
+   sentence case with more explanation of the cryptic parts. Comments are whole lines only (as
+   axesim already assumed); `...` blocks are refused. Token bytes: QRSRC 6409 → 3931, standalone
+   QRSRC 6839 → 4270, NOTESSRC 2506 → 1228, CHATSRC 9819 → 6921, LOREMSRC 1619 → 1210, SPEEDSRC
+   975 → 385, UNPROSRC 590 → 307. Compiled programs are unchanged (Axe ignores comments).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty

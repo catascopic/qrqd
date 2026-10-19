@@ -215,14 +215,28 @@
    the EC tail), and at the end `ClrList L₁,L₂,L₃,L₄,L₅` (L₃ = the row flags, up to 61
    elements) and `DelVar Str2`. ClrList keeps L1-L5 defined for the STAT editor. Kept:
    ʟCW (up to ~3.6 KB; Redraw needs it), Str3 (ASCII fix), ʟQROPT, the GF lists.
-39. QRBASIC, XOR table on: the remainder is kept split into 4-bit halves (high in L₁, low in
-   L₅, free then since the powers of 2 are only for the table off), so the inner loop never
-   splits or joins bytes: `seq(ʟXOR(L₁(J)+ʟGFXH(L₄(J))),J,1,R→L₁` and the same with L₅/ʟGFXL.
-   ʟGFXH/ʟGFXL are ʟGFX's high/low halves stored as 16·half+1 (ʟXOR's 16a+b+1 indexing, so
-   one addition makes the index); build.py writes GFXH.8xl and GFXL.8xl. Per data byte the
-   codeword byte is split once for the feedback XOR; per block the EC bytes are joined
-   (16L₁+L₅→L₁). Same named-list reads per element (4), but no divisions, int(, fPart( or
-   joins: in tibasic, a v11 run interprets 31% fewer tokens (v1 15%).
+39. Tried and reverted: QRBASIC with the XOR table kept the remainder split into 4-bit halves
+   (high in L₁, low in L₅, with ʟGFX's halves in two more lists, ʟGFXH/ʟGFXL), so the inner
+   loop never split or joined bytes. In tibasic a v11 run interpreted 31% fewer tokens, but on
+   the calculator it took the same time and needed 4.6 KB more for the lists: the named-list
+   reads (4 per element either way) dominate the ECC time.
+40. QRBASIC, XOR table off: both XORs (feedback →F, and the remainder update) use logical
+   `xor` on bit lists, `.5sum(L₅*(int(2fPart(A/L₅)) xor int(2fPart(B/L₅`, instead of
+   QRECC's complex trick `.5sum(L₅*(1=abs(int(2fPart((A+B𝑖)/L₅`. The user's prgmXORTEST
+   (`src/XORTEST.basic.txt`: one method, N trials of one random pair, whole seconds) timed
+   abs 14 s, xor 11 s, table 4 s: the complex division, complex int(/fPart( and abs('s square
+   root cost more than a second real division and xor. 3 bytes bigger. Exact: A/2^k is a short
+   decimal, so the bits are exactly 0 or 1.
+41. The XOR table option is on by default (ʟQROPT starts as {0,0,0,1}; the user's change), so
+   the tests' sweep covers the table and `xor_table()` the logical xor (table off). QRBASIC
+   times the ECC again: `startTmr→θ` before the block loop, `checkTmr(θ→θ` after it, so θ
+   is the ECC seconds (interleaving and drawing not included). θ was free (θQRBIT doesn't use
+   it). This makes QRBASIC TI-84+ only until the two lines go.
+
+42. CodeChat prototype (`src/CHATSRC.axe.txt` → prgmCODECHAT, an assembly program for testing;
+   the design outline is https://claude.ai/code/artifact/e83e8ff0-6022-4cb1-bc10-3243f1360518).
+   Menu: Send, Receive, New key (a stub: keys come from `tools/codechat.py`), Quit. No QR yet:
+   Send writes the digits to note CCOUT, which prgmQR can draw. See the CodeChat section.
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -375,6 +389,53 @@ so the last cell can't scroll the screen (`Fix 6` after), and curRow/curCol (wor
 saved and put back so the OS prints the result where it would have. The graph buffer is left
 clear (its old contents, e.g. a drawn QR code, are lost, as before).
 
+## CodeChat (src/CHATSRC.axe.txt, tools/codechat.py)
+
+Message = header (6 bytes: 10h + flags [bit 0 compact, bit 1 odd count], key ID, counter
+big-endian) + AES-SIV tag (16) + ciphertext; the header is S2V's one associated-data string
+(RFC 5297; `cryptography`'s `AESSIV(key).encrypt(text, [header])` gives tag + ciphertext).
+Key = 32 bytes: K1 (first half) for S2V/CMAC, K2 for CTR. Key ID = byte 0 of AES(K2, 0¹²⁸).
+The counter's last bit is the sender's side; it only grows (CCSTATE, one counter for all
+contacts, +1 or +2 to land on my side's parity), saved and archived before encrypting.
+Digits: each 2 bytes → 5 digits (00000-65535), a last odd byte → 3; receiving ignores
+non-digits, refuses a group over 65535 or a count that isn't 5k or 5k+3. Compact alphabet
+0-9 A-Z then space ? ! ' , - . / : (values 0-44), pairs in 11 bits, odd last in 6, zero pad.
+8-bit text = calculator character codes (ASCII but $ = F2h, [ = C1h).
+
+Appvars (OP1 names in GDB7-9): CCKEYS = version 1, count, entries of name 8 + my side 1 +
+key 32, may be archived (read through Y₁); CCSTATE = 4-byte counter; CCOUT = a NoteFolio note
+of the digits (header from TEST.8xv: the 4 unknown bytes 80 10 62 21, title CCOUT, trailing
+00 00 00). The PC script writes keyrings with the archive flag set, as TI Connect files do.
+
+Send: contact (menu if more than one, keys 1-6), `input` → tokens → ASCII via θQR's table
+(GDB0/GDB1) into L₃; a token without a character is refused. Compact if every character is
+in the alphabet; lowercase only → "uppercase / as typed" with both digit counts; anything
+else → 8-bit after a confirmation with the digit count. Limits: 416 compact, 286 8-bit
+(one version 11 code). Receive: type digits, or read CCOUT; for each keyring entry whose key
+ID matches: my own side → remember (H), other side → CTR, then the tag (`TR`; CTR again to
+undo if it fails). "SENT BY YOU" only when no other-side key was tried. Text shows on the
+home screen, 112 characters a page (Fix 7, so the last cell doesn't scroll).
+
+Keys: every wait is `WK`, which uses `getKeyʳ` (the OS's blocking _GetKey) rather than a
+`getKey` loop: only _GetKey runs the OS's auto power-down (the user's app never turned off on
+its menu), 2nd+ON works, and the CPU sleeps between interrupts instead of spinning at 15 MHz.
+_GetKey has its own codes (ti83plus.inc k...): `WK` turns 1-6 (8Fh-94h, GDB4+8) and F1-F5
+(Y= WINDOW ZOOM TRACE GRAPH: 49h 48h 2Eh 5Ah 44h, GDB4+15) into θ = 1-6, Clear (09h) into
+255, anything else into 0. Main menu: 1/F1 send, 2/F2 receive, 3/F3 new key, 4/F4 or Clear
+quit; Clear backs out of the contact list and the questions.
+
+Memory: L₁ header 0-5, tag 6-21, text 22-321, key entry 330-370 (name, side 338, K1 339, K2
+355), round keys 380-555, CMAC subkeys 576/592, S2V D 608, CMAC out 624, scratch block 640,
+CTR counter 656, temp 672; L₁+690 a name for display. L₃ typed characters. Variables:
+AE uses W U I J Z r₂-r₆, KX W I J Z, CM P N K O M C I, DB Y C I, CT O K C I; the main code
+keeps its values in other letters across them. The main menu is an If/Else chain: θ is
+changed inside every choice (a test caught Send's cancel key opening Receive).
+
+Tests: `tests/test_codechat.py` runs the source in axesim with `app=True` (writing into the
+program's own data raises, as a Flash app can't): AES (FIPS-197 C.1) and CMAC (RFC 4493, 0/16/
+40/64 bytes) by calling the subroutines, sends compared byte for byte with the Python
+reference, receives of reference messages, CCOUT round trip, errors, paging.
+
 ## Risks: not verified on hardware
 
 - Never compiled by a real Axe. Syntax checked against Axe 1.2.2 Commands.html, the 1.1.2
@@ -383,6 +444,11 @@ clear (its old contents, e.g. a drawn QR code, are lost, as before).
 - Archived notes read through Axe files (`GetCalc(name,Y₁)`, `{Y₁+k}`, `{Y₁-2}ʳ`).
 - VAT entry layout as above.
 - The graph-redraw assumption behind `ClrDraw:DispGraph` before `Asm(`.
+- CodeChat: compiled size not known; the estimate (~7.5-8 KB) is close to the 8,811 bytes an
+  assembly program can run (code past C000h crashes). Check before running; else compile as an app.
+  What ON does while `getKeyʳ` waits (some OS routines treat it as break). `input`'s result is assumed to be token data with its size in the 2 bytes before (like an
+  OS string); `Archive`/`UnArchive` with an OP1 name pointer; `Output(X,Y,PTR)` near the last
+  row is kept under 16 characters so it can't scroll.
 - The note picker: `Text(`/`Fix 5`/`RectI(`/`getKey` are modelled loosely in axesim (text is
   recorded, not drawn), so the menu's look and key handling are only checked on hardware.
   The home-screen redraw assumes textShadow holds plain displayable codes (`Disp ►Char` uses

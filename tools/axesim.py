@@ -13,6 +13,15 @@ and returning with Fix 5 or Fix 7 still on is an error. The home screen is a
 16x8 grid of character codes (`home`): Output( moves the cursor (curCol 844Ch,
 curRow 844Bh), Disp X►Char writes one cell and advances, DispGraph wipes it.
 Asm( runs only the OS calls listed in ASM (anything else raises).
+
+CodeChat's home-screen commands: ClrHome, Output(X,Y[,PTR]), Disp PTR / X►Char / X►Dec
+write into `home` (text wraps at column 16; going past row 7 raises unless Fix 7, as the
+real screen would scroll), `input` returns a scripted token string (`inputs`, its size in
+the 2 bytes before it, like an OS string), and every getKey records the home screen in
+`screens`. Archive/UnArchive move an appvar between RAM and the archive. Static data is
+laid out when the program is parsed (Axe does it at compile time), so `call(label)` can run
+one subroutine. Machine(src, app=True) refuses writes into the program's own data, which a
+Flash app can't do.
 """
 import re
 
@@ -21,7 +30,8 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
-    'Text(', 'RectI(', 'Rect(', 'Fix ', 'getKey', 'Output(', '►Char', 'Asm(',
+    'Text(', 'RectI(', 'Rect(', 'Fix ', 'getKey', 'Output(', '►Char', '►Dec', 'Asm(',
+    'ClrHome', 'input', 'UnArchive ', 'Archive ',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
     'ClrDraw', 'DispGraph', 'Disp ', 'Full', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
@@ -74,7 +84,7 @@ def lex(line):
 
 
 class Machine:
-    def __init__(self, src):
+    def __init__(self, src, app=False):
         self.mem = bytearray(65536)
         self.vars = {}
         self.ans = None
@@ -98,6 +108,9 @@ class Machine:
         self.scroll = 6       # 6 scroll at the last line, 7 don't
         self.home = {}        # (col, row) -> character code on the home screen
         self.run_indicator = True
+        self.app = app
+        self.inputs = []      # scripted input strings (token bytes)
+        self.screens = []     # the home screen (8 lines of text) at each getKey
         self.lines = []
         for raw in src.split('\n'):
             s = raw.rstrip('\n')
@@ -205,6 +218,47 @@ class Machine:
             return self.os.get(('str', int(m.group(1))), 0)
         raise AxeError('unknown GetCalc string ' + s)
 
+    def op1_appvar(self, p):
+        b = self.mem[p:p + 10]
+        if b[0] != 0x15: raise AxeError('not an appvar name: %s' % b.hex())
+        return bytes(b[1:]).split(b'\0')[0].decode('latin-1')
+
+    def archive(self, p, on):
+        """Archive/UnArchive PTR: 1 if it moved, 0 if missing or already there."""
+        name = self.op1_appvar(p)
+        if name not in self.appvars or self.appvars[name][1] == on:
+            return 0
+        ptr = self.appvars[name][0]
+        content = bytes(self.mem[ptr:ptr + self.rd16(ptr - 2)])
+        del self.appvars[name]
+        self.vat = [v for v in self.vat if v[1] != name]
+        self.add_appvar(name, content, archived=on)
+        return 1
+
+    def appvar(self, name):
+        """(content, archived) of an appvar, for tests."""
+        ptr, archived = self.appvars[name]
+        return bytes(self.mem[ptr:ptr + self.rd16(ptr - 2)]), archived
+
+    def screen(self):
+        return [''.join(chr(self.home.get((c, r), 32)) for c in range(16)) for r in range(8)]
+
+    def put(self, c):
+        col, row = self.mem[0x844C], self.mem[0x844B]
+        if not (col < 16 and row < 8): raise AxeError('cursor at %d,%d' % (col, row))
+        self.home[col, row] = c & 0xFF
+        col += 1
+        if col == 16:
+            col, row = 0, row + 1
+            if row == 8:
+                if self.scroll == 6: raise AxeError('Disp scrolled the home screen')
+                row = 7
+        self.mem[0x844C], self.mem[0x844B] = col, row
+
+    def put_str(self, p):
+        for c in self.mem[p:self.mem.index(0, p)]:
+            self.put(c)
+
     def getcalc_ptr(self, p):
         b = self.mem[p:p + 9]
         typ = b[0]
@@ -240,6 +294,16 @@ class Machine:
                 o = stack.pop()
                 self.match[o] = i
                 self.match[i, 'open'] = o
+            elif h[0] == 'HEX':
+                assert t[1] == ('T', '→') and t[2][0] == 'CONST'
+                data = bytes.fromhex(h[1])
+                self.static[t[2][1]] = self.data_ptr
+                self.mem[self.data_ptr:self.data_ptr + len(data)] = data
+                self.data_ptr += len(data)
+            elif h == ('T', 'Buff('):
+                assert t[2] == ('T', ')') and t[3] == ('T', '→')
+                self.static[t[4][1]] = self.data_ptr
+                self.data_ptr += t[1][1]
         if stack:
             raise AxeError('unclosed block at %s' % self.lines[stack[-1]])
 
@@ -254,6 +318,8 @@ class Machine:
         p &= 0xFFFF
         if p < 0x8000:
             raise AxeError('write to ROM %04x' % p)
+        if self.app and 0xA000 <= p < self.data_ptr:
+            raise AxeError('write into the program\'s own data at %04x (not allowed in an app)' % p)
         self.mem[p] = v & 0xFF
 
     def wr16(self, p, v):
@@ -341,6 +407,12 @@ class Machine:
                     v = self.getcalc_str(name)
             else:
                 p, i = self.expr(toks, i + 1)
+                if toks[i] == ('T', ',') and toks[i + 1] != ('T', 'Y₁'):   # GetCalc(NAME,SIZE)
+                    size, i = self.expr(toks, i + 1)
+                    v = self.appvar_create(self.op1_appvar(p), size)
+                    if v and all(e[1] != self.op1_appvar(p) for e in self.vat):
+                        self.vat.append((0x15, self.op1_appvar(p), False))
+                    return v, self.expect(toks, i, ')')
                 if toks[i] == ('T', ','):
                     assert toks[i + 1] == ('T', 'Y₁'), 'only Y1 files supported'
                     i += 2
@@ -363,8 +435,15 @@ class Machine:
                 self.mem[self.data_ptr:self.data_ptr + len(data)] = data
                 self.data_ptr += len(data)
             return self.literals[t], i + 1
-        if t == 'getKey':
+        if t == 'input':
+            if not self.inputs: raise AxeError('input: no scripted input left')
+            data = bytes(self.inputs.pop(0))
+            return self._alloc(len(data).to_bytes(2, 'little') + data) + 2, i + 1
+        if t == 'getKey':                 # getKeyʳ = the OS's blocking _GetKey (its own key codes)
+            self.screens.append(self.screen())
             if not self.keys: raise AxeError('getKey: no scripted keys left')
+            if i + 1 < len(toks) and toks[i + 1] == ('T', 'ʳ'):
+                return self.keys.pop(0), i + 2
             return self.keys.pop(0), i + 1
         if t == 'Y₁':
             if self.file is None: raise AxeError('Y1 used without an open file')
@@ -397,8 +476,14 @@ class Machine:
         raise AxeError('bad operand %r' % (toks[i:],))
 
     # ---------- execution ----------
-    def run(self, max_steps=50_000_000):
-        pc, calls, steps = 0, [], 0
+    def call(self, label, *args):
+        """Run subroutine LABEL with r1.. = ARGS until it returns."""
+        for k, v in enumerate(args):
+            self.vars['r' + '₁₂₃₄₅₆'[k]] = v
+        self.run(start=self.labels[label] + 1)
+
+    def run(self, max_steps=50_000_000, start=0):
+        pc, calls, steps = start, [], 0
         forinfo = {}
         while True:
             steps += 1
@@ -482,16 +567,23 @@ class Machine:
             if h == ('T', 'Disp ') and t[-1] == ('T', '►Char'):
                 c, j = self.expr(t, 1)
                 assert j == len(t) - 1, self.lines[pc]
-                col, row = self.mem[0x844C], self.mem[0x844B]
-                if not (col < 16 and row < 8): raise AxeError('cursor at %d,%d' % (col, row))
-                self.home[col, row] = c & 0xFF
-                col += 1
-                if col == 16:
-                    col, row = 0, row + 1
-                    if row == 8:
-                        if self.scroll == 6: raise AxeError('Disp scrolled the home screen')
-                        row = 7
-                self.mem[0x844C], self.mem[0x844B] = col, row
+                self.put(c)
+                pc += 1; continue
+            if h == ('T', 'Disp ') and t[-1] == ('T', '►Dec'):
+                n, j = self.expr(t, 1)
+                assert j == len(t) - 1, self.lines[pc]
+                for ch in str(n).rjust(5):
+                    self.put(ord(ch))
+                pc += 1; continue
+            if h == ('T', 'ClrHome'):
+                assert len(t) == 1
+                self.home = {}
+                self.mem[0x844C], self.mem[0x844B] = 0, 0
+                pc += 1; continue
+            if h in (('T', 'Archive '), ('T', 'UnArchive ')):
+                p, j = self.expr(t, 1)
+                assert j == len(t), self.lines[pc]
+                self.archive(p, h[1] == 'Archive ')
                 pc += 1; continue
             if h == ('T', 'Asm('):
                 code = ''.join(str(x[1]) if x[0] in ('NUM', 'VAR') else '' for x in t[1:-1])
@@ -501,15 +593,22 @@ class Machine:
                 pc += 1; continue
             if h == ('T', 'Output('):
                 x, j = self.expr(t, 1); j = self.expect(t, j, ',')
-                y, j = self.expr(t, j); j = self.expect(t, j, ')')
+                y, j = self.expr(t, j)
+                text = None
+                if t[j] == ('T', ','):
+                    text, j = self.expr(t, j + 1)
+                j = self.expect(t, j, ')')
                 assert j == len(t), self.lines[pc]
                 if not (x < 16 and y < 8): raise AxeError('Output(%d,%d' % (x, y))
                 self.mem[0x844C], self.mem[0x844B] = x, y
+                if text is not None:
+                    self.put_str(text)
                 pc += 1; continue
             if h == ('T', 'Disp '):
                 p, j = self.expr(t, 1)
                 assert j == len(t), self.lines[pc]
                 self.shown.append(bytes(self.mem[p:self.mem.index(0, p)]).decode('latin-1'))
+                self.put_str(p)
                 pc += 1; continue
             if h == ('T', 'Full'):           # CPU speed only; nothing to simulate
                 assert len(t) == 1, self.lines[pc]
@@ -562,18 +661,7 @@ class Machine:
                 for k in range(n):           # LDIR: forward byte copy
                     self.wr(d + k, self.mem[s + k])
                 pc += 1; continue
-            if h[0] == 'HEX':
-                assert t[1] == ('T', '→') and t[2][0] == 'CONST'
-                data = bytes.fromhex(h[1])
-                self.static[t[2][1]] = self.data_ptr
-                self.mem[self.data_ptr:self.data_ptr + len(data)] = data
-                self.data_ptr += len(data)
-                pc += 1; continue
-            if h == ('T', 'Buff('):
-                n = t[1][1]
-                assert t[2] == ('T', ')') and t[3] == ('T', '→')
-                self.static[t[4][1]] = self.data_ptr
-                self.data_ptr += n
+            if h[0] == 'HEX' or h == ('T', 'Buff('):   # laid out by parse()
                 pc += 1; continue
             # assignment
             v, j = self.expr(t, 0)

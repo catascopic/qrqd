@@ -29,17 +29,19 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (notes, and the picker), `qrtest.py` helpers |
 | `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
 | `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
-| `src/QRBASIC.basic.txt`, `src/_theta_QRBIT.basic.txt` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/` with everything else; runs on the TI-83+ (no stopwatch since design.md item 32; the timed version is branch `timer3`) |
+| `src/QRBASIC.basic.txt`, `src/_theta_QRBIT.basic.txt` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/` with everything else; TI-84+ only for now: an ECC stopwatch, `startTmr→θ` before the block loop and `checkTmr(θ→θ` after it (design.md item 41; without those two lines it runs on the TI-83+; the three-lap version is branch `timer3`) |
+| `src/XORTEST.basic.txt` | the user's XOR speed test (TI-84+: startTmr): pick complex, ʟXOR table or logical xor, run it N times on one random pair, show the seconds and the result (design.md item 40). Any `src/*.basic.txt` is built: default tokenizing unless listed in `MAX_MODE`, header comment from `BASIC_COMMENTS` (else "TI-BASIC program") |
 | `tests/test_basic.py` | runs build/QRBASIC.8xp and _theta_QRBIT.8xp in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
 | `tests/test_frontend.py` | menu flows of `src/QR.basic.txt` in tibasic, with a BASIC stand-in for the engine |
 | `src/LOREMSRC.axe.txt` | test tool (Axe, compiles to prgmLOREM): writes note LOREM, lorem ipsum ×N (OS var N, ≤100); `tests/test_lorem.py` |
+| `src/CHATSRC.axe.txt` | CodeChat prototype (Axe, compiles to prgmCODECHAT): encrypted messages as digits, AES-SIV, keyring appvar CCKEYS, counter CCSTATE, output note CCOUT; design.md "CodeChat". `tools/codechat.py` = PC side (keyrings, reference encrypt/decrypt); `tests/test_codechat.py` |
 | `src/UNPROSRC.axe.txt` | tool (Axe, compiles to prgmUNPROT): unprotects the program named in Str1 (VAT type 06h → 05h; `prgm` prefix allowed, must be in RAM) so TI Connect will copy an Axe-compiled program off the calculator; `tests/test_unprot.py` |
 | `src/SPEEDSRC.axe.txt` | test tool (Axe, compiles to prgmSPEED): bar sweep + FPS (84+ clock port 45h), MODE toggles Full/Normal, shows port 20h speed at start; leaves the speed set. Hardware-only (Asm( port reads), not simulated |
 
 ## Commands
 
 ```
-pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow
+pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow, cryptography
 python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp (build.bat does the same, for double-clicking)
 python tests/run_all.py                  # every suite but test_basic, in parallel (~30 s); --quick, --basic
 python tests/test_engine.py --quick      # drop --quick for the full sweep (~30 s)
@@ -48,6 +50,8 @@ python tests/test_frontend.py            # front-end menus; needs ../tibasic and
 python tests/test_basic.py --quick       # pure-BASIC set; same needs; minutes (see the workflow)
 python tests/test_lorem.py               # the LOREM note maker
 python tests/test_unprot.py              # the UNPROT tool
+python tests/test_codechat.py            # CodeChat (AES/CMAC vectors, sends vs the PC reference, receives)
+python tools/codechat.py loopkey         # build/CCKEYS.8xv test keyring (LOOP0/LOOP1, one random key)
 python tests/test_engine.py --quick --standalone   # the standalone engine (modes 0-2)
 python tests/test_standalone_notefolio.py          # its notes, E=4 list
 python tests/test_standalone_frontend.py           # its menus (PYTHONUTF8=1)

@@ -36,6 +36,8 @@ PROGRAMS = ROOT / ('originals' if '--originals' in sys.argv else 'build')
 DATA = ROOT / 'tests' / 'data' / 'basic'          # ʟGFL, ʟGFX from the user's calculator
 ASCII, ALNUM, BINARY, SET_VERSION, OPTIONS, REDRAW, EXIT = range(7)   # main menu choices
 STOREPIC, ALT_PUNCT, ASCII_FIX, XOR_TABLE, BACK = range(5)      # options menu
+TABLE_ON = []                              # the XOR table option is on by default (ʟQROPT(4)=1)
+TABLE_OFF = [OPTIONS, XOR_TABLE, BACK]     # menu choices that turn it off
 SKIPPED = {5: 6, 9: 10}   # an automatic pick bumps these to the next (faster) one; set ones are kept
 ORIGINALS = '--originals' in sys.argv
 if ORIGINALS:
@@ -175,24 +177,24 @@ def edge_cases():
     expect('no note when it fits', 'encoded' not in screens(env), screens(env))
     # auto version: the smallest that fits, skipping 9 always and 5 with the XOR table off
     # (the user's timings: with the table, 5 is faster than 6; 9 stays slower than 10)
-    env = run_qr([ALNUM], ['A' * 120])
+    env = run_qr(TABLE_OFF + [ALNUM], ['A' * 120])
     expect('120 alphanumeric chars, table off: version 6 (not 5)', check('auto v6', env, 6, 0, 'A' * 120, 'alphanumeric'))
-    env = run_qr([OPTIONS, XOR_TABLE, BACK, ALNUM], ['A' * 120])
+    env = run_qr(TABLE_ON + [ALNUM], ['A' * 120])
     expect('120 alphanumeric chars, table on: version 5', check('auto v5', env, 5, 0, 'A' * 120, 'alphanumeric'))
-    env = run_qr([OPTIONS, XOR_TABLE, BACK, ALNUM], ['A' * 300])
+    env = run_qr(TABLE_ON + [ALNUM], ['A' * 300])
     expect('300 alphanumeric chars, table on: still version 10 (not 9)', check('auto v10 table', env, 10, 0, 'A' * 300, 'alphanumeric'))
     # versions 5 and 9: drawn when set, whatever the automatic pick does
     for v in (5, 9):
         env = run_qr([SET_VERSION, ALNUM], [str(v), 'HELLO 5 AND 9'])
         expect('set version %d is drawn as %d' % (v, v), check('set v%d' % v, env, v, 0, 'HELLO 5 AND 9', 'alphanumeric'))
-    env = run_qr([ALNUM], ['A' * 300])
-    expect('300 alphanumeric chars: version 10 (not 9)', check('auto v10', env, 10, 0, 'A' * 300, 'alphanumeric'))
+    env = run_qr(TABLE_OFF + [ALNUM], ['A' * 300])
+    expect('300 alphanumeric chars, table off: version 10 (not 9)', check('auto v10', env, 10, 0, 'A' * 300, 'alphanumeric'))
     # cleanup: L₁-L₅ emptied (still defined) at the end; ʟCW kept for Redraw, and Str2 kept
     # (the working table: handy when testing)
     def cleaned(env):
         return ([env.lists[k] is not None and len(env.lists[k].data) == 0 for k in range(5)] == [True] * 5
                 and len(env.user_lists['CW'].data) > 0)
-    for label, choices in (('XOR table off', [ALNUM]), ('XOR table on', [OPTIONS, XOR_TABLE, BACK, ALNUM])):
+    for label, choices in (('XOR table off', TABLE_OFF + [ALNUM]), ('XOR table on', TABLE_ON + [ALNUM])):
         env = run_qr(choices, ['A' * 120])
         table = str(env.strings[1]) if env.strings[1] is not None else None
         expect('cleanup after drawing (%s): L1-L5 empty, CW and Str2 (alnum table) kept' % label,
@@ -218,9 +220,9 @@ def edge_cases():
             expect('bad char in mode %d at %d: error, nothing drawn' % (mode, pos), ok, (lit, sc))
         except Exception as e:
             expect('bad char in mode %d' % mode, False, repr(e))
-    # alt punct: ? ; ' , - . ! : type in place of $ % * + - . / :
-    env = run_qr([OPTIONS, ALT_PUNCT, BACK, ALNUM], ["HI?;'!"])
-    expect("alt punct: HI?;'! scans as HI$%*/", check('alt punct', env, 1, 0, 'HI$%*/', 'alphanumeric'))
+    # alt punct: ? ! ' , - . / : type in place of $ % * + - . / : (each its closest look-alike)
+    env = run_qr([OPTIONS, ALT_PUNCT, BACK, ALNUM], ["HI?!',/"])
+    expect("alt punct: HI?!',/ scans as HI$%*+/", check('alt punct', env, 1, 0, 'HI$%*+/', 'alphanumeric'))
     # ASCII: π stands in for the quote
     # ASCII fix: a 95-character Str3 of your own (here with a real quote) is used as the table
     table = [CHAR_TABLE[chr(c)] for c in range(32, 127)]
@@ -243,8 +245,9 @@ def gf_tables():
 def xor_table():
     """build/XOR.8xl: the named list ʟXOR, entry 16a+b+1 = a xor b, in the calculator's
     own list format (same header layout as ʟGFL/ʟGFX saved from the calculator). With the
-    "XOR table" option on, both XORs in the ECC use it; versions 1, 7 and 10 cover 1, 2 and 4
-    blocks (v10 has long blocks too). The sweep covers the option off (the default)."""
+    "XOR table" option off, both XORs in the ECC use logical xor on bit lists instead; versions
+    1, 7 and 10 cover 1, 2 and 4 blocks (v10 has long blocks too). The sweep covers the
+    option on (the default)."""
     from tivars import TIRealList
     path = PROGRAMS / 'XOR.8xl'
     values = [int(float(x)) for x in TIRealList.open(str(path)).list()]
@@ -256,11 +259,11 @@ def xor_table():
         cap = (CAP_ALNUM if mode == ALNUM else CAP_BYTE)[v - 1]
         payload = next(p for p in payloads(mode, cap) if len(p) == cap)
         inputs = [str(v)] + ([] if mode == BINARY else [payload])
-        env = run_qr([OPTIONS, XOR_TABLE, BACK, SET_VERSION, mode], inputs,
+        env = run_qr(TABLE_OFF + [SET_VERSION, mode], inputs,
                      binary=payload if mode == BINARY else None)
-        if not check('XOR table v%d' % v, env, v, 0, payload, 'alphanumeric' if mode == ALNUM else 'byte'):
+        if not check('XOR table off v%d' % v, env, v, 0, payload, 'alphanumeric' if mode == ALNUM else 'byte'):
             return
-    expect('XOR table on: v1, v7, v10 match the reference and decode', True)
+    expect('XOR table off (logical xor): v1, v7, v10 match the reference and decode', True)
 
 
 if __name__ == '__main__':

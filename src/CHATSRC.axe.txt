@@ -1,0 +1,888 @@
+.CODECHAT
+.CODECHAT PROTOTYPE: AES-SIV MESSAGES AS DIGITS
+.KEYRING APPVAR CCKEYS (FROM THE PC SCRIPT),
+.COUNTER CCSTATE, SENT DIGITS TO NOTE CCOUT
+.L₁: HEADER 0-5, TAG 6-21, TEXT 22-321,
+.KEY ENTRY 330 (NAME, SIDE 338, K1 339,
+.K2 355), ROUND KEYS 380, BLOCKS 576-687
+.L₃: TYPED CHARACTERS
+.
+.TOKENS FOR ASCII 32-126 (AS IN θQR)
+[292D2ABBBBBBBBAE101182702B713A83303132333435363738393EBB6B6A6CAFBB4142434445464748494A4B4C4D4E4F505152535455565758595A06BB07F0BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB08BB09BB000000D2D3DAD40000000000000000000000000000000000000000D600000000D1000000000000000000000000000000000000000000000000000000D70000D9D5B0B1B2B3B4B5B6B7B8B9BABCBDBEBFC0C1C2C3C4C5C6C7C8C9CA00D800CF]→GDB0
+.TWO-BYTE TOKEN PREFIXES
+[5C5D5E606162637EAABBEF00]→GDB1
+.AES S-BOX
+[637C777BF26B6FC53001672BFED7AB76CA82C97DFA5947F0ADD4A2AF9CA472C0B7FD9326363FF7CC34A5E5F171D8311504C723C31896059A071280E2EB27B27509832C1A1B6E5AA0523BD6B329E32F8453D100ED20FCB15B6ACBBE394A4C58CFD0EFAAFB434D338545F9027F503C9FA851A3408F929D38F5BCB6DA2110FFF3D2CD0C13EC5F974417C4A77E3D645D197360814FDC222A908846EEB814DE5E0BDBE0323A0A4906245CC2D3AC629195E479E7C8376D8DD54EA96C56F4EA657AAE08BA78252E1CA6B4C6E8DD741F4BBD8B8A703EB5664803F60E613557B986C11D9EE1F8981169D98E949B1E87E9CE5528DF8CA1890DBFE6426841992D0FB054BB16]→GDB2
+.SHIFTROWS: OLD POSITION OF EACH BYTE
+[00050A0F04090E03080D02070C01060B]→GDB3
+.BIT MASKS; AT +8 GETKEYʳ CODES OF 1-6,
+.AT +15 F1-F5 (Y= WINDOW ZOOM TRACE GRAPH)
+[80402010080402018F90919293940049482E5A4400]→GDB4
+.COMPACT VALUES 36-44: SPACE ?!',-./:
+[203F21272C2D2E2F3A00]→GDB5
+.NOTE HEADER: SIGNATURE, 4 BYTES, TITLE
+[F347BFAF8010622143434F5554000000]→GDB6
+.APPVAR NAMES: CCKEYS, CCSTATE, CCOUT
+[1543434B4559530000]→GDB7
+[154343535441544500]→GDB8
+[1543434F55540000]→GDB9
+.
+Full
+.RUN INDICATOR OFF (BCALL _RUNINDICOFF)
+Asm(EF7045)
+While 1
+ClrHome
+Output(0,0,"CODECHAT")
+Output(0,2,"1 SEND")
+Output(0,3,"2 RECEIVE")
+Output(0,4,"3 NEW KEY")
+Output(0,5,"4 QUIT")
+sub(WK)
+.ONE CHOICE PER KEY (θ CHANGES INSIDE)
+If θ=1
+sub(SD)
+Else
+If θ=2
+sub(RC)
+Else
+If θ=3
+sub(NK)
+Else
+If θ=4 or (θ=255)
+ClrHome
+Return
+End
+End
+End
+End
+End
+.
+.SEND: PICK A CONTACT, TYPE, ENCRYPT,
+.WRITE THE DIGITS TO NOTE CCOUT
+Lbl SD
+sub(PK)
+!If X
+Return
+End
+ClrHome
+Output(0,0,"TO ")
+sub(NM)
+Disp L₁+690
+Output(0,1)
+input→P
+.TOKENS→CHARACTERS AT L₃ (H OF THEM);
+.F=1 IF LOWERCASE, G=1 IF OUTSIDE THE SET
+{P-2}ʳ+P→E
+0→H
+0→F
+0→G
+While P<E
+{P}→Y
+P+1→P
+0→A
+If inData(Y,GDB1)
+If Y=187 and ({P}≠0)
+inData({P},GDB0+95,95)→A
+End
+P+1→P
+Else
+.⁻ AS MINUS
+If Y=176
+113→Y
+End
+inData(Y,GDB0,95)→A
+End
+!If A
+sub(ER,"BAD CHARACTER")
+Return
+End
+A+31→A
+If H=416
+sub(ER,"TOO LONG")
+Return
+End
+A→{L₃+H}
+H+1→H
+If A-97<26
+1→F
+Else
+!If A-48<10 or (A-65<26) or inData(A,GDB5)
+1→G
+End
+End
+End
+.S=1 COMPACT, 0 8-BIT
+1→S
+If G
+0→S
+ClrHome
+Output(0,0,"SPECIAL CHARS")
+Output(0,1,"SEND AS 8-BIT")
+H+22→A
+sub(DG,A)
+Output(0,2)
+Disp A►Dec
+Disp " DIGITS"
+Output(0,4,"1 SEND")
+Output(0,5,"2 CANCEL")
+sub(YN)
+If θ≠1
+Return
+End
+Else
+If F
+ClrHome
+Output(0,0,"HAS LOWERCASE")
+Output(0,2,"1 UPPERCASE")
+Output(0,3,"2 AS TYPED")
+H/2*11+(H^2*6)+7/8+22→A
+sub(DG,A)
+Output(11,2)
+Disp A►Dec
+H+22→A
+sub(DG,A)
+Output(11,3)
+Disp A►Dec
+sub(YN)
+If θ=255
+Return
+End
+If θ=2
+0→S
+Else
+For(E,0,H-1)
+If {L₃+E}-97<26
+{L₃+E}-32→{L₃+E}
+End
+End
+End
+End
+End
+If S=0 and (H>286)
+sub(ER,"TOO LONG")
+Return
+End
+ClrHome
+Output(0,0,"ENCRYPTING...")
+.TEXT AT L₁+22, L BYTES
+L₁+22→D
+0→W
+0→K
+If S
+0→E
+While E+1<H
+sub(VA,{L₃+E})
+A*45→V
+sub(VA,{L₃+E+1})
+V+A→A
+11→Z
+sub(AB)
+E+2→E
+End
+If H^2
+sub(VA,{L₃+E})
+6→Z
+sub(AB)
+End
+If K
+0→A
+8-K→Z
+sub(AB)
+End
+D-L₁-22→L
+Else
+If H
+For(E,0,H-1)
+{L₃+E}→A
+If A=36
+242→A
+End
+If A=91
+193→A
+End
+A→{L₁+22+E}
+End
+End
+H→L
+End
+.HEADER: VERSION 1 + FLAGS, KEY ID, COUNTER
+H^2*2+1*S+16→{L₁}
+sub(KI)
+A→{L₁+1}
+sub(CN)
+!If X
+sub(ER,"NO MEMORY")
+Return
+End
+.TAG = S2V(K1; HEADER, TEXT); CTR WITH K2
+sub(KX,L₁+339)
+sub(SK)
+sub(SV)
+Copy(L₁+624,L₁+6,16)
+sub(KX,L₁+355)
+sub(CT)
+sub(WN)
+!If X
+sub(ER,"NO MEMORY")
+Return
+End
+ClrHome
+Output(0,0,"SENT TO ")
+Disp L₁+690
+Output(0,1)
+Disp G►Dec
+Disp " DIGITS"
+Output(0,2,"IN NOTE CCOUT")
+sub(WK)
+Return
+.
+.RECEIVE: DIGITS (TYPED, OR NOTE CCOUT)
+.→BYTES, THEN TRY EACH MATCHING KEY
+Lbl RC
+ClrHome
+Output(0,0,"RECEIVE")
+Output(0,2,"1 TYPE DIGITS")
+Output(0,3,"2 READ CCOUT")
+sub(YN)
+If θ=255
+Return
+End
+If θ=1
+ClrHome
+Output(0,0,"TYPE THE DIGITS")
+Output(0,1)
+input→Q
+{Q-2}ʳ→T
+0→O
+Else
+sub(OP,GDB9)
+!If X
+sub(ER,"NO NOTE CCOUT")
+Return
+End
+.TEXT FROM 24, BEFORE 00 AND 2 BYTES
+24→O
+T-3→T
+End
+.GROUPS OF 5 DIGITS→2 BYTES, A LAST 3→1
+0→B
+0→D
+0→V
+While O<T
+sub(RB,O)
+O+1→O
+If C-48<10
+C-48→C
+If D=4
+If V>6553 or (V=6553 and (C>5))
+sub(ER,"BAD DIGITS")
+Return
+End
+V*10+C→V
+V/256→{L₁+B}
+V^256→{L₁+B+1}
+B+2→B
+0→D
+0→V
+If B>320
+sub(ER,"TOO LONG")
+Return
+End
+Else
+V*10+C→V
+D+1→D
+End
+End
+End
+If D=3
+If V>255
+sub(ER,"BAD DIGITS")
+Return
+End
+V→{L₁+B}
+B+1→B
+Else
+If D
+sub(ER,"BAD DIGIT COUNT")
+Return
+End
+End
+If B<22
+sub(ER,"TOO SHORT")
+Return
+End
+If {L₁}/16≠1
+sub(ER,"UNKNOWN FORMAT")
+Return
+End
+B-22→L
+ClrHome
+Output(0,0,"DECRYPTING...")
+sub(OP,GDB7)
+!If X
+sub(ER,"NO KEYRING")
+Return
+End
+sub(RB,1)
+C→G
+.H=1 IF A KEY OF MY OWN SIDE MATCHED,
+.B=1 IF ONE OF THE OTHER SIDE WAS TRIED
+0→H
+0→B
+0→E
+While E<G
+sub(KE,E)
+sub(KI)
+If A={L₁+1}
+If {L₁+338}=({L₁+5}^2)
+1→H
+Else
+1→B
+sub(TR)
+If X
+sub(SH)
+Return
+End
+End
+End
+E+1→E
+End
+If H and (B=0)
+sub(ER,"SENT BY YOU")
+Return
+End
+Output(0,6,"CANNOT OPEN IT")
+sub(ER,"WRONG KEY/TYPO?")
+Return
+.
+.TRY THE KEY AT L₁+330 (K2 ROUND KEYS
+.LOADED): CTR, THEN CHECK THE TAG; X=1 IF
+.IT OPENS, ELSE CTR AGAIN TO UNDO IT
+Lbl TR
+sub(CT)
+sub(KX,L₁+339)
+sub(SK)
+sub(SV)
+1→X
+For(I,0,15)
+If {L₁+624+I}≠{L₁+6+I}
+0→X
+End
+End
+!If X
+sub(KX,L₁+355)
+sub(CT)
+End
+Return
+.
+.SHOW THE TEXT (COMPACT OR 8-BIT)
+Lbl SH
+ClrHome
+Output(0,0,"FROM ")
+sub(NM)
+Disp L₁+690
+Output(0,1)
+Fix 7
+0→F
+If {L₁}^2
+L*8→X
+If {L₁}/2^2
+X-6/11→K
+Else
+X/11→K
+End
+0→D
+While K
+sub(RD,11)
+A→V
+sub(VC,V/45)
+sub(PC,C)
+sub(VC,V^45)
+sub(PC,C)
+K-1→K
+End
+If {L₁}/2^2
+sub(RD,6)
+sub(VC,A)
+sub(PC,C)
+End
+Else
+If L
+For(V,0,L-1)
+sub(PC,{L₁+22+V})
+End
+End
+End
+Fix 6
+sub(WK)
+Return
+.
+.CHARACTER r₁ ON THE HOME SCREEN, ROWS 1-7
+.(112 A PAGE; F ON THIS PAGE)
+Lbl PC
+If F=112
+sub(WK)
+ClrHome
+Output(0,0,"(CONTINUED)")
+Output(0,1)
+0→F
+End
+Disp r₁►Char
+F+1→F
+Return
+.
+.NEW KEY: NOT YET
+Lbl NK
+ClrHome
+Output(0,0,"NOT YET")
+Output(0,1,"MAKE KEYS ON PC")
+Output(0,2,"(CODECHAT.PY)")
+sub(WK)
+Return
+.
+.PICK A CONTACT→L₁+330; X=0 IF NONE
+Lbl PK
+0→X
+sub(OP,GDB7)
+!If X
+sub(ER,"NO KEYRING")
+Return
+End
+0→X
+sub(RB,1)
+C→G
+!If G
+sub(ER,"EMPTY KEYRING")
+Return
+End
+0→E
+If G>1
+ClrHome
+Output(0,0,"SEND TO")
+If G>6
+6→G
+End
+For(E,0,G-1)
+For(I,0,7)
+sub(RB,E*41+2+I)
+C→{L₁+690+I}
+End
+0→{L₁+698}
+Output(0,E+1)
+Disp E+49►Char
+Output(2,E+1,L₁+690)
+End
+0→E
+While E=0 or (E>G)
+sub(WK)
+If θ=255
+Return
+End
+θ→E
+End
+E-1→E
+End
+sub(KE,E)
+1→X
+Return
+.
+.KEYRING ENTRY r₁→L₁+330 (41 BYTES)
+Lbl KE
+r₁*41+2→Y
+For(I,0,40)
+sub(RB,Y+I)
+C→{L₁+330+I}
+End
+Return
+.
+.NAME AT L₁+330→L₁+690, 0-ENDED
+Lbl NM
+Copy(L₁+330,L₁+690,8)
+0→{L₁+698}
+Return
+.
+.NEXT COUNTER WITH MY SIDE AS ITS LAST
+.BIT, SAVED (ARCHIVED) BEFORE USE→L₁+2-5
+Lbl CN
+0→X
+UnArchive GDB8
+GetCalc(GDB8)→R
+!If R
+GetCalc(GDB8,4)→R
+!If R
+Return
+End
+0→{R}ʳ
+0→{R+2}ʳ
+End
+{R}*256+{R+1}→V
+{R+2}*256+{R+3}→G
+G+1→G
+!If G
+V+1→V
+End
+If G^2≠{L₁+338}
+G+1→G
+!If G
+V+1→V
+End
+End
+V/256→{R}
+V^256→{R+1}
+G/256→{R+2}
+G^256→{R+3}
+Copy(R,L₁+2,4)
+Archive GDB8
+1→X
+Return
+.
+.MESSAGE (L+22 BYTES)→G DIGITS IN NOTE
+.CCOUT; X=0 IF NO MEMORY
+Lbl WN
+0→X
+L+22→B
+sub(DG,B)
+A→G
+GetCalc(GDB9,G+27)→R
+!If R
+Return
+End
+Copy(GDB6,R,16)
+G+24→{R+16}ʳ
+24→{R+18}ʳ
+G+24→{R+20}ʳ
+1→{R+22}ʳ
+R+24→D
+0→E
+While E+1<B
+{L₁+E}*256+{L₁+E+1}→V
+For(I,0,4)
+V^10+48→{D+4-I}
+V/10→V
+End
+D+5→D
+E+2→E
+End
+If B^2
+{L₁+E}→V
+For(I,0,2)
+V^10+48→{D+2-I}
+V/10→V
+End
+D+3→D
+End
+0→{D}
+0→{D+1}
+0→{D+2}
+1→X
+Return
+.
+.DIGITS FOR r₁ BYTES→A
+Lbl DG
+r₁/2*5+(r₁^2*3)→A
+Return
+.
+.ASCII r₁→COMPACT VALUE A
+Lbl VA
+r₁-48→A
+If r₁-65<26
+r₁-55→A
+End
+If inData(r₁,GDB5)
+inData(r₁,GDB5)+35→A
+End
+Return
+.
+.COMPACT VALUE r₁→CHARACTER C
+Lbl VC
+r₁+48→C
+If r₁≥10
+r₁+55→C
+End
+If r₁≥36
+{r₁-36+GDB5}→C
+End
+Return
+.
+.APPEND THE LOW Z BITS OF A AT D
+.(W HOLDS K BITS)
+Lbl AB
+1→X
+While Z>1
+X*2→X
+Z-1→Z
+End
+While X
+W*2+(A·X≠0)→W
+K+1→K
+If K=8
+W→{D}
+D+1→D
+0→W
+0→K
+End
+X/2→X
+End
+Return
+.
+.READ r₁ BITS AT BIT D OF THE TEXT→A
+Lbl RD
+0→A
+For(I,1,r₁)
+A*2+({D/8+L₁+22} and {D^8+GDB4}≠0)→A
+D+1→D
+End
+Return
+.
+.WAIT FOR A KEY WITH THE OS GETKEY (AUTO
+.POWER-DOWN, 2ND+ON TURNS IT OFF). θ = 1-6
+.FOR 1-6 OR F1-F5, 255 FOR CLEAR, ELSE 0
+Lbl WK
+getKeyʳ→θ
+If θ>255
+0→θ
+End
+If θ=9
+255→θ
+Else
+If inData(θ,GDB4+8)
+inData(θ,GDB4+8)→θ
+Else
+inData(θ,GDB4+15)→θ
+End
+End
+Return
+.
+.WAIT FOR 1 OR 2 (OR F1, F2), OR CLEAR→θ
+Lbl YN
+0→θ
+While θ=0 or (θ>2 and (θ≠255))
+sub(WK)
+End
+Return
+.
+.r₁ ON THE LAST LINE, THEN WAIT
+Lbl ER
+Output(0,7,r₁)
+sub(WK)
+Return
+.
+.OPEN APPVAR NAMED r₁: X=1 IF FOUND;
+.Q=RAM DATA, OR Q=0 AND FILE Y₁; T=SIZE
+Lbl OP
+0→X
+GetCalc(r₁)→Q
+If Q
+{Q-2}ʳ→T
+1→X
+Return
+End
+!If GetCalc(r₁,Y₁)
+Return
+End
+{Y₁-2}ʳ→T
+1→X
+Return
+.
+.BYTE r₁ OF THE OPEN APPVAR→C
+Lbl RB
+If Q
+{Q+r₁}→C
+Return
+End
+{Y₁+r₁}→C
+Return
+.
+.KEY ID: FIRST BYTE OF AES(K2, ZEROS)→A
+.(LEAVES K2'S ROUND KEYS LOADED)
+Lbl KI
+sub(KX,L₁+355)
+For(I,0,15)
+0→{L₁+640+I}
+End
+sub(AE,L₁+640)
+{L₁+640}→A
+Return
+.
+.CMAC SUBKEYS (K1 LOADED): L₁+576 =
+.DBL(AES(0)), L₁+592 = DBL OF THAT
+Lbl SK
+For(I,0,15)
+0→{L₁+576+I}
+End
+sub(AE,L₁+576)
+sub(DB,L₁+576)
+Copy(L₁+576,L₁+592,16)
+sub(DB,L₁+592)
+Return
+.
+.S2V (RFC 5297) OF HEADER (6) AND TEXT
+.(L BYTES)→L₁+624. D AT L₁+608
+Lbl SV
+For(I,0,15)
+0→{L₁+640+I}
+End
+sub(CM,L₁+640,16)
+Copy(L₁+624,L₁+608,16)
+sub(DB,L₁+608)
+sub(CM,L₁,6)
+For(I,0,15)
+{L₁+608+I} xor {L₁+624+I}→{L₁+608+I}
+End
+If L≥16
+.TEXT XOREND D: XOR, CMAC, XOR BACK
+For(I,0,15)
+{L₁+22+L-16+I} xor {L₁+608+I}→{L₁+22+L-16+I}
+End
+sub(CM,L₁+22,L)
+For(I,0,15)
+{L₁+22+L-16+I} xor {L₁+608+I}→{L₁+22+L-16+I}
+End
+Else
+.DBL(D) XOR THE PADDED TEXT
+sub(DB,L₁+608)
+For(I,0,15)
+I=L*128→C
+If I<L
+{L₁+22+I}→C
+End
+C xor {L₁+608+I}→{L₁+640+I}
+End
+sub(CM,L₁+640,16)
+End
+Return
+.
+.CMAC (RFC 4493) OF r₂ BYTES AT r₁
+.→L₁+624. USES P N K O M C I
+Lbl CM
+r₁→P
+r₂→N
+For(I,0,15)
+0→{L₁+624+I}
+End
+.K BLOCKS BEFORE THE LAST
+0→K
+If N
+N+15/16-1→K
+End
+0→O
+While K
+For(I,0,15)
+{L₁+624+I} xor {P+O+I}→{L₁+624+I}
+End
+sub(AE,L₁+624)
+O+16→O
+K-1→K
+End
+N-O→M
+If M=16
+For(I,0,15)
+{L₁+624+I} xor {P+O+I} xor {L₁+576+I}→{L₁+624+I}
+End
+Else
+For(I,0,15)
+I=M*128→C
+If I<M
+{P+O+I}→C
+End
+{L₁+624+I} xor C xor {L₁+592+I}→{L₁+624+I}
+End
+End
+sub(AE,L₁+624)
+Return
+.
+.DOUBLE 16 BYTES AT r₁ IN GF(2^128)
+Lbl DB
+r₁→Y
+{Y}/128→C
+For(I,0,14)
+{Y+I}*2^256 xor ({Y+I+1}/128)→{Y+I}
+End
+{Y+15}*2^256 xor (C*135)→{Y+15}
+Return
+.
+.CTR (RFC 5297, K2 LOADED) OVER THE L
+.TEXT BYTES, FROM THE TAG WITH BITS 63
+.AND 31 CLEARED. USES O K C I
+Lbl CT
+Copy(L₁+6,L₁+656,16)
+{L₁+664} and 127→{L₁+664}
+{L₁+668} and 127→{L₁+668}
+0→O
+While O<L
+Copy(L₁+656,L₁+640,16)
+sub(AE,L₁+640)
+For(I,0,15)
+If O+I<L
+{L₁+22+O+I} xor {L₁+640+I}→{L₁+22+O+I}
+End
+End
+16→K
+1→C
+While C
+K-1→K
+{L₁+656+K}+1^256→{L₁+656+K}
+{L₁+656+K}=0→C
+End
+O+16→O
+End
+Return
+.
+.AES-128 KEY SCHEDULE OF r₁→L₁+380
+Lbl KX
+Copy(r₁,L₁+380,16)
+1→Z
+For(J,4,43)
+J*4+L₁+380→W
+If J^4
+Copy(W-4,L₁+672,4)
+Else
+{{W-3}+GDB2} xor Z→{L₁+672}
+{{W-2}+GDB2}→{L₁+673}
+{{W-1}+GDB2}→{L₁+674}
+{{W-4}+GDB2}→{L₁+675}
+Z*2^256 xor (Z/128*27)→Z
+End
+For(I,0,3)
+{W-16+I} xor {L₁+672+I}→{W+I}
+End
+End
+Return
+.
+.AES-128 ENCRYPT 16 BYTES AT r₁ IN PLACE
+.USES W U I J Z r₂-r₆
+Lbl AE
+r₁→W
+For(I,0,15)
+{W+I} xor {L₁+380+I}→{W+I}
+End
+For(U,1,10)
+.SUBBYTES AND SHIFTROWS
+For(I,0,15)
+{{{GDB3+I}+W}+GDB2}→{L₁+672+I}
+End
+Copy(L₁+672,W,16)
+.MIXCOLUMNS (NOT IN THE LAST ROUND)
+If U≠10
+For(J,0,3)
+J*4+W→Z
+{Z}→r₂
+{Z+1}→r₃
+{Z+2}→r₄
+{Z+3}→r₅
+r₂ xor r₃ xor r₄ xor r₅→r₆
+r₂ xor r₃→I
+r₂ xor r₆ xor (I*2^256) xor (I/128*27)→{Z}
+r₃ xor r₄→I
+r₃ xor r₆ xor (I*2^256) xor (I/128*27)→{Z+1}
+r₄ xor r₅→I
+r₄ xor r₆ xor (I*2^256) xor (I/128*27)→{Z+2}
+r₅ xor r₂→I
+r₅ xor r₆ xor (I*2^256) xor (I/128*27)→{Z+3}
+End
+End
+For(I,0,15)
+{W+I} xor {U*16+L₁+380+I}→{W+I}
+End
+End
+Return

@@ -27,7 +27,8 @@ TI84P = {'TI-84+', 'TI-84+SE'}                     # allowed, with a warning (TI
 MAX_MODE = {'QRBASIC', 'θQRBIT'}               # BASIC programs tokenized in tivars "max" mode
 BASIC_COMMENTS = {'QR': 'QR code menus (BASIC front end)',
                   'QRBASIC': 'QR code generator, pure BASIC',
-                  'θQRBIT': 'QR code generator, pure BASIC'}
+                  'θQRBIT': 'QR code generator, pure BASIC',
+                  'XORTEST': 'XOR speed test for QRBASIC'}
 # tivars 1.1.1 decompiles the π token (ACh) as "π" but only accepts "pi" when tokenizing,
 # and "pi" inside a string becomes two lowercase letters. Teach every model's trie "π".
 for _model in (v for k, v in vars(tivars.models).items() if k.startswith('TI_')):
@@ -130,7 +131,8 @@ AXE_COMMENTS = {'QRSRC': 'QR engine source - compile with Axe',
                 'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
                 'SPEEDSRC': '15 MHz speed test - compile with Axe',
                 'NOTESSRC': 'Notefolio picker source - compile with Axe',
-                'UNPROSRC': 'Program unprotector - compile with Axe'}
+                'UNPROSRC': 'Program unprotector - compile with Axe',
+                'CHATSRC': 'CodeChat prototype source - compile with Axe'}
 
 
 def build():
@@ -180,7 +182,7 @@ def build_programs(srcdir, outdir):
         elif model not in TI83P:
             raise SystemExit('%s needs a %s token; if max munch picked it, escape it with \\ '
                              '(like R\\edraw)' % (src.name, model))
-        save_program(name, bytes(prog.data), outdir / (stem + '.8xp'), BASIC_COMMENTS[name])
+        save_program(name, bytes(prog.data), outdir / (stem + '.8xp'), BASIC_COMMENTS.get(name, 'TI-BASIC program'))
         print('%-28s %5d token bytes' % (shown + stem + '.8xp', len(prog.data)))
 
 

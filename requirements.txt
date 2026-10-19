@@ -2,3 +2,4 @@ tivars>=1.1
 qrcode>=7
 zxing-cpp>=2
 pillow
+cryptography

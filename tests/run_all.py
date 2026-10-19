@@ -26,7 +26,8 @@ SUITES = [['test_engine.py'] + QUICK,
           ['test_frontend.py'],
           ['test_standalone_frontend.py'],
           ['test_lorem.py'],
-          ['test_unprot.py']]
+          ['test_unprot.py'],
+          ['test_codechat.py']]
 if '--basic' in sys.argv:
     SUITES.append(['test_basic.py'] + QUICK)
 

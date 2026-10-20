@@ -1,17 +1,24 @@
 # Plan: the standalone engine in Z80 assembly
 
-Status: milestones 1-4 are done in the harness; 1-3 also on the user's calculator
-(milestone 2 from the home screen: a valid call 0, V=12 and V=256 65535; milestone 3 through
-prgmQR's bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric
-65533 with B = 2; all as in the harness).
-`src/standalone/_theta_QR.z80` (1398 bytes) sets 15 MHz, reads E, V and M, rejects bad
-ones, finds Str1 or ʟBIN (65535 if missing), and answers the check call (V=0): Str1's length
-in tokens, the mode, and a bad character's position in B (65533). A draw call in auto mode
-scans the text the same way, so a bad character fails it. A draw call (V=1-11) then reads N
-and O and packs the data codewords into L₁ (mode, count, data, terminator, padding), and
-answers 0 with nothing drawn (`NotYet`), as do a note (E=3) and the note list (E=4).
-`tools/z80sim.py` runs it; `python tests/test_engine.py --asm` tests it, and `tests/test_z80sim.py` checks that
-the harness catches each kind of mistake and models the OS routines as described below.
+Status: milestones 1-9 are done in the harness, so the port does everything the Axe engine
+does; 1-7 also on the user's calculator (milestone
+2 from the home screen: a valid call 0, V=12 and V=256 65535; milestone 3 through prgmQR's
+bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric 65533
+with B = 2; milestones 6-7 through the standalone prgmQR, drawing codes that scan; all as in
+the harness).
+`src/standalone/_theta_QR.z80` (3381 bytes) does everything the Axe engine does for Str1,
+ʟBIN and NoteFolio notes (in RAM or archived): the check call (V=0) and the draw calls
+(V=1-11: data codewords, error correction, the drawing, DispGraph, Ans = 0), and the note
+list (E=4) in Str3. Every test of `test_engine.py` and `test_standalone_notefolio.py` passes
+against it (the sweep's 262 symbols, the notes' symbols, the 32 KB archived note, the list).
+`NotYet` is gone. Time in the emulator for a full code drawn (OS
+calls not counted): version 1 0.04 s, 5 0.15 s, 10 0.32 s, 11 0.38 s at 15 MHz (0.94 s at
+6 MHz). Checking a 32 KB archived note: 2.5 s at 15 MHz plus 65,538 `_LoadCIndPaged` calls
+(two passes over the text, one byte per call). For comparison, the compiled Axe engine was
+6267 bytes (design.md item 33), about 930 of them for the notes.
+`tools/z80sim.py` runs it; `python tests/test_engine.py --asm` and
+`python tests/test_standalone_notefolio.py --asm` test it, and `tests/test_z80sim.py` checks
+that the harness catches each kind of mistake and models the OS routines as described below.
 
 ## Goal
 
@@ -113,35 +120,58 @@ Built so far (`AsmMachine(program, model='84+', max_ticks=1.5e9)`):
   interrupts-enabled are checked.
 - **Ports:** port 2 reads the model (bit 7 set on a TI-84+), port 20h may be written on a
   TI-84+ only (`full`), any other port raises.
-- **Variables and the VAT:** `set_real`, `set_str`, `set_list` (each with `archived=`) put the
-  data in RAM from C000h, or for an archived one give it a flash page (0Bh) and a pointer into
-  4000h-7FFFh, where nothing is mapped yet. `run()` writes the VAT first (`build_vat`): the
+- **Variables and the VAT:** `set_real`, `set_str`, `set_list`, `add_appvar` (each with
+  `archived=`) put the data in RAM from C000h, or in the archive (below); `add_vat_other`
+  adds an entry with no data (a program, a list), as in axesim. `run()` writes the VAT first
+  (`build_vat`): the
   symbol table from symTable (FE66h) down, 9-byte entries (type, T2, version, data pointer
   low, high, page, then a 3-byte name, going down), for reals and strings; then the program
   table from (progPtr) down to (pTemp), entries with a length byte and the name, for lists
   (assumed to live there, since their names are up to 6 bytes; test_unprot.py assumes it too),
-  and later appvars. `vat_entries()` reads it back.
+  and appvars. `vat_entries()` reads it back.
+- **Archive:** flash pages of 16 KB (`flash`). An archived variable is an entry written as
+  the OS writes it: FCh, the size of the rest (word), a copy of its VAT entry going up (type,
+  T2, version, address low, high, page), the name length and the name, then the data. Its VAT
+  entry gives the page and the address of the FCh byte, which `_ChkFindSym` returns in B and
+  DE. The archive starts at 3FF0h on page 0Bh, so every archived variable crosses into the
+  next page. Nothing is mapped at 4000h-7FFFh: a direct read or a jump there raises; the only
+  way in is `_LoadCIndPaged` (C = the byte at page B, address HL in 4000h-7FFFh), which also
+  raises for a page with no archive on it.
 - **bcalls:** `_ChkFindSym` walks that VAT in memory (the symbol table by the 3 name bytes, the
   program table by name and kind): carry if missing, else HL = the entry, DE = the data, B =
   the page. `_SetXXXXOP2` (HL → OP2 as a float), `_OP2ToOP1`, `_StoAns` (sets `ans`),
-  `_OP1Set0`. `calls` lists them in order, `ticks` is the run's T-states.
+  `_OP1Set0`, `_GrBufCpy` (records the graph buffer in `displays`), `_LoadCIndPaged`,
+  `_MemChk` (HL = `free_ram`, 20000 unless a test sets it), `_DelVarArc` (deletes the
+  variable whose VAT entry is at HL, RAM or archive; the VAT closes up), `_CreateStrng` (a
+  string named in OP1, HL bytes, in RAM: HL = its VAT entry, DE = its size word; raises if
+  one of that name exists, as the OS would quietly make a second, or if RAM is short: the
+  string, 11 bytes more, out of `free_ram`).
+  `calls` lists them in order, `ticks` is the run's T-states.
 - **Single routines:** build.py writes the program's labels to `_theta_QR.lab` (spasm's `-L`,
   filtered to the names the source defines), and `call(label, de=..., ...)` runs one
   subroutine with the given registers until it returns, under the same checks (the test of
   `FloatToInt` on 33 values uses it).
 
-`--asm` implies `--standalone`. `test_engine.py --asm` runs the groups shared with the Axe
-engines that the port covers so far: `parameter_errors()` (rejected and missing input) and
-`check_calls()` (the check call, bad characters, B, ʟBIN's check, and the auto-mode draw
-calls that fail before drawing). Plus the port's own: `asm_parameters()` (GV's conversion,
+`--asm` implies `--standalone`. `test_engine.py --asm` runs every group the Axe engines run
+(`check_calls()`, `edge_cases()`, `parameter_errors()`, `skipping()`, `sweep()`, each drawn
+symbol compared with the `qrcode` library and decoded by zxing-cpp), plus the port's own:
+`asm_parameters()` (GV's conversion,
 archived variables, the speed), `asm_characters()` (`CH` on 531 tokens and `AV` on all
-256 bytes, called directly and compared with qrtest's tables) and `asm_codewords()` (the
-data codewords in L₁ after a draw call, compared byte for byte with
-`qrtest.data_codewords`, which builds them from the `qrcode` library's own BitBuffer the
-way its `util.create_data` does: the sweep's payloads at every version, plus skipping and
-clamping; 271 sets in the full run). The other groups join as the milestones reach them;
-`asm_codewords()` can go once the sweep runs, since the drawn symbols cover it. `run_all.py` runs `test_z80sim.py` always and `test_engine.py --asm`
-when the build has `build/standalone/_theta_QR.8xp`.
+256 bytes, called directly and compared with qrtest's tables), `asm_codewords()` (the
+data codewords in L₁ and the EC codewords at L₁+330 after a draw call, compared byte for
+byte with `qrtest.data_codewords`, which builds them from the `qrcode` library's own
+BitBuffer the way its `util.create_data` does, and `qrtest.ec_codewords`, which takes them
+from create_data's full sequence and undoes the interleaving: the sweep's payloads at every
+version, plus skipping and clamping; 271 sets in the full run; the drawn symbols cover the
+same ground, but this one says which codeword is wrong) and `asm_tables()` (`GFTables`
+called on its own, since the drawing reuses L₃: the exp and log tables, and the generator,
+as logs, for every version, against the `qrcode` library's tables and its product of
+(x + 2^i)). `run_all.py` runs `test_z80sim.py` always and `test_engine.py --asm` when the
+build has `build/standalone/_theta_QR.8xp`; the notes' suite (`test_standalone_notefolio.py`)
+runs with `--asm` too (its `arch_at`, which moves axesim's 16 KB archive, is ignored: the
+harness's flash pages hold a 32 KB note), plus `asm_list()`: an old Str3 replaced (in RAM or
+archived), no notes, too little RAM (65535, the old Str3 kept) and just enough, at most 80
+notes of 85.
 
 ## What the engine needs from the OS (first guess, to check)
 
@@ -151,10 +181,10 @@ when the build has `build/standalone/_theta_QR.8xp`.
 | store B (only if it exists) | `_ChkFindSym`, then write the float into its data |
 | `→Ans` | done: `_SetXXXXOP2` + `_OP2ToOP1` + `_StoAns` (in `Quit`) |
 | Str1, Str2, ʟBIN | Str1 and ʟBIN done: `_ChkFindSym` (Str1 = type 4, AAh, 00h; the list = type 1, 5Dh, "BIN"); DE = the size word |
-| notes, archived ones read through `Y₁` | `_ChkFindSym`: B = flash page (0 = RAM); skip the archived entry's header; read bytes with `_LoadCIndPaged` (or map the page, then restore port 6) |
-| E=4: list notes into Str3 | walk the VAT; `_DelVarArc` an old Str3, `_CreateStrng` |
+| notes, archived ones read through `Y₁` | done: `_ChkFindSym`: B = flash page (0 = RAM); in flash, skip the entry's header (9 bytes, the name length, the name) to the size word; read every byte with `_LoadCIndPaged` (`RB`, `NotePtr`) |
+| E=4: list notes into Str3 | done: walk the VAT; `_MemChk` first; `_ChkFindSym` + `_DelVarArc` an old Str3, `_CreateStrng` |
 | `Full` | detect an 84+/SE (port 2) and set port 20h; the OS goes back to 6 MHz itself (design.md item 16) |
-| `Rect(`, `Pxl-On(`, `DispGraph` | own drawing into `plotSScreen` and the reserved-module map in `appBackUpScreen`; display with `_GrBufCpy` (handles LCD timing) |
+| `Rect(`, `Pxl-On(`, `DispGraph` | done: own drawing into `plotSScreen` and the reserved-module map in `appBackUpScreen`; display with `_GrBufCpy` (handles LCD timing; the harness records the graph buffer there) |
 | L₁, L₃ scratch | the same areas (`saveSScreen` 86ECh, `appBackUpScreen` 9872h) and the same memory map as design.md |
 
 Assembly gotchas to respect: keep IY intact (the OS needs it for bcalls and interrupts),
@@ -173,7 +203,17 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
   `float{` isn't documented for those (axesim refuses them), so this is a choice, not a copy.
   Values above 255 are rejected before they are cut to a byte (V=256 must not read as 0).
 - **Archived variables** are treated as missing (a real reads as 0, Str1 or ʟBIN is bad
-  input), as the Axe engine's GetCalc does. Notes are the exception (milestone 8).
+  input), as the Axe engine's GetCalc does. Notes are the exception.
+- **Notes** (`NF`, `NH`, `RB`, `MA`) as in the Axe engine: the name from Str2 up to a space
+  token, an OP1 name at L₁+700, size ≥ 27, the signature, the text from byte 24 to a 00h
+  (bounded by the size). Differences: `NF` stops copying the name at a 9th character (the
+  Axe engine copies all of Str2 before checking the length, which a long Str2 would carry
+  past L₁). An open note is `NotePage` (0 = RAM) and `NoteAddr`; in flash, `NoteAddr` is
+  an offset from 4000h, and `NotePtr` turns "byte k" into a page and an address: the sum can
+  pass several 16 KB pages (and 16 bits, for a 32 KB note), so the page goes up by its bits
+  14 and up and the address keeps bits 0-13. Reading archived bytes through the OS
+  (`_LoadCIndPaged`) instead of mapping pages with port 6 ourselves: slower (a bcall per
+  byte), but the OS does the mapping; port 6 is the fallback if it proves too slow.
 - **Order:** E is read and E=4 dispatched before V and M are read, as in the Axe engine.
 - **Tables** are the Axe engine's (GDB0, GDB1, GDB9 as `TokenFirst`/`TokenSecond`,
   `Prefixes`, `Punct`), generated from QRSRC.axe.txt's hex. `inData(` becomes `cpir`: after
@@ -191,11 +231,33 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
   45·first is computed as 9·(5·first) with shifts and adds. ʟBIN elements go through
   `FloatToInt`, so one over 65535 (never sent by prgmQR) gives FFh where Axe's `float{`
   would wrap around; up to 65535 both take the low 8 bits.
-- **Later:** the test "N far over capacity writes nothing past L1" compares L₁+714 onwards,
-  which is where the port keeps its variables (Axe's live in axesim's Python). At milestone 7
-  it needs to start after the variables (L₁+768) for the port.
-- **Not tested:** 65532 (over 32765 characters) for Str1 or ʟBIN: neither fits in the
-  harness's RAM that long. Milestone 8 tests it with an archived note, as for the Axe engine.
+- **Error correction** follows the Axe engine step by step (same tables, same places). In
+  `RS`, a log sum can reach 508, so its carry becomes bit 8 of the index into the doubled
+  exp table (`rl h`). The blocks are counted down (blocks left, B to 1), so a block is one of
+  the long ones when blocks left ≤ M mod B. M / B is found by subtracting, as B is 1, 2 or 4.
+  `RS` keeps its place in `BlockPtr`/`ECPtr` and moves them on, so the block loop only says
+  how long each block is.
+- **Drawing** keeps the Axe engine's plan: the map of function modules in L₃ (one pixel per
+  module, 12 bytes a row like the screen, at module coordinates), the symbol in the graph
+  buffer with the centering offsets. `PixelAddr` (column B, row C, buffer DE → byte HL, bit
+  A) serves both; `RectOn`/`RectInv` (column B, row C, width D, height E, buffer IX) fill or
+  invert pixel by pixel, which is fast enough for the few rectangles drawn. `CW` finds each
+  codeword in place as in Axe, with an `and` for "mod blocks" and shifts for "/ blocks"
+  (1, 2 or 4 blocks). The timing loop counts 2V+1 modules each way.
+- **More variables** than the 54 bytes at L₁+714 hold: the drawing's are at L₁+600
+  (`DrawVars`), space the memory map leaves free (notes use L₁+700 up).
+- **Names:** a label that matches an equate in ti83plus.inc (`RectMode` did) makes spasm
+  warn and build.py stop, so a clash can't silently change a value.
+- **Memory test:** "N far over capacity writes nothing past L1" compares from L₁+768 for the
+  port (its variables are at L₁+714..767; Axe's live in axesim's Python).
+- **The note list** (`ListNotes`, `NC`) walks the VAT as the Axe engine's `LS` does. Making
+  Str3: the Axe engine's `GetCalc("Str3",size)` returns 0 when RAM is short; the port asks
+  `_MemChk` first and answers 65535 unless the string plus 32 bytes is free (11 for its size
+  word and VAT entry, the rest a margin), so the OS never stops with ERR:MEMORY. That check
+  comes before deleting the old Str3, so a refusal keeps it (and a large old Str3 doesn't
+  count as free space).
+- **65532** (over 32765 characters) is tested with a 32 KB archived note, as for the Axe
+  engine; a Str1 or ʟBIN that long doesn't fit in the harness's RAM.
 
 ## How to port
 
@@ -223,20 +285,30 @@ Milestones, each with the tests that cover it:
    Done, and checked on the calculator.
 4. Bit packing into the data codewords: compare memory with a Python reference before
    going on. Done in the harness.
-5. GF(256) tables, the generator polynomial, `RS`.
+5. GF(256) tables, the generator polynomial, `RS`. Done in the harness.
 6. Drawing: function patterns, format and version information, the zigzag through `CW`. Now
-   the sweep's symbols can match.
-7. ʟBIN, skipping (O), clamping N.
-8. Notes: RAM, archived, the character swaps, the non-ASCII warning.
-9. E=4: the note list in Str3.
-10. Full test pass, then size and speed against the Axe engine, then the calculator.
+   the sweep's symbols can match. Done in the harness: all 262 match and decode.
+7. ʟBIN, skipping (O), clamping N. Done with milestone 6 (the code came with milestone 4;
+   `skipping()` and `edge_cases()` pass).
+8. Notes: RAM, archived, the character swaps, the non-ASCII warning. Done in the harness.
+9. E=4: the note list in Str3. Done in the harness.
+10. Full test pass, then size and speed against the Axe engine, then the calculator. On the
+    user's calculator (2026-10-20): prgmθQR 3393 bytes as assembly against 6155 compiled by
+    Axe (the size its memory menu shows), and at least as fast. Left: the release decision
+    (replace the Axe engine or ship both) and the docs that go with it.
 
 ## On the calculator
 
 - Back up the calculator with TI Connect first: an assembly bug can clear RAM.
 - Try milestone 1 alone, then the full engine with the standalone prgmQR.
 - The things only hardware will show: archived notes, creating Str3, `Full` on an 83+ vs an
-  84+, the display.
+  84+, the display. For archived notes the harness assumes, from the OS documentation as
+  remembered rather than checked: `_ChkFindSym` gives an archived variable's FCh byte in DE;
+  the entry header is 9 bytes, then the name length and the name; `_LoadCIndPaged` returns
+  the byte at B:HL in C. For the note list: `_MemChk` returns the free RAM in HL;
+  `_DelVarArc` takes what `_ChkFindSym` returned (and deletes archived variables too);
+  `_CreateStrng` takes the name in OP1 and the size in HL and returns the size word's address
+  in DE.
 
 ## Repo layout (proposal)
 

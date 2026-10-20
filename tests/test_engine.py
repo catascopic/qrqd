@@ -10,8 +10,8 @@ import random
 import sys
 
 from qrtest import (Machine, SRC, ASM, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
-                    ascii_tokens, check_symbol, data_codewords, decode, matrix_from, run_engine,
-                    TEXT, BINARY, AUTO, ASCII, ALNUM, BAD, bad)
+                    ascii_tokens, check_symbol, data_codewords, decode, ec_codewords,
+                    matrix_from, run_engine, TEXT, BINARY, AUTO, ASCII, ALNUM, BAD, bad)
 from axesim import L1, L3                                      # noqa: E402
 
 failures = []
@@ -175,10 +175,11 @@ def edge_cases():
     for name, val in zip('EVNMO', (TEXT, 1, 9999, ASCII, 0)):
         m.set_real(name, val)
     m.set_str(1, b''.join(ascii_tokens('x' * 800)))
-    beyond = bytes(m.mem[L1 + 714:L1 + 0x800])
+    end = L1 + (768 if ASM else 714)   # the Z80 port keeps its variables in L₁+714..767, as Axe does
+    beyond = bytes(m.mem[end:L1 + 0x800])
     m.run()
     expect('N far over capacity writes nothing past L1', m.ans == 0 and m.displays and
-           bytes(m.mem[L1 + 714:L1 + 0x800]) == beyond)
+           bytes(m.mem[end:L1 + 0x800]) == beyond)
     m = run_engine(BINARY, 2, 999, AUTO, lst=list(range(5)))
     expect('clamp to list length', m.ans == 0 and decode(matrix_from(m, 2))[0].bytes == bytes(range(5)))
     expect('runs at full speed (15 MHz)', getattr(m, 'full', False))
@@ -275,19 +276,23 @@ def asm_parameters():
 
 
 def asm_codewords(versions):
-    """The Z80 port, until it draws: after a draw call, L₁ holds the data codewords, compared
-    byte for byte with qrtest.data_codewords (built from the qrcode library). The same
-    payloads as sweep(), plus skipping (O) and clamping (N); nothing may be written between
-    the data codewords and L₁+330 (where the EC codewords go)."""
+    """The Z80 port, until it draws: after a draw call, L₁ holds the data codewords and, from
+    L₁+330, the EC codewords block after block, compared byte for byte with
+    qrtest.data_codewords and ec_codewords (both from the qrcode library). The same payloads
+    as sweep(), plus skipping (O) and clamping (N). Nothing may be written between the data
+    codewords and L₁+330, or between the EC codewords and the generator at L₁+420."""
     random.seed(1)
     wrong, n = [], 0
 
     def compare(name, m, payload, v, kind):
         nonlocal n
         ref = data_codewords(payload, v, kind)
+        ec = ec_codewords(payload, v, kind)
         got = bytes(m.mem[L1:L1 + len(ref)])
-        if m.ans != 0 or got != ref or any(m.mem[L1 + len(ref):L1 + 330]):
-            wrong.append((name, m.ans, got.hex(), ref.hex()))
+        got_ec = bytes(m.mem[L1 + 330:L1 + 330 + len(ec)])
+        if (m.ans != 0 or got != ref or got_ec != ec or any(m.mem[L1 + len(ref):L1 + 330])
+                or any(m.mem[L1 + 330 + len(ec):L1 + 420])):
+            wrong.append((name, m.ans, got.hex(), ref.hex(), got_ec.hex(), ec.hex()))
         n += 1
     for v in versions:
         for kind in ('alnum', 'ascii', 'binary'):
@@ -315,7 +320,30 @@ def asm_codewords(versions):
             ('version 10: 16-bit byte count', (TEXT, 10, 3, ASCII), dict(str1=ascii_tokens('abc')), 'abc', 'byte'),
             ('version 10: 11-bit alnum count', (TEXT, 10, 3, AUTO), dict(str1=alnum_tokens('A:1')), 'A:1', 'alphanumeric')):
         compare(name, run_engine(*args, **kw), payload, args[1], kind)
-    expect('asm: %d data codeword sets match the reference' % n, not wrong, wrong[:3])
+    expect('asm: %d sets of data and EC codewords match the reference' % n, not wrong, wrong[:3])
+
+
+def asm_tables():
+    """The Z80 port only: the GF(256) tables in L₃ (exp twice, log) and the generator
+    polynomial at L₁+420 (1, then the coefficients as logs) for every EC count used, compared
+    with the qrcode library's tables and its generator (the product of (x + 2^i))."""
+    from qrcode.base import EXP_TABLE, LOG_TABLE, Polynomial, gexp
+    m = Machine(SRC)                   # the drawing reuses L₃ for its map, so call GFTables alone
+    m.call('GFTables')
+    exp = bytes(EXP_TABLE[:255])
+    expect('asm: exp table at L3 (twice) and log table at L3+512',
+           bytes(m.mem[L3:L3 + 255]) == exp and bytes(m.mem[L3 + 255:L3 + 510]) == exp
+           and bytes(m.mem[L3 + 513:L3 + 768]) == bytes(LOG_TABLE[1:256]))
+    wrong = []
+    for v, R in enumerate((7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20), 1):
+        g = Polynomial([1], 0)
+        for i in range(R):
+            g = g * Polynomial([1, gexp(i)], 0)
+        want = bytes([1] + [LOG_TABLE[g[k]] for k in range(1, R + 1)])
+        m = run_engine(TEXT, v, 1, ASCII, str1=ascii_tokens('a'))
+        if bytes(m.mem[L1 + 420:L1 + 421 + R]) != want:
+            wrong.append(v)
+    expect('asm: generator polynomial (as logs) for each version', not wrong, wrong)
 
 
 def asm_characters():
@@ -353,17 +381,16 @@ def asm_characters():
 
 
 if __name__ == '__main__':
-    if ASM:        # the groups below join as the port's milestones reach them
-        parameter_errors()
+    versions = [1, 5, 10] if '--quick' in sys.argv else range(1, 12)
+    check_calls()
+    edge_cases()
+    parameter_errors()
+    skipping()
+    sweep(versions)
+    if ASM:        # the Z80 port's own: its routines on their own, its memory, its choices
         asm_parameters()
-        check_calls()
         asm_characters()
-        asm_codewords([1, 5, 10] if '--quick' in sys.argv else range(1, 12))
-    else:
-        check_calls()
-        edge_cases()
-        parameter_errors()
-        skipping()
-        sweep([1, 5, 10] if '--quick' in sys.argv else range(1, 12))
+        asm_codewords(versions)
+        asm_tables()
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

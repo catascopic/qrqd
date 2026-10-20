@@ -32,6 +32,7 @@ SUITES = [['test_engine.py'] + QUICK,
 # the Z80 port of the standalone engine, when build.py could assemble it (spasm-ng installed)
 if (HERE.parent / 'build' / 'standalone' / '_theta_QR.8xp').exists():
     SUITES.append(['test_engine.py', '--asm'] + QUICK)
+    SUITES.append(['test_standalone_notefolio.py', '--asm'])
 if '--basic' in sys.argv:
     SUITES.append(['test_basic.py'] + QUICK)
 

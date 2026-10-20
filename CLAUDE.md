@@ -19,8 +19,8 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | --- | --- |
 | `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
 | `src/NOTESSRC.axe.txt` | Axe note picker, compiles to prgmθNOTES: menu of Notefolio notes, name → Str2 (Ans 1 picked, 0 cancelled, 2 none) |
-| `docs/asm_port.md` | plan for rewriting the standalone engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing standalone tests run unchanged, milestones, decisions made while porting. Milestones 1-4 done (1-3 also on the calculator) |
-| `src/standalone/_theta_QR.z80` | the Z80 port of the standalone prgmθQR, so far milestone 4 (15 MHz, reads E/V/M, finds Str1/ʟBIN, 65535 for bad input, the check call V=0 with B, a draw call packs the data codewords into L₁ and answers 0 without drawing); build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/standalone/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
+| `docs/asm_port.md` | plan for rewriting the standalone engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing standalone tests run unchanged, milestones, decisions made while porting. Milestones 1-9 done (1-7 also on the calculator) |
+| `src/standalone/_theta_QR.z80` | the Z80 port of the standalone prgmθQR (3381 bytes): everything the Axe engine does, E=1-4 (all of `test_engine.py` and `test_standalone_notefolio.py` pass with `--asm`); not yet the release's engine; build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/standalone/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
 | `tools/z80sim.py` | `AsmMachine`: runs a compiled `.8xp` in the `z80` package's emulator with axesim's `Machine` interface (a real VAT, bcalls in Python, junk in registers after each, strict memory/ports/stack/IY checks; `call(label)` runs one routine); `tests/test_z80sim.py` checks the harness |
 | `docs/API.md` | how other programs call prgmθQR and prgmθNOTES (variables, return values, capacity, a tested example) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
@@ -58,7 +58,8 @@ python tools/codechat.py loopkey         # build/CCKEYS.8xv test keyring (LOOP0/
 python tests/test_engine.py --quick --standalone   # the standalone engine (modes 0-2)
 python tests/test_standalone_notefolio.py          # its notes, E=4 list
 python tests/test_standalone_frontend.py           # its menus (PYTHONUTF8=1)
-python tests/test_engine.py --asm                  # the Z80 port (build first; only its milestones so far)
+python tests/test_engine.py --asm                  # the Z80 port (build first)
+python tests/test_standalone_notefolio.py --asm    # its notes and note list (PYTHONUTF8=1)
 python tests/test_z80sim.py                        # the Z80 harness itself
 python tools/build.py decompile build/QRSRC.8xp
 ```

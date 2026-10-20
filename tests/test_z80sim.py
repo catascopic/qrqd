@@ -66,8 +66,8 @@ if __name__ == '__main__':
     fails('returning with the stack off raises', '214000' 'e5' 'c9', 'stack')
     fails('changing IY raises', 'fd23' 'c9', 'IY')
     fails('returning with interrupts off raises', 'f3' 'c9', 'interrupts')
-    fails('a jump into ROM raises', 'c30020', 'ROM')
-    fails('a ret with a value left on the stack (into ROM) raises', 'c5' 'c9', 'ROM')
+    fails('a jump into ROM raises', 'c30020', 'outside the program')
+    fails('a ret with a value left on the stack (to 5A5Ah) raises', 'c5' 'c9', 'outside the program')
     fails('a hang is stopped', '18fe', 'still running', max_ticks=100_000)
     fails('an unknown port raises', 'db01' 'c9', 'port 01h')
     fails('the speed port on a TI-83+ raises', '3e01d320' 'c9', 'port 20h', model='83+')
@@ -117,6 +117,62 @@ if __name__ == '__main__':
     expect('VAT: 4 symbol-table entries (E, V, Str1, Str2), then lists E and BIN', prog == SYMTABLE - 36
            and ptemp == prog - (7 + 2) - (7 + 4) and m.mem[prog] == 1 and m.mem[prog - 6] == 2,
            (hex(prog), hex(ptemp)))
+    # the archive: an entry as the OS writes it, from 16 bytes before the end of page 0Bh
+    m = AsmMachine(HEAD + RET)
+    m.add_appvar('NOTE', b'hello world', archived=True)
+    m.build_vat()
+    entry = bytes(m.flash[0x0B][0x3FF0:]) + bytes(m.flash[0x0C][:11])
+    rest = bytes([0x15, 0, 0, 0xF0, 0x7F, 0x0B, 4]) + b'NOTE' + (11).to_bytes(2, 'little') + b'hello world'
+    expect('archive entry: FCh, size of the rest, VAT copy, name, size word, data, across pages',
+           entry == b'\xfc' + len(rest).to_bytes(2, 'little') + rest, entry.hex(' '))
+    carry, de, b, m = find(lambda m: m.add_appvar('NOTE', b'hi', archived=True), b'\x15NOTE')
+    expect('_ChkFindSym: archived appvar -> B = page 0Bh, DE = its FCh byte (7FF0h)',
+           not carry and (b, de) == (0x0B, 0x7FF0), (carry, hex(de), b))
+    code = '060c' '210640' 'ef1d50' '79' '32ec86' 'c9'    # ld b,0Ch: ld hl,4006h: bcall: ld (L1),c
+    m = AsmMachine(HEAD + bytes.fromhex(code))
+    m.add_appvar('NOTE', b'hello world', archived=True)
+    m.run()
+    expect('_LoadCIndPaged: C = the byte at page B, address HL', m.mem[0x86EC] == ord('w'), m.mem[0x86EC])
+    def arch(m):
+        m.add_appvar('NOTE', b'x', archived=True)
+    fails('a direct read of 4000h-7FFFh raises', '3a0040' 'c9', 'read from 4000h')
+    m = AsmMachine(HEAD + bytes.fromhex('060c' '210080' 'ef1d50' 'c9'))
+    arch(m)
+    try:
+        m.run()
+        expect('_LoadCIndPaged outside 4000h-7FFFh raises', False)
+    except Z80Error as e:
+        expect('_LoadCIndPaged outside 4000h-7FFFh raises', 'outside' in str(e), e)
+    m = AsmMachine(HEAD + bytes.fromhex('0620' '210040' 'ef1d50' 'c9'))
+    arch(m)
+    try:
+        m.run()
+        expect('_LoadCIndPaged from a page with no archive raises', False)
+    except Z80Error as e:
+        expect('_LoadCIndPaged from a page with no archive raises', 'holds no' in str(e), e)
+    # _CreateStrng: Str3 of 5 bytes (ld hl,name: ld de,OP1: ld bc,9: ldir: ld hl,5: bcall: ret)
+    make = bytes.fromhex('21a79d' '117884' '010900' 'edb0' '210500' 'ef2743' 'c9')
+    assert 0x9D95 + len(make) == 0x9DA7                                # the name follows
+    make += bytes([0x04, 0xAA, 0x02]) + bytes(6)
+    m = AsmMachine(HEAD + make)
+    m.run()
+    p = m.os.get(('str', 3))
+    expect('_CreateStrng makes Str3 (size word 5) in the VAT', p and m.rd16(p - 2) == 5
+           and any(name == b'\xaa\x02' for _, typ, name, _, _ in m.vat_entries() if typ == 4))
+    m = AsmMachine(HEAD + make)
+    m.set_str(3, b'x')
+    try:
+        m.run()
+        expect('_CreateStrng on an existing Str3 raises', False)
+    except Z80Error as e:
+        expect('_CreateStrng on an existing Str3 raises', 'exists' in str(e), e)
+    m = AsmMachine(HEAD + make)
+    m.free_ram = 15
+    try:
+        m.run()
+        expect('_CreateStrng without the RAM raises ERR:MEMORY', False)
+    except Z80Error as e:
+        expect('_CreateStrng without the RAM raises ERR:MEMORY', 'MEMORY' in str(e), e)
     try:
         AsmMachine(b'\x3a' + RET)
         expect('a program without BB 6D is refused', False)

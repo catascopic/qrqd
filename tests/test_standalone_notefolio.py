@@ -2,16 +2,18 @@
 E=4 list). Name of the note in Str2, list of names in Str3.
 
   python tests/test_standalone_notefolio.py
+  --asm runs them against the Z80 port (build/standalone/_theta_QR.8xp, docs/asm_port.md)
 """
 import random
 import struct
 import sys
 from pathlib import Path
 
-from qrtest import (ROOT, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode, matrix_from,
-                    AUTO, ASCII, ALNUM, BAD)
+from qrtest import (ROOT, ASM, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode,
+                    matrix_from, AUTO, ASCII, ALNUM, BAD)
 
-SRC = (ROOT / "src" / "standalone" / "QRSRC.axe.txt").read_text(encoding="utf-8")
+if not ASM:     # with --asm, qrtest's SRC is the Z80 port's .8xp
+    SRC = (ROOT / "src" / "standalone" / "QRSRC.axe.txt").read_text(encoding="utf-8")
 failures = []
 SIG = bytes([0xF3, 0x47, 0xBF, 0xAF])
 TI_FROM = {'\n': 0xD6, '[': 0xC1, '$': 0xF2, 'θ': 0x5B, 'é': 0x96, 'ñ': 0xB5, '⁴': 0x24}
@@ -63,8 +65,8 @@ def notefolio(title, tb):
 
 def machine(notes, params, str2=None, extra=(), arch_at=None):
     m = Machine(SRC)
-    if arch_at is not None:      # where archived data starts (the default 4000h holds 16 KB)
-        m.arch_ptr = arch_at
+    if arch_at is not None and not ASM:  # where archived data starts (axesim's default 4000h
+        m.arch_ptr = arch_at             # holds 16 KB; the Z80 harness has real flash pages)
     m.add_vat_other(0x05, 'QR')                             # a program
     m.add_appvar('SAVE', bytes(range(40)))                  # ordinary appvar
     m.add_vat_other(0x01, '\x5dBIN')                        # a named list
@@ -182,8 +184,51 @@ def real_file():
     expect('TEST.8xv decodes to the pangram', got == b'The quick brown fox jumps over the lazy dog.', got)
 
 
+def asm_list():
+    """The Z80 port only: making Str3 with the OS (axesim's GetCalc just allocates)."""
+    def str3(m):
+        p = m.os[('str', 3)]
+        return bytes(m.mem[p:p + m.rd16(p - 2)])
+
+    def run(notes, setup=None):
+        m = Machine(SRC)
+        for name, content, arch in notes:
+            m.add_appvar(name, content, archived=arch)
+        if setup:
+            setup(m)
+        m.set_real('E', 4)
+        m.run()
+        return m
+    one = [('ONE', notefolio('ONE', b'x'), False)]
+    m = run(one, lambda m: m.set_str(3, b'old text that is longer than the list'))
+    expect('asm: an old Str3 is replaced (deleted, then made again)',
+           m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 53 and m.calls.count('_DelVarArc') == 1,
+           (m.ans, str3(m)[:12]))
+    m = run(one, lambda m: m.set_str(3, b'old', archived=True))
+    expect('asm: an archived Str3 is deleted too', m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 53)
+    m = run([])
+    expect('asm: no notes: Ans 0, Str3 is the 48 spaces', m.ans == 0 and str3(m) == b'\x29' * 48)
+
+    def low(m):
+        m.set_str(3, b'keep')
+        m.free_ram = 8 + 48 + 31          # one byte short of the string + 32
+    m = run(one, low)
+    expect('asm: not enough RAM: 65535, the old Str3 kept', m.ans == 65535 and str3(m) == b'keep'
+           and '_CreateStrng' not in m.calls, (m.ans, str3(m)))
+    m = run(one, lambda m: setattr(m, 'free_ram', 8 + 48 + 32))
+    expect('asm: just enough RAM: listed', m.ans == 1, m.ans)
+    many = [('N%d' % k, notefolio('N%d' % k, b'a'), k % 2 == 0) for k in range(85)]
+    m = run(many)
+    names = str3(m)
+    expect('asm: at most 80 notes, the first 80 in VAT order', m.ans == 80 and len(names) == 80 * 8 + 48
+           and names[:8] == b'N0' + b'\x29' * 6 and names[79 * 8:80 * 8] == b'N79' + b'\x29' * 5,
+           (m.ans, len(names)))
+
+
 if __name__ == '__main__':
     real_file()
     synthetic()
+    if ASM:
+        asm_list()
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

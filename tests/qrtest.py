@@ -155,6 +155,21 @@ def data_codewords(payload, version, mode):
     return bytes(buf.buffer)
 
 
+def ec_codewords(payload, version, mode):
+    """The EC codewords in the engines' layout: block after block, R each. Taken from the
+    qrcode library's full codeword sequence (util.create_data: data, then EC interleaved,
+    EC byte i of every block in turn), so EC byte i of block b is at M + i·blocks + b."""
+    from qrcode.base import rs_blocks
+    from qrcode.util import create_data
+    data = QRData(payload.encode() if isinstance(payload, str) else bytes(payload),
+                  mode=MODE_ALPHA_NUM if mode == 'alphanumeric' else MODE_8BIT_BYTE)
+    blocks = rs_blocks(version, qrcode.constants.ERROR_CORRECT_L)
+    allcw = create_data(version, qrcode.constants.ERROR_CORRECT_L, [data])
+    M = sum(b.data_count for b in blocks)
+    R = blocks[0].total_count - blocks[0].data_count
+    return bytes(allcw[M + i * len(blocks) + b] for b in range(len(blocks)) for i in range(R))
+
+
 def check_symbol(m, version, payload, mode):
     """Engine output must equal the reference symbol and decode to the payload."""
     assert m.ans == 0, 'engine returned %r' % m.ans

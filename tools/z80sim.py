@@ -13,9 +13,20 @@ ans, displays, os, mem, full), so the engine tests can run the Z80 port of prgmÎ
 - OS variables: their data in RAM from C000h, and a real VAT, built when the program starts:
   the symbol table (reals, strings: fixed 3-byte names) from symTable (FE66h) down, then the
   program table (lists, appvars, programs: a length byte and the name) from (progPtr) down to
-  (pTemp). An archived variable has a flash page in its entry and a data pointer into
-  4000h-7FFFh, where nothing is mapped yet (reading it is a later milestone).
-- OS calls: bcall (rst 28h) runs a Python version of the routine; only those in BCALLS exist,
+  (pTemp). `add_appvar` and `add_vat_other` add appvars (notes) and other entries, as in
+  axesim.
+- Archive: flash pages of 16 KB (`flash`, page -> bytes), read only through `_LoadCIndPaged`
+  (the byte at page B, address HL in 4000h-7FFFh); nothing is mapped at 4000h-7FFFh, so a
+  direct read (or a jump) there raises, as a write does. An archived variable is an entry there, as the OS
+  writes it: FCh (valid), the size of the rest (word), a copy of its VAT entry going up (type,
+  T2, version, address low, high, page), the name length and the name, then the data (for an
+  appvar: size word, content). Its VAT entry, and so `_ChkFindSym`, gives the page (B) and the
+  address of the FCh byte (DE). The archive starts 16 bytes before the end of page 0Bh, so
+  every archived variable's entry crosses a page boundary somewhere in the tests.
+- OS calls: bcall (rst 28h) runs a Python version of the routine; only those in BCALLS exist
+  (`_GrBufCpy`, the display, records the graph buffer in `displays`, as axesim's DispGraph does;
+  `_MemChk` reports `free_ram`; `_DelVarArc` deletes what `_ChkFindSym` found; `_CreateStrng`
+  makes a string in RAM, and raises if one of that name exists or RAM is short),
   any other raises. After one, every register it doesn't return is set to junk (5A5Ah), the
   shadow registers too, so the program can't count on the OS keeping a value. ROM is filled
   with FFh (rst 38h), so a jump into ROM stops at 0038h and raises instead of running.
@@ -45,8 +56,7 @@ STACK_LOW = 0xFE70           # the OS stack: 400 bytes below FFFFh
 EXIT = 0x0040                # return address pushed for the program: reaching it ends the run
 RET_SLOT = 0xFFDE            # where that return address sits (above it: the OS's own stack)
 VAR_DATA = 0xC000            # where the harness puts OS variables' data
-ARCHIVE = 0x4000             # data pointers of archived variables (flash, page ARCH_PAGE)
-ARCH_PAGE = 0x0B
+ARCH_PAGE, ARCH_START = 0x0B, 0x3FF0   # where the archive's entries start: page, offset in it
 SYMTABLE, PROGPTR, PTEMP = 0xFE66, 0x9830, 0x982E
 BCALL, RST38 = 0x0028, 0x0038
 JUNK = 0x5A5A
@@ -55,7 +65,10 @@ REAL, LIST, STRING, PROG, PROTPROG, APPVAR = 0x00, 0x01, 0x04, 0x05, 0x06, 0x15
 PROG_TABLE = {LIST, PROG, PROTPROG, APPVAR, 0x0D, 0x16, 0x17}   # types with variable-length names
 
 BCALLS = {0x41BF: '_OP1Set0', 0x4ABF: '_StoAns', 0x42F1: '_ChkFindSym',
-          0x4792: '_SetXXXXOP2', 0x4156: '_OP2ToOP1'}
+          0x4792: '_SetXXXXOP2', 0x4156: '_OP2ToOP1', 0x486A: '_GrBufCpy',
+          0x501D: '_LoadCIndPaged', 0x42E5: '_MemChk', 0x4FC6: '_DelVarArc',
+          0x4327: '_CreateStrng'}
+VAR_OVERHEAD = 11            # RAM a new string costs besides its text: size word + 9-byte VAT entry
 
 
 class Z80Error(Exception):
@@ -106,15 +119,21 @@ class AsmMachine:
         self.os = {}                # (kind, name) -> pointer to the data, as in axesim (RAM only)
         self.vars = {}              # (kind, name) -> (type, VAT name bytes, data pointer, page)
         self.ticks = 0              # T-states the last run took
+        self.free_ram = 20000       # what _MemChk reports; _CreateStrng needs size + 11 of it
         self.cpu = z80.Z80Machine()
         self.mem = self.cpu.memory
         self.mem[0:0x8000] = b'\xff' * 0x8000
         self.cpu.set_memory_block(USERMEM, self.code)
         self.var_ptr = VAR_DATA
-        self.arch_ptr = ARCHIVE
+        self.flash = {}             # flash page -> bytearray(16384), the archive
+        self.arch_page, self.arch_off = ARCH_PAGE, ARCH_START
         # every address is write-protected, then the allowed areas are opened
         self.cpu.set_write_callback(self._bad_write)
         self.cpu.mark_addrs(0, 0x10000, self.cpu.WRITE_MARK)
+        # nothing is mapped at 4000h-7FFFh for the program: archived data is read with
+        # _LoadCIndPaged, so a direct read there (or running code there) is a bug
+        self.cpu.set_read_callback(self._bad_read)
+        self.cpu.mark_addrs(0x4000, 0x4000, self.cpu.READ_MARK)
         for start, size in ((OP1, 66), (L1, 768), (L6, 768), (L3, 768),
                             (USERMEM, len(self.code)), (STACK_LOW, RET_SLOT - STACK_LOW)):
             self.writable(start, size)
@@ -129,6 +148,12 @@ class AsmMachine:
 
     def _bad_write(self, addr, value):
         raise Z80Error('write of %02Xh to %04Xh (PC %04Xh)' % (value, addr, self.cpu.pc))
+
+    def _bad_read(self, addr):
+        if addr == self.cpu.pc:
+            raise Z80Error('ran into %04Xh, outside the program' % addr)
+        raise Z80Error('read from %04Xh (PC %04Xh): archived data must be read with '
+                       '_LoadCIndPaged' % (addr, self.cpu.pc))
 
     # ---------- ports ----------
     def _port_in(self, port):
@@ -146,10 +171,9 @@ class AsmMachine:
 
     # ---------- OS variables ----------
     def _add_var(self, key, typ, name, data, archived):
-        """Store a variable's data (RAM, or the unmapped archive) and remember its VAT entry."""
+        """Store a variable's data (RAM, or an entry in the archive) and remember its VAT entry."""
         if archived:
-            p, page = self.arch_ptr, ARCH_PAGE
-            self.arch_ptr += len(data) + 16
+            p, page = self._archive(typ, name, data)
             self.os.pop(key, None)
         else:
             p, page = self.var_ptr, 0
@@ -158,6 +182,70 @@ class AsmMachine:
             self.var_ptr += len(data) + 16
         self.vars[key] = (typ, name, p, page)
         return p
+
+    def _archive(self, typ, name, data):
+        """Write an archive entry (see the module's notes) at the archive's end, crossing into
+        the next page where it must; return (address of its FCh byte, page)."""
+        page, off = self.arch_page, self.arch_off
+        head = bytes([typ, 0, 0, (0x4000 + off) & 0xFF, (0x4000 + off) >> 8, page, len(name)])
+        rest = head + name + data
+        entry = bytes([0xFC]) + len(rest).to_bytes(2, 'little') + rest
+        for b in entry:
+            self.flash.setdefault(self.arch_page, bytearray([0xFF] * 0x4000))[self.arch_off] = b
+            self.arch_off += 1
+            if self.arch_off == 0x4000:
+                self.arch_page, self.arch_off = self.arch_page + 1, 0
+        return 0x4000 + off, page
+
+    def flash_read(self, page, addr):
+        """The archive byte at page, address (4000h-7FFFh), as _LoadCIndPaged reads it."""
+        if not 0x4000 <= addr < 0x8000:
+            raise Z80Error('flash read at %04Xh, outside 4000h-7FFFh' % addr)
+        if page not in self.flash:
+            raise Z80Error('flash read from page %02Xh, which holds no archived variables' % page)
+        return self.flash[page][addr - 0x4000]
+
+    def add_appvar(self, name, content, archived=False):
+        """An appvar (a note, for example): its data is a size word, then content."""
+        data = len(content).to_bytes(2, 'little') + bytes(content)
+        p = self._add_var(('appvar', name), APPVAR, name.encode('latin-1'), data, archived)
+        if not archived:
+            self.os[('appvar', name)] = p + 2
+
+    def _delete(self, entry):
+        """_DelVarArc: delete the variable whose VAT entry is at `entry` (RAM or archive); the
+        VAT closes up (build_vat again), as the OS's does."""
+        found = [(typ, ptr, page) for e, typ, name, ptr, page in self.vat_entries() if e == entry]
+        for key, (typ, name, ptr, page) in list(self.vars.items()):
+            if found and (typ, ptr, page) == found[0] and ptr:
+                del self.vars[key]
+                self.os.pop(key, None)
+                self.build_vat()
+                return
+        raise Z80Error('_DelVarArc: no variable has its VAT entry at %04Xh' % entry)
+
+    def _create_string(self, size):
+        """_CreateStrng: a new string named in OP1 (04h, AAh, number), `size` bytes, in RAM.
+        Raises if one of that name exists (the OS would make a second one) or if RAM is short
+        (the OS would stop with ERR:MEMORY). Returns HL = its VAT entry, DE = its size word."""
+        op1 = bytes(self.mem[OP1:OP1 + 3])
+        if op1[:2] != b'\x04\xaa':
+            raise Z80Error('_CreateStrng: OP1 is not a string name: %s' % op1.hex())
+        n = op1[2] + 1 if op1[2] < 9 else 0
+        if ('str', n) in self.vars:
+            raise Z80Error('_CreateStrng: Str%d exists already (delete it first)' % n)
+        if size + VAR_OVERHEAD > self.free_ram:
+            raise Z80Error('_CreateStrng: ERR:MEMORY (%d bytes, %d free)' % (size, self.free_ram))
+        self.free_ram -= size + VAR_OVERHEAD
+        self.set_str(n, bytes(size))
+        self.build_vat()
+        p = self.os[('str', n)] - 2
+        entry = next(e for e, typ, name, ptr, page in self.vat_entries() if ptr == p)
+        return {'hl': entry, 'de': p}
+
+    def add_vat_other(self, typ, name):
+        """A VAT entry with no data the engine may read (a program, a list), like axesim's."""
+        self.vars[('other', typ, name)] = (typ, name.encode('latin-1'), 0, 0)
 
     def set_real(self, name, v, archived=False):
         p = self._add_var(('real', name), REAL, name.encode('latin-1'), self.tifloat(v), archived)
@@ -232,6 +320,9 @@ class AsmMachine:
     def rd(self, p):
         return self.mem[p]
 
+    def rd16(self, p):
+        return self.mem[p] | self.mem[p + 1] << 8
+
     # ---------- OS routines ----------
     def _chkfindsym(self):
         """Find the variable named in OP1 (type byte, then the name). Carry set if there is
@@ -271,6 +362,16 @@ class AsmMachine:
             self.mem[OP1:OP1 + 11] = bytes(self.mem[OP2:OP2 + 11])
         elif name == '_ChkFindSym':
             out = self._chkfindsym()
+        elif name == '_MemChk':             # HL = free RAM
+            out = {'hl': min(self.free_ram, 0xFFFF)}
+        elif name == '_DelVarArc':          # the variable _ChkFindSym found (its VAT entry at HL)
+            self._delete(cpu.hl)
+        elif name == '_CreateStrng':        # a string named in OP1, HL bytes: DE = its size word
+            out = self._create_string(cpu.hl)
+        elif name == '_LoadCIndPaged':      # C = the byte at page B, address HL
+            out = {'c': self.flash_read(cpu.b, cpu.hl)}
+        elif name == '_GrBufCpy':        # the graph buffer to the LCD: record what it shows
+            self.displays.append(bytes(self.mem[L6:L6 + 768]))
         # every register the routine doesn't return is junk afterwards
         for reg in ('af', 'bc', 'de', 'hl', 'ix'):
             setattr(cpu, reg, JUNK)
@@ -281,6 +382,8 @@ class AsmMachine:
             cpu.de = out['de']
         if 'b' in out:
             cpu.b = out['b']
+        if 'c' in out:
+            cpu.c = out['c']
         if 'carry' in out:
             cpu.f = (cpu.f & 0xFE) | out['carry']
 

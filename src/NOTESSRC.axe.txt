@@ -190,9 +190,7 @@ sub(NC)
 If X and (K<80)
 sub(NH)
 If X
-For(I,0,7)
-0→{K*8+L₁+I}
-End
+Fill(K*8+L₁,8,0)
 Copy(L₁+701,K*8+L₁,L)
 K+1→K
 End
@@ -230,19 +228,13 @@ GetCalc(L₁+700)→Q
 If Q
 {Q-2}ʳ→U
 Else
-!If GetCalc(L₁+700,Y₁)
-Return
-End
+Return!If GetCalc(L₁+700,Y₁)
 {Y₁-2}ʳ→U
 End
-If U<27
-Return
-End
+ReturnIf U<27
 For(J,0,3)
 sub(RB,J)
-If C≠{J+GDB8}
-Return
-End
+ReturnIf C≠{J+GDB8}
 End
 1→X
 Return

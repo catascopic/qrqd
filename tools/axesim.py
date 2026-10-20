@@ -29,7 +29,7 @@ L1, L3, L6 = 0x86EC, 0x9872, 0x9340
 TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 TOKENS = [  # longest first matters
-    'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Buff(',
+    'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Fill(', 'Buff(', 'e^(',
     'Text(', 'RectI(', 'Rect(', 'Fix ', 'getKey', 'Output(', '►Char', '►Dec', 'Asm(',
     'ClrHome', 'input', 'UnArchive ', 'Archive ',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
@@ -459,6 +459,11 @@ class Machine:
         if t == 'Y₁':
             if self.file is None: raise AxeError('Y1 used without an open file')
             return self.file, i + 1
+        if t == 'e^(':                    # 2 to the power EXP
+            v, i = self.expr(toks, i + 1)
+            i = self.expect(toks, i, ')')
+            if v > 15: raise AxeError('e^(%d): past 16 bits' % v)
+            return 1 << v, i
         if t == 'inData(':
             b, i = self.expr(toks, i + 1)
             i = self.expect(toks, i, ',')
@@ -559,6 +564,14 @@ class Machine:
                     pc = o + 1 if self.vars[var] <= b else pc + 1
                     continue
                 pc += 1; continue
+            if h == ('T', 'Return') and len(t) > 1:
+                # ReturnIf c / Return!If c: return only if c is true (false); else go on
+                assert t[1] in [('T', 'If '), ('T', '!If ')], self.lines[pc]
+                v, j = self.expr(t, 2)
+                assert j == len(t), self.lines[pc]
+                if (v != 0) != (t[1] == ('T', 'If ')):
+                    pc += 1; continue
+                h = ('T', 'Return')
             if h == ('T', 'Return'):
                 if not calls:
                     if self.fix == 5: raise AxeError('returned with Fix 5 on')
@@ -679,6 +692,15 @@ class Machine:
                             self.mem[base + yy * 12 + xx // 8] |= bit
                 if h[1] == 'RectI(' and not back:
                     self.rects.append(tuple(args))
+                pc += 1; continue
+            if h == ('T', 'Fill('):
+                d, j = self.expr(t, 1); j = self.expect(t, j, ',')
+                n, j = self.expr(t, j); j = self.expect(t, j, ',')
+                b, j = self.expr(t, j); self.expect(t, j, ')')
+                if n < 2: raise AxeError('Fill( size %d (must be more than 1)' % n)
+                if b > 255: raise AxeError('Fill( byte %d' % b)
+                for k in range(n):
+                    self.wr(d + k, b)
                 pc += 1; continue
             if h == ('T', 'Copy('):
                 s, j = self.expr(t, 1); j = self.expect(t, j, ',')

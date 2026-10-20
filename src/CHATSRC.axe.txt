@@ -74,9 +74,7 @@ End
 .the digits to the note CCOUT
 Lbl SD
 sub(PK)
-!If X
-Return
-End
+Return!If X
 ClrHome
 Output(0,0,"TO ")
 sub(NM)
@@ -142,9 +140,7 @@ Disp " DIGITS"
 Output(0,4,"1 SEND")
 Output(0,5,"2 CANCEL")
 sub(YN)
-If θ≠1
-Return
-End
+ReturnIf θ≠1
 .Lowercase only: uppercase it (compact) or send it as typed
 .(8-bit). Both digit counts are shown. Compact bytes =
 .(11 bits per pair + 6 for an odd last + 7)/8 rounds the bits
@@ -163,9 +159,7 @@ sub(DG,A)
 Output(11,3)
 Disp A►Dec
 sub(YN)
-If θ=255
-Return
-End
+ReturnIf θ=255
 If θ=2
 0→S
 Else
@@ -273,9 +267,7 @@ Output(0,0,"RECEIVE")
 Output(0,2,"1 TYPE DIGITS")
 Output(0,3,"2 READ CCOUT")
 sub(YN)
-If θ=255
-Return
-End
+ReturnIf θ=255
 .Typed: read them from the input string (Q, so RB reads RAM),
 .T bytes from O=0
 If θ=1
@@ -529,9 +521,7 @@ End
 0→E
 While E=0 or (E>G)
 sub(WK)
-If θ=255
-Return
-End
+ReturnIf θ=255
 θ→E
 End
 E-1→E
@@ -569,9 +559,7 @@ GetCalc(GDB8)→R
 !If R
 .No CCSTATE yet: make one, counter 0
 GetCalc(GDB8,2)→R
-!If R
-Return
-End
+Return!If R
 0→{R}ʳ
 End
 {R}*256+{R+1}→G
@@ -596,9 +584,7 @@ sub(DG,B)
 A→G
 .Note size: header 24 + digits + 00h end + 2 trailing bytes
 GetCalc(GDB9,G+27)→R
-!If R
-Return
-End
+Return!If R
 .Header: the 16 bytes at GDB6, then the words textlen+24, 18h,
 .textlen+24, 1 (as NoteFolioEdit writes them)
 Copy(GDB6,R,16)
@@ -668,11 +654,7 @@ Return
 .is the first bit's mask; W collects bits and goes to D when it
 .has 8 (K counts them). Same as prgmθQR's AB.
 Lbl AB
-1→X
-While Z>1
-X*2→X
-Z-1→Z
-End
+e^(Z-1)→X
 While X
 .· is a 16-bit and (Axe's and only uses the low 8 bits)
 W*2+(A·X≠0)→W
@@ -743,9 +725,7 @@ If Q
 1→X
 Return
 End
-!If GetCalc(r₁,Y₁)
-Return
-End
+Return!If GetCalc(r₁,Y₁)
 {Y₁-2}ʳ→T
 1→X
 Return
@@ -763,9 +743,7 @@ Return
 .Leaves K2's round keys loaded.
 Lbl KI
 sub(KX,L₁+355)
-For(I,0,15)
-0→{L₁+640+I}
-End
+Fill(L₁+640,16,0)
 sub(AE,L₁+640)
 {L₁+640}→A
 Return
@@ -773,9 +751,7 @@ Return
 .SK: CMAC subkeys (RFC 4493) for the loaded key (K1):
 .L₁+576 = dbl(AES(0)), L₁+592 = dbl of that
 Lbl SK
-For(I,0,15)
-0→{L₁+576+I}
-End
+Fill(L₁+576,16,0)
 sub(AE,L₁+576)
 sub(DB,L₁+576)
 Copy(L₁+576,L₁+592,16)
@@ -788,9 +764,7 @@ Return
 .CMAC(header). Last: CMAC(text xorend D) if the text has 16
 .bytes or more, else CMAC(dbl(D) xor text padded with 80h 00..).
 Lbl SV
-For(I,0,15)
-0→{L₁+640+I}
-End
+Fill(L₁+640,16,0)
 sub(CM,L₁+640,16)
 Copy(L₁+624,L₁+608,16)
 sub(DB,L₁+608)
@@ -828,9 +802,7 @@ Return
 Lbl CM
 r₁→P
 r₂→N
-For(I,0,15)
-0→{L₁+624+I}
-End
+Fill(L₁+624,16,0)
 .K = blocks before the last: ceil(N/16)-1, read left to right
 .as ((N+15)/16)-1; 0 when N=0
 0→K

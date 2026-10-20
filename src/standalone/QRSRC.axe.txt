@@ -336,9 +336,7 @@ End
 .top down, coefficient J ^= coefficient J-1 · 2^I (that product
 .done with logs: exp(log C + I))
 1→{L₁+420}
-For(J,1,R)
-0→{J+L₁+420}
-End
+Fill(L₁+421,R,0)
 For(I,0,R-1)
 I+1→J
 While J
@@ -551,11 +549,7 @@ Return
 .X = 2^(Z-1) is the mask of the first bit; W collects bits and
 .is stored at D when it has 8 (K counts them).
 Lbl AB
-1→X
-While Z>1
-X*2→X
-Z-1→Z
-End
+e^(Z-1)→X
 While X
 .· is a 16-bit and (Axe's and only uses the low 8 bits)
 W*2+(A·X≠0)→W
@@ -626,9 +620,7 @@ Return
 .then remainder ^= C · generator (coefficients 1..R, as logs at
 .L₁+421..: C·g = exp(log C + log g)).
 Lbl RS
-For(J,0,R)
-0→{J+L₁+460}
-End
+Fill(L₁+460,R+1,0)
 For(I,0,L-1)
 {A+I} xor {L₁+460}→C
 Copy(L₁+461,L₁+460,R)
@@ -749,20 +741,14 @@ GetCalc(L₁+700)→Q
 If Q
 {Q-2}ʳ→U
 Else
-!If GetCalc(L₁+700,Y₁)
-Return
-End
+Return!If GetCalc(L₁+700,Y₁)
 {Y₁-2}ʳ→U
 End
-If U<27
-Return
-End
+ReturnIf U<27
 .The first 4 bytes must be the NoteFolio signature
 For(J,0,3)
 sub(RB,J)
-If C≠{J+GDB8}
-Return
-End
+ReturnIf C≠{J+GDB8}
 End
 1→X
 Return
@@ -774,9 +760,7 @@ Return
 Lbl NF
 0→X
 GetCalc("Str2")→Z
-!If Z
-Return
-End
+Return!If Z
 {Z-2}ʳ→U
 0→L
 While L<U
@@ -788,16 +772,12 @@ L+1→L
 End
 End
 .1-8 characters (L=0 wraps around, so it fails too)
-If L-1>7
-Return
-End
+ReturnIf L-1>7
 .Make the OP1 name: type 15h (appvar), the name, 0
 21→{L₁+700}
 0→{L+L₁+701}
 sub(NH)
-!If X
-Return
-End
+Return!If X
 .The text runs from byte 24 to a 00h; the appvar size bounds
 .the scan (U-24 bytes at most)
 0→T

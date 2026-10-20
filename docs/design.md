@@ -254,6 +254,16 @@
    (the main menu became one chain), 1 in the note picker; the engines had none (their two
    Else+If spots have more code after the inner If). axesim learned the clauses
    (`next_clause`, `next_branch`).
+46. From the Axe command list: `ReturnIf`/`Return!If` replaced every `If c` / `Return` /
+   `End` (23: 6 in each engine, 8 in CodeChat, 3 in the note picker; a conditional `ret`, 3
+   bytes instead of 6), `Fill(PTR,SIZE,0)` every loop storing zeros (the generator and the RS
+   remainder in both engines, 4 in CodeChat, the picker's name slot), and `e^(Z-1)` the
+   doubling loop that made AB's first mask (both engines, CodeChat; Z is always 1-16 there).
+   Token bytes: QRSRC 3914 → 3863, standalone 4253 → 4202, CHATSRC 6827 → 6748, NOTESSRC
+   1225 → 1206. Considered and not done: `EndIf` (no loop needs it, no Goto), `P++` (same
+   size and speed as `P+1→P` per the command list), `c?a,b` (one spot, reads worse),
+   `length(` for a note's end (can't read archived notes; the scan is bounded on purpose).
+   Still open: `getKeyʳ` in the note picker (auto power-down), `#ExprOff` (size).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty

@@ -129,6 +129,9 @@ first, picks the version from the length and mode, then encodes.
   program; Returning from inside `For(V,..)`/`While` is fine. Subroutines share all globals.
 - `ElseIf c` / `Else!If c` (the Else and If tokens on one line) chain conditions in one block
   with one End; use them instead of an If that is an Else's whole body. axesim supports them.
+- `ReturnIf c` / `Return!If c` instead of `If c` / `Return` / `End` (a Z80 conditional `ret`:
+  3 bytes instead of 6). `Fill(PTR,SIZE,0)` instead of a loop storing zeros (SIZE must be
+  more than 1). `e^(n)` is 2^n (axesim refuses n > 15).
 - Comments start with `.`; a line starting with `...` opens a multi-line comment. In this
   project comments are whole lines only (axesim skips lines starting with `.`; build.py refuses
   `...` blocks), and build.py strips them all, plus blank lines, except line 1 (the `.NAME`

@@ -25,11 +25,14 @@ class Recording(Machine):
         return super().appvar_create(name, size)
 
 
-def lorem(n=None, free=12000):
+def lorem(n=None, free=12000, old=None):
+    """Run LOREM; old = (content, archived) of a LOREM already on the calculator."""
     m = Recording(SRC)
     m.free_ram = free
     if n is not None:
         m.set_real('N', n)
+    if old:
+        m.add_appvar('LOREM', old[0], archived=old[1])
     m.run()
     p = m.appvars.get('LOREM', (None,))[0]
     return m, (bytes(m.mem[p:p + m.rd16(p - 2)]) if p else None)
@@ -52,8 +55,16 @@ if __name__ == '__main__':
                (len(got) if got else got, m.shown))
     m, got = lorem()
     expect('N missing: 1 copy', got == note(1), len(got) if got else got)
-    m, got = lorem(100)
-    expect('N=100 needs %d bytes: NOT ENOUGH RAM, nothing created' % (100 * 446 - 1 + 27),
+    expect('the new LOREM is archived', m.appvar('LOREM')[1])
+    m, got = lorem(2, old=(note(5), True))
+    expect('an archived old LOREM is replaced', got == note(2) and m.appvar('LOREM')[1]
+           and [v[1] for v in m.vat].count('LOREM') == 1, (len(got) if got else got, m.vat))
+    m, got = lorem(10, free=1000, old=(bytes(10000), False))
+    expect('an old LOREM in RAM is deleted first, so its RAM can hold the new one',
+           got == note(10) and m.appvar('LOREM')[1], (m.shown, getattr(m, 'requested', None)))
+    m, got = lorem(100, old=(note(1), True))
+    expect('N=100 needs %d bytes: NOT ENOUGH RAM, nothing created (the old one deleted)'
+           % (100 * 446 - 1 + 27),
            got is None and m.requested == 100 * 446 - 1 + 27 and m.shown == ['NOT ENOUGH RAM'],
            (m.shown, getattr(m, 'requested', None)))
     m, got = lorem(150)

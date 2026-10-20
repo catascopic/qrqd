@@ -2,8 +2,9 @@
 .Test tool: makes the NoteFolio note LOREM, the lorem ipsum
 .paragraph repeated N times, one copy per line. N is the OS
 .variable N (1 if it doesn't exist, at most 100 = 44.6 KB, so
-.sizes stay under 65536). Says NOT ENOUGH RAM instead of
-.crashing when there's no room.
+.sizes stay under 65536). An old LOREM is deleted first, and the
+.new one is archived at the end. Says NOT ENOUGH RAM instead of
+.crashing when there's no room (the old LOREM is gone by then).
 .
 .The text, 445 characters (ASCII, which matches the calculator's
 .character codes for these letters and punctuation)
@@ -28,8 +29,11 @@ N*446→T
 If T
 T-1→T
 End
+.Delete an old LOREM, in RAM or archived (nothing happens if
+.there is none), so its RAM is free before the new one is made
+DelVar "appvLOREM"
 .Appvar size: header 24 + text + 00h end + 2 trailing bytes.
-.GetCalc with a size replaces an old LOREM; 0 if there's no room.
+.0 if there's no room.
 GetCalc("appvLOREM",T+27)→P
 !If P
 Disp "NOT ENOUGH RAM"
@@ -61,5 +65,8 @@ End
 0→{D}
 43→{D+1}
 42→{D+2}
+.Move it to the archive (ERR:MEMORY if the archive is full).
+.P is no longer valid after this.
+Archive "appvLOREM"
 Disp "LOREM CREATED"
 Return

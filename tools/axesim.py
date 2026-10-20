@@ -18,7 +18,8 @@ CodeChat's home-screen commands: ClrHome, Output(X,Y[,PTR]), Disp PTR / X►Char
 write into `home` (text wraps at column 16; going past row 7 raises unless Fix 7, as the
 real screen would scroll), `input` returns a scripted token string (`inputs`, its size in
 the 2 bytes before it, like an OS string), and every getKey records the home screen in
-`screens`. Archive/UnArchive move an appvar between RAM and the archive. Static data is
+`screens`. Archive/UnArchive move an appvar between RAM and the archive; DelVar deletes one
+(RAM or archive) and gives its RAM back to `free_ram`. Static data is
 laid out when the program is parsed (Axe does it at compile time), so `call(label)` can run
 one subroutine. Machine(src, app=True) refuses writes into the program's own data, which a
 Flash app can't do.
@@ -31,7 +32,7 @@ TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 TOKENS = [  # longest first matters
     'float{', 'GetCalc(', 'inData(', 'pxl-Test(', 'Pxl-On(', 'Copy(', 'Fill(', 'Buff(', 'e^(',
     'Text(', 'RectI(', 'Rect(', 'Fix ', 'getKey', 'Output(', '►Char', '►Dec', 'Asm(',
-    'ClrHome', 'input', 'UnArchive ', 'Archive ',
+    'ClrHome', 'input', 'UnArchive ', 'Archive ', 'DelVar ',
     'sub(', '!If ', 'If ', 'Else', 'End', 'While ', 'For(', 'Return', 'Lbl ',
     'ClrDraw', 'DispGraph', 'Disp ', 'Full', 'Ans', ' and ', ' or ', ' xor ',
     'Y₁', 'L₁', 'L₂', 'L₃', 'L₄', 'L₅', 'L₆', 'r₁', 'r₂', 'r₃', 'r₄', 'r₅', 'r₆',
@@ -234,6 +235,15 @@ class Machine:
         self.vat = [v for v in self.vat if v[1] != name]
         self.add_appvar(name, content, archived=on)
         return 1
+
+    def delvar(self, p):
+        """DelVar PTR: delete the appvar, in RAM or archived; nothing if it doesn't exist."""
+        name = self.op1_appvar(p)
+        if name in self.appvars:
+            ptr, archived = self.appvars.pop(name)
+            if not archived:
+                self.free_ram += self.rd16(ptr - 2)
+            self.vat = [v for v in self.vat if v[1] != name]
 
     def appvar(self, name):
         """(content, archived) of an appvar, for tests."""
@@ -443,6 +453,8 @@ class Machine:
                 data = t.encode('ascii') + bytes(1)
                 if t.startswith('var') and len(t) == 4:   # Axe stores "varA" as an OS name
                     data = bytes([0x00, ord(t[3])]) + bytes(7)
+                if t.startswith('appv'):                  # and "appvNAME" as 15h, NAME, 0
+                    data = bytes([0x15]) + t[4:].encode('ascii') + bytes(1)
                 self.mem[self.data_ptr:self.data_ptr + len(data)] = data
                 self.data_ptr += len(data)
             return self.literals[t], i + 1
@@ -623,6 +635,11 @@ class Machine:
                 p, j = self.expr(t, 1)
                 assert j == len(t), self.lines[pc]
                 self.archive(p, h[1] == 'Archive ')
+                pc += 1; continue
+            if h == ('T', 'DelVar '):
+                p, j = self.expr(t, 1)
+                assert j == len(t), self.lines[pc]
+                self.delvar(p)
                 pc += 1; continue
             if h == ('T', 'Asm('):
                 code = ''.join(str(x[1]) if x[0] in ('NUM', 'VAR') else '' for x in t[1:-1])

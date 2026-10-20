@@ -41,9 +41,9 @@ def ti_text(s, wrap_every=0):
 
 
 # calculator [ $ Enter swap with θ ⁴ and the calculator's 0Ah; wrap space -> space;
-# hyphen and negative sign -> -; every other byte goes through unchanged
+# hyphen -> -; every other byte goes through unchanged (the negative sign 1Ah too: not ASCII)
 SWAP = {0xC1: 91, 0x5B: 0xC1, 0xF2: 36, 0x24: 0xF2, 0xD6: 10, 0x0A: 0xD6,
-        0xF1: 32, 0xD2: 45, 0x1A: 45}
+        0xF1: 32, 0xD2: 45}
 
 
 def expected_bytes(tb):
@@ -162,9 +162,9 @@ def synthetic():
     m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO}, str2='ALL')
     got = decode(matrix_from(m, 11))[0].bytes if m.ans == 0 else m.ans
     expect('every byte 1-255 encodes as mapped', got == expected_bytes(every), got)
-    # one-to-one except the deliberate merges: wrap space with space, hyphen and negative with -
-    expect('only wrap space, hyphen and negative share a byte with another character',
-           len(set(expected_bytes(every))) == 255 - 3)
+    # one-to-one except the deliberate merges: wrap space with space, hyphen with -
+    expect('only wrap space and hyphen share a byte with another character',
+           len(set(expected_bytes(every))) == 255 - 2)
 
 
 def str2(m):

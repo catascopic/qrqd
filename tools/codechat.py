@@ -9,7 +9,7 @@
   python tools/codechat.py encrypt KEYS.8xv NAME COUNTER TEXT   digits for a message to NAME
   python tools/codechat.py decrypt KEYS.8xv DIGITS  who sent it, and the text
 
-Message: header (6 bytes: version/flags, key ID, counter big-endian) + AES-SIV tag (16) +
+Message: header (4 bytes: version/flags, key ID, 2-byte counter big-endian) + AES-SIV tag (16) +
 ciphertext, with the header as AES-SIV's associated data (RFC 5297). Version 1 in the high
 nibble of byte 0; bit 0 = compact alphabet, bit 1 = odd character count. The counter's last
 bit is the sender's side. Key ID = first byte of AES-128 under the key's second half (the CTR
@@ -34,7 +34,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 
 ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' + " ?!',-./:"
 VERSION = 1
-HEADER = 6
+HEADER = 4
 TAG = 16
 ENTRY = 41                     # name 8, side 1, key 32
 TO_CALC = {'$': 0xF2, '[': 0xC1}
@@ -119,7 +119,7 @@ def encrypt(key, counter, text, compact=None):
         plain, flags = pack(text), 1 | (len(text) % 2) << 1
     else:
         plain, flags = to_calc(text), 0
-    header = bytes([VERSION << 4 | flags, key_id(key)]) + counter.to_bytes(4, 'big')
+    header = bytes([VERSION << 4 | flags, key_id(key)]) + counter.to_bytes(2, 'big')
     return header + AESSIV(key).encrypt(plain, [header])
 
 
@@ -130,7 +130,7 @@ def decrypt(message, entries):
     header, body = message[:HEADER], message[HEADER:]
     if header[0] >> 4 != VERSION:
         raise ValueError('unknown format %d' % (header[0] >> 4))
-    side = header[5] & 1
+    side = header[3] & 1
     own = tried = False
     for name, my_side, key in entries:
         if key_id(key) != header[1]:

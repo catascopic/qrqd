@@ -29,7 +29,7 @@ The most you can encode at once is 32765 characters.
 
 CHARACTERS
 
-ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. The negative sign encodes as a minus. Tokens like sin( or π have no ASCII equivalent: you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
+ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. The negative sign isn't ASCII (only the minus sign is), so it's a bad character too. Tokens like sin( or π have no ASCII equivalent: you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
 
 Alphanumeric mode only has 0-9, A-Z, space and $%*+-./: (no lowercase). With Mode set to Alnum, anything else gives ERR:NOT ALNUM.
 

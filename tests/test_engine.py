@@ -138,9 +138,16 @@ def edge_cases():
     # special characters
     expect('ascii: real quote token',
            drawn(ascii_tokens('say ') + [Q] + ascii_tokens('hi') + [Q], AUTO) == (0, b'say "hi"'))
-    expect('ascii: negative sign -> hyphen', drawn(ascii_tokens('x=') + [NEG] + ascii_tokens('5'), AUTO) == (0, b'x=-5'))
-    expect('alnum: negative sign -> hyphen', check_text(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == 7
-           and drawn(alnum_tokens('A') + [NEG] + alnum_tokens('1'), AUTO) == (0, b'A-1'))
+    # the negative sign ⁻ isn't ASCII (only the minus sign is): a bad character in every mode
+    for label, toks, mode, pos in (('auto', ascii_tokens('x=') + [NEG] + ascii_tokens('5'), AUTO, 3),
+                                   ('ASCII', ascii_tokens('x=') + [NEG] + ascii_tokens('5'), ASCII, 3),
+                                   ('alnum', alnum_tokens('A') + [NEG] + alnum_tokens('1'), ALNUM, 2)):
+        expect('%s: negative sign is a bad character at %d' % (label, pos), check_text(toks, mode) == bad(pos),
+               check_text(toks, mode))
+    toks = ascii_tokens('x=') + [NEG] + ascii_tokens('5')
+    expect('auto draw with no check: negative sign fails, nothing drawn', drawn(toks, AUTO) == (65533, None),
+           drawn(toks, AUTO))
+    expect('ascii: minus sign still encodes', drawn(ascii_tokens('x-5'), AUTO) == (0, b'x-5'))
     # count larger than the message or the capacity is clamped
     # prgmQR keeps N within capacity; a bad N may give a wrong symbol but stays inside L1
     m = Machine(SRC)

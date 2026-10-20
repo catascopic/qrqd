@@ -42,7 +42,7 @@ def machine(keys, inputs=(), entries=LOOP, state=None, state_archived=True, keyr
     if entries is not None:
         m.add_appvar('CCKEYS', cc.keyring(entries), archived=keyring_archived)
     if state is not None:
-        m.add_appvar('CCSTATE', state.to_bytes(4, 'big'), archived=state_archived)
+        m.add_appvar('CCSTATE', state.to_bytes(2, 'big'), archived=state_archived)
     if note is not None:
         m.add_appvar('CCOUT', note)
     m.keys = list(keys)
@@ -108,6 +108,14 @@ def sending():
            counter == 3 and digits == cc.to_digits(cc.encrypt(KEY, 3, 'NEXT')), counter)
     m = machine([SEND, ENTER, QUIT], ['X'], entries=[('BOB', 0, KEY)], state=3, state_archived=False)
     expect('side 0 after counter 3 sends 4', sent(m)[1:] == (4, True), sent(m)[1:])
+    m = machine([SEND, ENTER, QUIT], ['WRAP'], entries=[('BOB', 0, KEY)], state=65535)
+    digits, counter, _ = sent(m)
+    expect('the 2-byte counter starts over: side 0 after 65535 sends 0',
+           counter == 0 and digits == cc.to_digits(cc.encrypt(KEY, 0, 'WRAP')), counter)
+    m = machine([SEND, ENTER, QUIT], ['WRAP'], entries=[('ALICE', 1, KEY)], state=65535)
+    expect('side 1 after 65535 sends 1', sent(m)[1] == 1, sent(m)[1])
+    expect('the header is 4 bytes: 20 bytes of overhead, 50 digits for an empty message',
+           len(cc.encrypt(KEY, 1, '')) == 20 and cc.digit_count(20) == 50)
 
     # two contacts: a menu; pick the second
     m = machine([SEND, K2, ENTER, QUIT], ["IT'S 5:30/OK?!"], entries=LOOP)
@@ -122,8 +130,8 @@ def sending():
         expect('lowercase, %s' % what,
                digits == cc.to_digits(cc.encrypt(KEY, 2, want_text, compact=what == 'uppercase')), digits)
     expect('the lowercase question shows both digit counts',
-           '1 UPPERCASE   ' + str(cc.digit_count(22 + len(cc.pack('HELLO THERE')))) in shown(m)
-           and '2 AS TYPED    ' + str(cc.digit_count(22 + 11)) in shown(m), shown(m))
+           '1 UPPERCASE   ' + str(cc.digit_count(20 + len(cc.pack('HELLO THERE')))) in shown(m)
+           and '2 AS TYPED    ' + str(cc.digit_count(20 + 11)) in shown(m), shown(m))
 
     m = machine([SEND, K1, K1, ENTER, QUIT], ['COST $5 [OK]'])
     digits, _, _ = sent(m)
@@ -139,11 +147,16 @@ def sending():
     expect('an empty message', cc.decrypt(cc.from_digits(sent(m)[0]), LOOP)[1] == '')
     m = machine([SEND, K1, ENTER, QUIT], [tokens('AB') + b'\xc2'])            # sin(
     expect('a token with no character is refused', 'BAD CHARACTER' in shown(m) and 'CCOUT' not in m.appvars)
-    for n, ok in ((416, True), (417, False)):
+    m = machine([SEND, K1, ENTER, QUIT], [tokens('X=') + b'\xb0' + tokens('5')])   # the negative sign
+    expect('the negative sign is refused (only the minus sign is ASCII)',
+           'BAD CHARACTER' in shown(m) and 'CCOUT' not in m.appvars)
+    m = machine([SEND, K1, ENTER, QUIT], [tokens('X-5')], entries=LOOP)
+    expect('the minus sign is sent', cc.decrypt(cc.from_digits(sent(m)[0]), LOOP)[1] == 'X-5')
+    for n, ok in ((418, True), (419, False)):
         m = machine([SEND, K1, ENTER, QUIT], ['A' * n])
         expect('%d compact characters %s' % (n, 'fit' if ok else 'are too long'),
                ('CCOUT' in m.appvars) == ok and (ok or 'TOO LONG' in shown(m)))
-    for n, ok in ((286, True), (287, False)):
+    for n, ok in ((288, True), (289, False)):
         m = machine([SEND, K1, K1, ENTER, QUIT], ['$' * n])
         expect('%d 8-bit characters %s' % (n, 'fit' if ok else 'are too long'), ('CCOUT' in m.appvars) == ok)
     m = machine([SEND, ENTER, QUIT], ['HI'], entries=None)

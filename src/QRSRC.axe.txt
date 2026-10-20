@@ -52,9 +52,9 @@
 .Alphanumeric punctuation in value order, values 36-44 (space,
 .$ % * + - . / and colon), 0-terminated. At +10: note characters
 .that change on
-.the way out ([ θ $ ⁴ Enter 0Ah, wrapped-line space, two kinds of
-.hyphen), at +20 what each becomes (see Lbl MA)
-[2024252A2B2D2E2F3A00C15BF224D60AF1D21A005BC124F20AD6202D2D]→GDB9
+.the way out ([ θ $ ⁴ Enter 0Ah, wrapped-line space, hyphen), at
+.+20 what each becomes (see Lbl MA)
+[2024252A2B2D2E2F3A00C15BF224D60AF1D200005BC124F20AD6202D]→GDB9
 .The token for each ASCII character 32-126, as two 95-byte rows:
 .first bytes, then second bytes (0 for a one-byte token). Every
 .two-byte one starts with BBh (lowercase letters and some
@@ -586,10 +586,6 @@ inData({P},GDB0+95,95)→A
 End
 P+1→P
 Else
-.Treat the negative sign ⁻ (B0h) as minus (71h)
-If Y=176
-113→Y
-End
 inData(Y,GDB0,95)→A
 End
 .Table position 1-95 → ASCII 32-126
@@ -662,8 +658,9 @@ Return
 .unchanged; the calculator's swaps are undone so a character
 .never poses as another ASCII one: θ (5Bh) and [ (C1h) swap,
 .⁴ (24h) and $ (F2h) swap, Enter (D6h) and 0Ah swap, F1h (the
-.space where a line wrapped) → space, D2h/1Ah (hyphen, negative)
-.→ -. U = position in the list at GDB9+10 (1-based).
+.space where a line wrapped) → space, D2h (hyphen) → -. The
+.negative sign (1Ah) isn't ASCII. U = position in the list at
+.GDB9+10 (1-based).
 Lbl MA
 C→A
 inData(C,GDB9+10)→U

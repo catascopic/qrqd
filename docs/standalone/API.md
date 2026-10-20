@@ -92,7 +92,8 @@ Version 11 is the largest that fits the 64-pixel screen.
 
 - **Str1** is read token by token. Tokens that are a single ASCII character (letters,
   digits, punctuation, lowercase letters, `"` typed at an Input prompt) encode as that
-  character. The negative sign `⁻` encodes as `-`. Anything else fails with 65533 (position in B).
+  character. The negative sign `⁻` is not the minus sign `-` and fails like any other
+  non-ASCII token. Anything else fails with 65533 (position in B).
 - **Alphanumeric mode** holds only `0-9 A-Z`, space and `$%*+-./:`.
 - **Notes** never fail in byte mode. Each calculator character becomes its own byte:
   - θ, ⁴ and the calculator's 0Ah character are swapped with `[`, `$` and Enter;

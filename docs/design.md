@@ -18,7 +18,7 @@
 5. "Alt punct" removed after discussion with the user: it relabeled alphanumeric punctuation
    (typing `?` stored `$`), so scanned text differed from what was typed. Unsupported characters
    in alphanumeric mode now become `*` (was `$`, which only made sense under alt punct).
-6. The negative-sign token (B0h) is treated as minus (71h) in both text modes.
+6. The negative-sign token (B0h) was treated as minus (71h) in both text modes (undone in item 44).
 7. Options menu removed (ʟQR list no longer used). Center and StorePic made sense when drawing
    took minutes; now centering is always on and StorePic is left to the user. Safe mode is
    always on; its warning gained "Use ASCII" for alphanumeric input. The engine still takes C
@@ -244,6 +244,11 @@
    axesim already assumed); `...` blocks are refused. Token bytes: QRSRC 6409 → 3931, standalone
    QRSRC 6839 → 4270, NOTESSRC 2506 → 1228, CHATSRC 9819 → 6921, LOREMSRC 1619 → 1210, SPEEDSRC
    975 → 385, UNPROSRC 590 → 307. Compiled programs are unchanged (Axe ignores comments).
+44. The negative sign is a bad character again, in both engines: the Str1 token ⁻ (B0h) no
+   longer becomes minus (71h), and a note's negative character (1Ah) no longer becomes `-`
+   (it goes out as 1Ah with the non-ASCII warning in byte mode, and fails in alphanumeric
+   mode). The user's readme says only the minus sign is valid ASCII. The hyphen (D2h) still
+   becomes `-`. CodeChat (CHATSRC) refuses ⁻ too (BAD CHARACTER).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
@@ -327,8 +332,7 @@ Text uses the calculator's character codes (`ti83plus.inc`, `L...` equates), not
 20h-7Eh match ASCII except 24h (superscript 4) and 5Bh (θ); `[` is C1h, `$` is F2h; accented
 letters are 8Ah-B5h, Greek BBh-CAh; D6h is Enter (newline); F1h is a space where a line wrapped.
 Engine mapping (`MA`, table at GDB9+10/+20): C1h ↔ 5Bh (`[` ↔ θ), F2h ↔ 24h (`$` ↔ ⁴),
-D6h ↔ 0Ah (Enter ↔ the calculator's 0Ah character), F1h → space, D2h/1Ah (hyphen/negative) →
-`-`; every other byte goes out unchanged (so in byte mode a scanner shows its Latin-1 meaning).
+D6h ↔ 0Ah (Enter ↔ the calculator's 0Ah character), F1h → space, D2h (hyphen) → `-`; every other byte goes out unchanged (so in byte mode a scanner shows its Latin-1 meaning).
 Anything outside printable ASCII and newline sets B (the warning), never fails.
 
 VAT scan (prgmθNOTES): entries from `progPtr` (word at 9830h) down to `pTemp` (982Eh). Type in the
@@ -398,26 +402,29 @@ clear (its old contents, e.g. a drawn QR code, are lost, as before).
 
 ## CodeChat (src/CHATSRC.axe.txt, tools/codechat.py)
 
-Message = header (6 bytes: 10h + flags [bit 0 compact, bit 1 odd count], key ID, counter
-big-endian) + AES-SIV tag (16) + ciphertext; the header is S2V's one associated-data string
+Message = header (4 bytes: 10h + flags [bit 0 compact, bit 1 odd count], key ID, 2-byte
+counter big-endian; it was 4 bytes, cut to save 5 digits a message) + AES-SIV tag (16) + ciphertext; the header is S2V's one associated-data string
 (RFC 5297; `cryptography`'s `AESSIV(key).encrypt(text, [header])` gives tag + ciphertext).
 Key = 32 bytes: K1 (first half) for S2V/CMAC, K2 for CTR. Key ID = byte 0 of AES(K2, 0¹²⁸).
-The counter's last bit is the sender's side; it only grows (CCSTATE, one counter for all
-contacts, +1 or +2 to land on my side's parity), saved and archived before encrypting.
+The counter's last bit is the sender's side; it grows (CCSTATE, one counter for all
+contacts, +1 or +2 to land on my side's parity), saved and archived before encrypting, and
+starts over after 65535: 32,768 messages per side. A repeat only shows that two messages
+with the same counter and key have the same text (AES-SIV); 1 byte (128 per side) was
+rejected for repeating often enough to match short replies like "YES".
 Digits: each 2 bytes → 5 digits (00000-65535), a last odd byte → 3; receiving ignores
 non-digits, refuses a group over 65535 or a count that isn't 5k or 5k+3. Compact alphabet
 0-9 A-Z then space ? ! ' , - . / : (values 0-44), pairs in 11 bits, odd last in 6, zero pad.
 8-bit text = calculator character codes (ASCII but $ = F2h, [ = C1h).
 
 Appvars (OP1 names in GDB7-9): CCKEYS = version 1, count, entries of name 8 + my side 1 +
-key 32, may be archived (read through Y₁); CCSTATE = 4-byte counter; CCOUT = a NoteFolio note
+key 32, may be archived (read through Y₁); CCSTATE = 2-byte counter (an old 4-byte one is read as its high word, so it starts over); CCOUT = a NoteFolio note
 of the digits (header from TEST.8xv: the 4 unknown bytes 80 10 62 21, title CCOUT, trailing
 00 00 00). The PC script writes keyrings with the archive flag set, as TI Connect files do.
 
 Send: contact (menu if more than one, keys 1-6), `input` → tokens → ASCII via θQR's table
 (GDB0/GDB1) into L₃; a token without a character is refused. Compact if every character is
 in the alphabet; lowercase only → "uppercase / as typed" with both digit counts; anything
-else → 8-bit after a confirmation with the digit count. Limits: 416 compact, 286 8-bit
+else → 8-bit after a confirmation with the digit count. Limits: 418 compact, 288 8-bit
 (one version 11 code). Receive: type digits, or read CCOUT; for each keyring entry whose key
 ID matches: my own side → remember (H), other side → CTR, then the tag (`TR`; CTR again to
 undo if it fails). "SENT BY YOU" only when no other-side key was tried. Text shows on the
@@ -431,7 +438,7 @@ _GetKey has its own codes (ti83plus.inc k...): `WK` turns 1-6 (8Fh-94h, GDB4+8) 
 255, anything else into 0. Main menu: 1/F1 send, 2/F2 receive, 3/F3 new key, 4/F4 or Clear
 quit; Clear backs out of the contact list and the questions.
 
-Memory: L₁ header 0-5, tag 6-21, text 22-321, key entry 330-370 (name, side 338, K1 339, K2
+Memory: L₁ message from 2 (header 2-5, tag 6-21, text 22-321), key entry 330-370 (name, side 338, K1 339, K2
 355), round keys 380-555, CMAC subkeys 576/592, S2V D 608, CMAC out 624, scratch block 640,
 CTR counter 656, temp 672; L₁+690 a name for display. L₃ typed characters. Variables:
 AE uses W U I J Z r₂-r₆, KX W I J Z, CM P N K O M C I, DB Y C I, CT O K C I; the main code

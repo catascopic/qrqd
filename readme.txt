@@ -130,7 +130,7 @@ Since the first line just computes how many bits you need to hold the number (fo
 
 APPENDIX: DRAWING STRATEGIES
 
-Originally, I avoided fixed patterns in the drawing phase with an equation that calculated whether a pixel was reserved or not. The equation got more complex at higher versions, and I stored it in a Y-Var. Just plug in I and J (plus a value of T which changed with the version) and it will tell you if the pixel is reserved or not.
+Originally, I avoided fixed patterns in the drawing phase with an equation that calculated whether a pixel was reserved or not. The equation got more complex at higher versions, and I stored it in a Y-Var. Just plug in I and J (plus a value of T which changed with the version) and it will return 1 if the pixel is reserved and 0 if it's free.
 
 For version 1, we only have to avoid the timing pattern (note that the finder patterns were already skipped by the loop):
 "I=6"

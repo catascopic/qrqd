@@ -106,7 +106,7 @@ Here's what the program actually does once you give it a message to encode:
 3. Create the codewords. This is the phase that calls θQRBIT, which packs the codepoints into ʟCW. For example, alphanumeric mode encodes two characters at a time into 11 bits, which have to be reorganized into 8-bit codewords. This part is fairly well optimized, given that we don't have true bitwise functions on the calculator. It may be possible to speed it up further, but probably not without a different paradigm.
 4. Error correction. This is the hard part. Different versions use different quantities and sizes of ECC blocks. The size of these blocks determines which generator polynomial to use. Then, for each block, we use Reed-Solomon division to fill out the blocks. This is where we have to do a ton of bitwise xors and we lose all our time.
 5. Interleaving. When there are multiple ECC blocks, they get interleaved. This part doesn't take too long, but it does require copying the codeword list, which is the most memory-intensive part.
-6. Drawing. We draw the code pixel-by-pixel using only Pxl-On, meaning the graph's X/Y bounds don't matter. This is probably the most optimized part, and we have several tricks to save time. QR codes use a weird zig-zag system that wraps around the fixed patterns, so we fill those in completely first so we can use pxl-Test to avoid them. We also adjust the bounds in the drawing loop so we don't waste any time maneuvering around the finder patterns (the things in the corners). Finally, we "fix up" the fixed patterns by erasing the parts that we had to turn on for pxl-Test to see them.
+6. Drawing. We draw the code pixel-by-pixel using only Pxl-On, meaning the graph's X/Y bounds don't matter. This is probably the most optimized part, and we have several tricks to save time. QR codes use a weird zig-zag system that wraps around the fixed patterns, so we fill those in completely first so we can use pxl-Test to avoid them. We also adjust the bounds in the drawing loop so we don't waste any time maneuvering around the alignment patterns (the things in the corners). Finally, we "fix up" the fixed patterns by erasing the parts that we had to turn on for pxl-Test to see them.
 
 MEMORY USAGE
 
@@ -130,10 +130,17 @@ Since the first line just computes how many bits you need to hold the number (fo
 
 APPENDIX: DRAWING STRATEGIES
 
-Originally, I avoided fixed patterns in the drawing phase with an equation that calculated whether a pixel was reserved or not. The equation got more complex at higher versions (I stored it in a Y-Var), and for v6 and up, it looked like this:
+Originally, I avoided fixed patterns in the drawing phase with an equation that calculated whether a pixel was reserved or not. The equation got more complex at higher versions, and I stored it in a Y-Var. Just plug in I and J (plus a value of T which changed with the version) and it will tell you if the pixel is reserved or not.
 
+For version 1, we only have to avoid the timing pattern (note that the finder patterns were already skipped by the loop):
+"I=6"
+
+For version 2-6, we avoid the timing pattern and a single alignment pattern:
+"I=6 or abs(S-7-I)<=2 and abs(S-7-J)<=2"
+
+For version 7+, we avoid the timing pattern, six alignment patterns, and the version information block. What's with the 2.1s? It just happened to be the right number to make the math work out!
 "I=6 or abs(TfPart(I/T)-6)<=2.1 and abs(TfPart(J/T)-6)<=2.1 and abs(I-J)<=S/2-2 or J>=S-11 and I<=5"
 
-Pretty cool, right? Just plug in I and J (plus a value of T which changed with the version) and it will tell you if the pixel is reserved or not. (What's with the 2.1s? It just happened to be the right number to make the math work out!) The problem was, it was *slow*. We had to evaluate this equation for every single pixel, and drawing a v11 code took over 5 minutes.
+Pretty cool, right? The problem was, it was *slow*. We had to evaluate this equation for every single pixel, and drawing a v11 code took over 5 minutes. The pxl-Test method is a huge improvement, even if it is a bit inelegant to fill in the patterns completely only to erase parts of them.
 
 HAPPY SCANNING!

@@ -132,6 +132,12 @@ def synthetic():
         # nothing uses, instead of running into L1 (a real one is in flash pages)
         m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='BIG', arch_at=0)
         expect('check a %d-character note -> %d' % (n + len(extra), want), m.ans == want, m.ans)
+    # no 00h after the text: the appvar's size ends it (size 24 + 5)
+    for arch in (False, True):
+        noz = [('NOZ', notefolio('NOZ', b'ABCDE')[:-3], arch)]
+        m = machine(noz, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='NOZ')
+        expect('check a note with no 00h (%s): length 5 -> 11' % ('archived' if arch else 'RAM'),
+               m.ans == 11, m.ans)
     for bad in ('SAVE', 'NOPE', 'TINY', 'FAKE'):
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=bad)
         expect('check %s -> 65535' % bad, m.ans == 65535, m.ans)

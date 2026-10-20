@@ -6,15 +6,17 @@ does; 1-7 also on the user's calculator (milestone
 bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric 65533
 with B = 2; milestones 6-7 through the standalone prgmQR, drawing codes that scan; all as in
 the harness).
-`src/standalone/_theta_QR.z80` (3381 bytes) does everything the Axe engine does for Str1,
+`src/standalone/_theta_QR.z80` (3386 bytes) does everything the Axe engine does for Str1,
 ʟBIN and NoteFolio notes (in RAM or archived): the check call (V=0) and the draw calls
 (V=1-11: data codewords, error correction, the drawing, DispGraph, Ans = 0), and the note
 list (E=4) in Str3. Every test of `test_engine.py` and `test_standalone_notefolio.py` passes
 against it (the sweep's 262 symbols, the notes' symbols, the 32 KB archived note, the list).
 `NotYet` is gone. Time in the emulator for a full code drawn (OS
 calls not counted): version 1 0.04 s, 5 0.15 s, 10 0.32 s, 11 0.38 s at 15 MHz (0.94 s at
-6 MHz). Checking a 32 KB archived note: 2.5 s at 15 MHz plus 65,538 `_LoadCIndPaged` calls
-(two passes over the text, one byte per call). For comparison, the compiled Axe engine was
+6 MHz). A 32,000-character archived note: checking it 1.9 s at 15 MHz (4.75 s at 6 MHz),
+drawing 300 of its characters at version 11 0.44 s (1.09 s), with no OS calls while reading
+it (it was 2.43 s and 1.06 s plus one `_LoadCIndPaged` per byte read, 64,008 and 32,308; see
+"Notes" under the decisions). For comparison, the compiled Axe engine was
 6267 bytes (design.md item 33), about 930 of them for the notes.
 `tools/z80sim.py` runs it; `python tests/test_engine.py --asm` and
 `python tests/test_standalone_notefolio.py --asm` test it, and `tests/test_z80sim.py` checks
@@ -101,7 +103,7 @@ What the harness has to provide:
 - **OS calls:** trap `rst 28h` (bcall) and implement in Python the few routines the engine uses
   (below). Anything else raises, so an unexpected call is caught at once.
 - **Archive:** flash pages, with what the engine needs for reading an archived note
-  (`_LoadCIndPaged`, or port 6 page mapping at 4000h-7FFFh if we read flash directly).
+  (port 6 page mapping at 4000h-7FFFh, and `_LoadCIndPaged`, which it used at first).
 - **Display:** record `plotSScreen` at each display call (axesim's `displays`).
 - **Strictness, like axesim:** fail on writes to ROM or outside RAM, on running outside the
   program, on a stack that isn't back where it started at the final `ret`, on unknown OS calls,
@@ -119,7 +121,8 @@ Built so far (`AsmMachine(program, model='84+', max_ticks=1.5e9)`):
   program can't count on a value surviving an OS call. At the end the stack, IY and
   interrupts-enabled are checked.
 - **Ports:** port 2 reads the model (bit 7 set on a TI-84+), port 20h may be written on a
-  TI-84+ only (`full`), any other port raises.
+  TI-84+ only (`full`), port 6 (bank A's page) read and written (`bank_a`), any other port
+  raises. Bank A must hold the OS's page again (`OS_PAGE`) when the program returns.
 - **Variables and the VAT:** `set_real`, `set_str`, `set_list`, `add_appvar` (each with
   `archived=`) put the data in RAM from C000h, or in the archive (below); `add_vat_other`
   adds an entry with no data (a program, a list), as in axesim. `run()` writes the VAT first
@@ -134,9 +137,10 @@ Built so far (`AsmMachine(program, model='84+', max_ticks=1.5e9)`):
   T2, version, address low, high, page), the name length and the name, then the data. Its VAT
   entry gives the page and the address of the FCh byte, which `_ChkFindSym` returns in B and
   DE. The archive starts at 3FF0h on page 0Bh, so every archived variable crosses into the
-  next page. Nothing is mapped at 4000h-7FFFh: a direct read or a jump there raises; the only
-  way in is `_LoadCIndPaged` (C = the byte at page B, address HL in 4000h-7FFFh), which also
-  raises for a page with no archive on it.
+  next page. A read of 4000h-7FFFh gives the archive page that port 6 has put in bank A; with
+  the OS's page there (no archive on it) it raises, as does a jump there. `_LoadCIndPaged`
+  (C = the byte at page B, address HL in 4000h-7FFFh) also works, and raises for a page with
+  no archive on it.
 - **bcalls:** `_ChkFindSym` walks that VAT in memory (the symbol table by the 3 name bytes, the
   program table by name and kind): carry if missing, else HL = the entry, DE = the data, B =
   the page. `_SetXXXXOP2` (HL → OP2 as a float), `_OP2ToOP1`, `_StoAns` (sets `ans`),
@@ -181,7 +185,7 @@ notes of 85.
 | store B (only if it exists) | `_ChkFindSym`, then write the float into its data |
 | `→Ans` | done: `_SetXXXXOP2` + `_OP2ToOP1` + `_StoAns` (in `Quit`) |
 | Str1, Str2, ʟBIN | Str1 and ʟBIN done: `_ChkFindSym` (Str1 = type 4, AAh, 00h; the list = type 1, 5Dh, "BIN"); DE = the size word |
-| notes, archived ones read through `Y₁` | done: `_ChkFindSym`: B = flash page (0 = RAM); in flash, skip the entry's header (9 bytes, the name length, the name) to the size word; read every byte with `_LoadCIndPaged` (`RB`, `NotePtr`) |
+| notes, archived ones read through `Y₁` | done: `_ChkFindSym`: B = flash page (0 = RAM); in flash, skip the entry's header (9 bytes, the name length, the name) to the size word; read bytes with the page mapped into bank A through port 6 (`RB`, `NotePtr`, `NoteTextLen`), as Axe does |
 | E=4: list notes into Str3 | done: walk the VAT; `_MemChk` first; `_ChkFindSym` + `_DelVarArc` an old Str3, `_CreateStrng` |
 | `Full` | detect an 84+/SE (port 2) and set port 20h; the OS goes back to 6 MHz itself (design.md item 16) |
 | `Rect(`, `Pxl-On(`, `DispGraph` | done: own drawing into `plotSScreen` and the reserved-module map in `appBackUpScreen`; display with `_GrBufCpy` (handles LCD timing; the harness records the graph buffer there) |
@@ -204,6 +208,10 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
   Values above 255 are rejected before they are cut to a byte (V=256 must not read as 0).
 - **Archived variables** are treated as missing (a real reads as 0, Str1 or ʟBIN is bad
   input), as the Axe engine's GetCalc does. Notes are the exception.
+- **A complex ʟBIN** (type 0Dh, 18-byte elements) is bad input: `_ChkFindSym` finds a list by
+  name whatever its type, so the engine checks that the VAT type is the one the name is for
+  (the Axe engine doesn't: it reads the real and imaginary parts as elements, so a complex
+  {72,73} encodes as 48h 00h).
 - **Notes** (`NF`, `NH`, `RB`, `MA`) as in the Axe engine: the name from Str2 up to a space
   token, an OP1 name at L₁+700, size ≥ 27, the signature, the text from byte 24 to a 00h
   (bounded by the size). Differences: `NF` stops copying the name at a 9th character (the
@@ -211,9 +219,23 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
   past L₁). An open note is `NotePage` (0 = RAM) and `NoteAddr`; in flash, `NoteAddr` is
   an offset from 4000h, and `NotePtr` turns "byte k" into a page and an address: the sum can
   pass several 16 KB pages (and 16 bits, for a 32 KB note), so the page goes up by its bits
-  14 and up and the address keeps bits 0-13. Reading archived bytes through the OS
-  (`_LoadCIndPaged`) instead of mapping pages with port 6 ourselves: slower (a bcall per
-  byte), but the OS does the mapping; port 6 is the fallback if it proves too slow.
+  14 and up and the address keeps bits 0-13.
+  Archived bytes were first read through the OS (`_LoadCIndPaged`, a bcall per byte), and
+  every draw call measures the whole note first (the clamp needs its length). On the
+  calculator that made big archived notes noticeably slower than the Axe engine, whose file
+  reading (`{Y₁+k}`) maps the page with port 6 itself, with interrupts on (seen in the
+  disassembly in `build/dump/`). So now: `RB` maps the page into bank A for its one read and
+  puts the old page back (what `_LoadCIndPaged` does, without the bcall), and the measuring
+  is `NoteTextLen`, a `cpir` for a note in RAM and, in flash, a `cpi` loop with the page
+  mapped once per 16 KB page, the old page put back at the end (about 53 T-states a byte,
+  where `RB` per byte cost about 340 plus the bcall). Measured in the harness on a
+  32,000-character archived note: a draw call 1.06 → 0.44 s at 15 MHz, the check 2.43 → 1.90
+  s, before counting the 32,308 and 64,008 bcalls the old way also made.
+  Considered and not done: measuring a draw call's note only up to θ+N (the clamp gives the
+  same θ and N for any longer length). With the faster measuring it would save about 0.05 s
+  per code on a 32 KB note at 15 MHz, and the length would no longer be the real one in
+  draw calls. Also not done: reading the check's scan sequentially instead of through
+  `NotePtr` for each character (about a quarter of the check's time).
 - **Order:** E is read and E=4 dispatched before V and M are read, as in the Axe engine.
 - **Tables** are the Axe engine's (GDB0, GDB1, GDB9 as `TokenFirst`/`TokenSecond`,
   `Prefixes`, `Punct`), generated from QRSRC.axe.txt's hex. `inData(` becomes `cpir`: after
@@ -250,7 +272,10 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
   warn and build.py stop, so a clash can't silently change a value.
 - **Memory test:** "N far over capacity writes nothing past L1" compares from L₁+768 for the
   port (its variables are at L₁+714..767; Axe's live in axesim's Python).
-- **The note list** (`ListNotes`, `NC`) walks the VAT as the Axe engine's `LS` does. Making
+- **The note list** (`ListNotes`, `NC`) walks the VAT as the Axe engine's `LS` does, but
+  takes each appvar's data pointer and page from its VAT entry (P-3, P-4, P-5: just what
+  `_ChkFindSym` would return) instead of searching for it by name, and `NC` copies the name
+  straight into its slot in the list, which only counts if `NH` accepts the note. Making
   Str3: the Axe engine's `GetCalc("Str3",size)` returns 0 when RAM is short; the port asks
   `_MemChk` first and answers 65535 unless the string plus 32 bytes is free (11 for its size
   word and VAT entry, the rest a margin), so the OS never stops with ERR:MEMORY. That check
@@ -294,8 +319,10 @@ Milestones, each with the tests that cover it:
 9. E=4: the note list in Str3. Done in the harness.
 10. Full test pass, then size and speed against the Axe engine, then the calculator. On the
     user's calculator (2026-10-20): prgmθQR 3393 bytes as assembly against 6155 compiled by
-    Axe (the size its memory menu shows), and at least as fast. Left: the release decision
-    (replace the Axe engine or ship both) and the docs that go with it.
+    Axe (the size its memory menu shows), and at least as fast, except on big archived notes
+    (a bcall per byte read; reading flash through port 6 since, not yet tried on the
+    calculator). Left: the release decision (replace the Axe engine or ship both) and the
+    docs that go with it.
 
 ## On the calculator
 
@@ -303,9 +330,13 @@ Milestones, each with the tests that cover it:
 - Try milestone 1 alone, then the full engine with the standalone prgmQR.
 - The things only hardware will show: archived notes, creating Str3, `Full` on an 83+ vs an
   84+, the display. For archived notes the harness assumes, from the OS documentation as
-  remembered rather than checked: `_ChkFindSym` gives an archived variable's FCh byte in DE;
-  the entry header is 9 bytes, then the name length and the name; `_LoadCIndPaged` returns
-  the byte at B:HL in C. For the note list: `_MemChk` returns the free RAM in HL;
+  remembered rather than checked: `_ChkFindSym` gives an archived variable's FCh byte in DE
+  (the address in its VAT entry); the entry header is 9 bytes, then the name length and the
+  name; a variable that runs past 7FFFh goes on at 4000h of the next page; the page number
+  `_ChkFindSym` gives in B, written to port 6, shows that page at 4000h-7FFFh, and the OS's
+  interrupt handler doesn't mind another page there (Axe's file reading relies on both).
+  Archived notes worked on the user's calculator through `_LoadCIndPaged` (only slowly), so
+  the entry layout holds; the port 6 reading hasn't run there yet. For the note list: `_MemChk` returns the free RAM in HL;
   `_DelVarArc` takes what `_ChkFindSym` returned (and deletes archived variables too);
   `_CreateStrng` takes the name in OP1 and the size in HL and returns the size word's address
   in DE.

@@ -8,13 +8,20 @@
 ; Ans = 0); and E=4, the list of notes in Str3 for prgmQR's menu.
 ;
 ; Rules for the whole program (the OS needs them): keep IY (the OS flags pointer), leave
-; interrupts on, return with the stack where it started, and write only the scratch areas of
+; interrupts on, return with the stack where it started, put back the page in bank A (port 6,
+; 4000h-7FFFh) after mapping an archived note there, and write only the scratch areas of
 ; design.md's memory map (saveSScreen = L₁, appBackUpScreen = L₃, plotSScreen = the graph
 ; buffer), OP1-OP6 and the program's own variables. Every bcall may change every register but
 ; IY (the tests make sure nothing counts on one surviving), and the OS's interrupt handler
 ; changes the shadow registers, so they are never used.
 
 #include "ti83plus.inc"
+
+; Answers in Ans besides lengths and 0 (docs/standalone/API.md). 65534 is prgmQR's own: it
+; stores it before Asm(, so it is left if the engine didn't run.
+AnsBadInput	= 65535		; bad E, V or M, or the input doesn't exist
+AnsBadChar	= 65533		; a character the mode can't encode (its position in B)
+AnsTooLong	= 65532		; a check of more than 32765 characters
 
 ; The engine's variables: the last 54 bytes of saveSScreen, where Axe keeps its own (which is
 ; why L₁ is 714 bytes, not 768), so L₁ keeps the same size as for the Axe engine. The Axe
@@ -25,34 +32,33 @@ Source		= Vars+2	; byte: [E] 1 Str1, 2 ʟBIN, 3 a note
 Version		= Vars+3	; byte: [V] 0-11, 0 = only check
 Mode		= Vars+4	; byte: [F] 0 auto, 1 ASCII (byte mode), 2 alphanumeric
 InputPtr	= Vars+5	; word: [P] the input's first byte (Str1 token or ʟBIN element)
-InputSize	= Vars+7	; word: Str1's size in bytes, or ʟBIN's element count
-Length		= Vars+9	; word: [T] the input's length in characters (Str1: tokens)
-ReadPtr		= Vars+11	; word: [P] CH's place in Str1
-Pos		= Vars+13	; word: [O] the position of the character CH read last (1 = first)
-BadPos		= Vars+15	; word: [K] the first character that can't be encoded, 0 if none
-NonAlnumPos	= Vars+17	; word: [X] the first one alphanumeric mode can't encode, 0 if none
-Count		= Vars+19	; word: [N] characters to encode
-Skip		= Vars+21	; word: [θ] characters to skip first
-DataCount	= Vars+23	; word: [M] data codewords of the version (EC level L)
-ECPerBlock	= Vars+25	; byte: [R] EC codewords per block
-Blocks		= Vars+26	; byte: [B] number of blocks
-OutPtr		= Vars+27	; word: [D] where AB stores the next full byte
-BitAcc		= Vars+29	; byte: [W] the byte AB is filling
-BitCount	= Vars+30	; byte: [K] bits in BitAcc, 0-7
-ShortLen	= Vars+31	; byte: [Y] data codewords in a short block (M / B)
-LongBlocks	= Vars+32	; byte: [U] blocks one codeword longer, the last ones (M mod B)
-BlockPtr	= Vars+33	; word: [A] the next block's data codewords, for RS
-ECPtr		= Vars+35	; word: [Z] where RS writes the next block's EC codewords
-NotePage	= Vars+37	; byte: the open note's flash page, 0 if it is in RAM
-NoteAddr	= Vars+38	; word: [Q] its data (after the size word): the address in RAM, or
+Length		= Vars+7	; word: [T] the input's length in characters (Str1: tokens)
+ReadPtr		= Vars+9	; word: [P] CH's place in Str1
+Pos		= Vars+11	; word: [O] the position of the character CH read last (1 = first)
+BadPos		= Vars+13	; word: [K] the first character that can't be encoded, 0 if none
+NonAlnumPos	= Vars+15	; word: [X] the first one alphanumeric mode can't encode, 0 if none
+Count		= Vars+17	; word: [N] characters to encode
+Skip		= Vars+19	; word: [θ] characters to skip first
+DataCount	= Vars+21	; word: [M] data codewords of the version (EC level L)
+ECPerBlock	= Vars+23	; byte: [R] EC codewords per block
+Blocks		= Vars+24	; byte: [B] number of blocks
+OutPtr		= Vars+25	; word: [D] where AB stores the next full byte
+BitAcc		= Vars+27	; byte: [W] the byte AB is filling
+BitCount	= Vars+28	; byte: [K] bits in BitAcc, 0-7
+ShortLen	= Vars+29	; byte: [Y] data codewords in a short block (M / B)
+LongBlocks	= Vars+30	; byte: [U] blocks one codeword longer, the last ones (M mod B)
+BlockPtr	= Vars+31	; word: [A] the next block's data codewords, for RS
+ECPtr		= Vars+33	; word: [Z] where RS writes the next block's EC codewords
+NotePage	= Vars+35	; byte: the open note's flash page, 0 if it is in RAM
+NoteAddr	= Vars+36	; word: [Q] its data (after the size word): the address in RAM, or
 				; in flash the offset from 4000h on NotePage (0-3FFFh)
-NoteSize	= Vars+40	; word: [U] its size (the appvar's size word)
-ListPtr		= Vars+42	; word: [P] the VAT entry LS is looking at
-ListCount	= Vars+44	; byte: [K] notes listed so far (at most 80)
-ListSize	= Vars+45	; word: Str3's size, 8 per note + 48
+NoteSize	= Vars+38	; word: [U] its size (the appvar's size word)
+ListPtr		= Vars+40	; word: [P] the VAT entry LS is looking at
+ListCount	= Vars+42	; byte: [K] notes listed so far (at most 80)
+ListSize	= Vars+43	; word: Str3's size, 8 per note + 48
 
-; The drawing's variables: past the 54 bytes above, so in L₁'s free space at +600 (design.md's
-; memory map leaves L₁+503..699 unused)
+; The drawing's variables don't fit in those 54 bytes, so they go in L₁'s free space at +600
+; (design.md's memory map leaves L₁+503..699 unused)
 DrawVars	= saveSScreen+600
 Size		= DrawVars	; byte: [S] modules per side, 4V+17
 RowOff		= DrawVars+1	; byte: [G] screen row of the symbol's top row (centered)
@@ -71,11 +77,14 @@ CWBit		= DrawVars+16	; byte: [Z] the mask of its next bit, from 80h down
 ZigPair		= DrawVars+17	; byte: [K] the zigzag's column pair, from the right
 ZigCol		= DrawVars+18	; byte: [X] that pair's right column
 ZigStep		= DrawVars+19	; byte: [I] the step along the pair (0 to S-1)
-RectOp	= DrawVars+20	; byte: Rect's operation, 0 fill, 1 invert
+RectOp		= DrawVars+20	; byte: Rect's operation, 0 fill, 1 invert
 VersionBits	= DrawVars+21	; word: the version information still to draw
 VersionIdx	= DrawVars+23	; byte: its bit number, 0-17
 
 ; Work areas (design.md's memory map)
+DataOut		= saveSScreen		; the data codewords, block after block (at most 324; a bad
+					; N can run on to L₁+470, short of Align)
+NameList	= saveSScreen		; E=4: the notes' names, 8 bytes each (at most 80)
 Map		= appBackUpScreen	; while drawing: the function modules, one pixel each, at
 					; module coordinates (no offset), like a 96×64 screen
 Align		= saveSScreen+500	; alignment pattern coordinates (2 or 3)
@@ -104,38 +113,23 @@ Start:
 	out (20h),a
 SlowModel:
 
-; Read the parameters (GV gives 0 for a missing variable). Each is checked as it is read; a
-; value above 255 can't be valid, so H must be 0 and the rest is a byte.
+; Read the parameters (GV gives 0 for a missing variable); GVBelow ends with bad input for a
+; value that is too big
 	ld a,'E'
-	call GV
-	ld a,h
-	or a
-	jp nz,BadInput
-	ld a,l
+	ld c,5
+	call GVBelow			; E = 0-4
 	cp 4				; E=4 is a separate job: list the notes
 	jp z,ListNotes
-	dec a				; E-1 > 2 rejects E=0 too: 0-1 wraps around to 255
-	cp 3
-	jp nc,BadInput
-	inc a
+	or a
+	jp z,BadInput
 	ld (Source),a
 	ld a,'V'
-	call GV
-	ld a,h
-	or a
-	jp nz,BadInput
-	ld a,l
-	cp 12
-	jp nc,BadInput
+	ld c,12
+	call GVBelow
 	ld (Version),a
 	ld a,'M'
-	call GV
-	ld a,h
-	or a
-	jp nz,BadInput
-	ld a,l
-	cp 3
-	jp nc,BadInput
+	ld c,3
+	call GVBelow
 	ld (Mode),a
 
 ; Find the input. A missing one (or an archived one: the Axe engine's GetCalc doesn't open
@@ -151,8 +145,17 @@ SlowModel:
 	ld (Mode),a
 	ld hl,NameBIN
 FindInput:
+	ld a,(hl)			; the type the name is for: string or real list
+	push af
 	call FindVar
+	pop bc				; B = that type
 	jp c,BadInput
+; A variable of another type is bad input too: a complex list BIN (type 0Dh) has 18-byte
+; elements, which would be read as reals, half of them imaginary parts
+	ld a,(hl)			; HL = its VAT entry: the type is in the low 5 bits
+	and 1Fh
+	cp b
+	jp nz,BadInput
 ; DE = the size word (Str1: bytes, ʟBIN: elements), then the data
 	ex de,hl
 	ld c,(hl)
@@ -160,7 +163,6 @@ FindInput:
 	ld b,(hl)
 	inc hl
 	ld (InputPtr),hl
-	ld (InputSize),bc
 	ld (Length),bc			; ʟBIN: one element per character
 	ld a,(Source)
 	cp 1
@@ -179,13 +181,7 @@ CountTokens:
 	add hl,de
 	jr nc,Counted
 	inc bc
-	ld a,(hl)
-	inc hl
-	push bc
-	call IsPrefix
-	pop bc
-	jr nz,CountTokens
-	inc hl				; a two-byte token
+	call NextToken
 	jr CountTokens
 Counted:
 	ld (Length),bc
@@ -208,7 +204,7 @@ Measured:
 	or a
 	sbc hl,bc
 	jr nc,LengthOK
-	ld hl,65532
+	ld hl,AnsTooLong
 	jp Quit
 LengthOK:
 
@@ -297,7 +293,7 @@ ModeKnown:
 	cp 1
 	jr z,Scanned
 BadChar:
-	ld hl,65533
+	ld hl,AnsBadChar
 	jp Quit
 Scanned:
 
@@ -372,7 +368,7 @@ CountFits:
 CountOK:
 
 ; Bit-pack the data codewords into L₁ with AB
-	ld hl,saveSScreen
+	ld hl,DataOut
 	ld (OutPtr),hl
 	xor a
 	ld (BitAcc),a
@@ -451,14 +447,7 @@ SkipTokens:
 	ld a,b
 	or c
 	jr z,Skipped
-	ld a,(hl)
-	inc hl
-	push bc
-	call IsPrefix
-	pop bc
-	jr nz,SkipOne
-	inc hl				; a two-byte token
-SkipOne:
+	call NextToken
 	dec bc
 	jr SkipTokens
 Skipped:
@@ -540,7 +529,7 @@ Packed:
 ; ((OutPtr-L₁)·8 + BitCount); like the Axe engine's, the subtraction wraps around if a bad N
 ; overfilled the version, which then counts as "more than 4 left".
 	ld hl,(OutPtr)
-	ld de,saveSScreen
+	ld de,DataOut
 	or a
 	sbc hl,de
 	add hl,hl
@@ -585,7 +574,7 @@ Terminated:
 Aligned:
 ; Fill the rest with pad bytes 236 (ECh) and 17 (11h) in turn: 236 xor 253 = 17, and back
 	ld hl,(DataCount)
-	ld de,saveSScreen
+	ld de,DataOut
 	add hl,de
 	ex de,hl			; DE = the end of the data codewords
 	ld hl,(OutPtr)
@@ -692,7 +681,7 @@ BlockDivDone:
 	ld (ShortLen),a
 	ld a,l
 	ld (LongBlocks),a
-	ld hl,saveSScreen
+	ld hl,DataOut
 	ld (BlockPtr),hl
 	ld hl,ECOut
 	ld (ECPtr),hl
@@ -1087,9 +1076,10 @@ ZigDone:
 
 ; For prgmQR's pager: 8 characters a name, padded with space tokens, then 48 more spaces, so a
 ; page of 5 names read past the last one stays inside Str3. Ans = the number of notes. The
-; names are gathered at L₁+8K first (at most 80, L₁+0..639). VAT walk: entries go down from
-; (progPtr) to (pTemp); the type in the low 5 bits at P, the name length at P-6, the name from
-; P-7 downward, the next entry at P-7-length.
+; names are gathered at L₁+8K first (NameList: at most 80, L₁+0..639). VAT walk: entries go
+; down from (progPtr) to (pTemp); the type in the low 5 bits at P, the data pointer at P-3
+; (low) and P-4 (high), the flash page at P-5 (0 = RAM), the name length at P-6, the name
+; from P-7 downward, the next entry at P-7-length.
 ListNotes:
 	xor a
 	ld (ListCount),a
@@ -1103,7 +1093,7 @@ LS_Entry:
 	jr z,LS_Done
 	jr c,LS_Done
 	add hl,de
-; An appvar (15h) with a name of 1-8 characters
+; An appvar (15h) with a name of 1-8 characters, while fewer than 80 are listed
 	ld a,(hl)
 	and 1Fh
 	cp AppVarObj
@@ -1117,43 +1107,38 @@ LS_Entry:
 	ld a,(ListCount)
 	cp 80
 	jr nc,LS_Next
-; NC: a name we can open by name; NH: really a note
-	call NC
-	jr c,LS_Next
-	ld hl,AppvarName
-	ld de,OP1
-	ld bc,10
-	ldir
-	bcall(_ChkFindSym)
-	jr c,LS_Next
-	call NH
-	jr c,LS_Next
-	ld a,(ListCount)		; the name at L₁+8K, after 8 space tokens
+; Its slot at L₁+8K: 8 space tokens, and NC copies the name over them. It counts only if
+; the name can be opened by name (NC) and the appvar is really a note (NH); otherwise the
+; next one gets the slot.
 	ld l,a
 	ld h,0
 	add hl,hl
 	add hl,hl
 	add hl,hl
-	ld de,saveSScreen
+	ld de,NameList
 	add hl,de
 	push hl
-	ld (hl),29h
+	ld (hl),tSpace
 	ld d,h
 	ld e,l
 	inc de
 	ld bc,7
 	ldir
 	pop de
-	ld hl,AppvarName+1
-LS_Copy:
-	ld a,(hl)
-	or a
-	jr z,LS_Copied
-	ld (de),a
-	inc hl
-	inc de
-	jr LS_Copy
-LS_Copied:
+	call NC
+	jr c,LS_Next
+; NH wants what _ChkFindSym would give, which is just what the VAT entry holds: DE = the
+; data pointer, B = the page
+	ld hl,(ListPtr)
+	ld de,-3
+	add hl,de
+	ld e,(hl)
+	dec hl
+	ld d,(hl)
+	dec hl
+	ld b,(hl)
+	call NH
+	jr c,LS_Next
 	ld hl,ListCount
 	inc (hl)
 LS_Next:
@@ -1211,11 +1196,11 @@ LS_NoOld:
 	add hl,hl
 	ld b,h
 	ld c,l
-	ld hl,saveSScreen
+	ld hl,NameList
 	ldir
 LS_Pad:
 	ld b,48
-	ld a,29h
+	ld a,tSpace
 LS_PadByte:
 	ld (de),a
 	inc de
@@ -1229,7 +1214,7 @@ LS_PadByte:
 
 ; BadInput: Ans = 65535 (bad E, V or M, or the input doesn't exist), and return.
 BadInput:
-	ld hl,65535
+	ld hl,AnsBadInput
 
 ; Quit: Ans = HL, and return to prgmQR from anywhere: the stack goes back to where it was at
 ; the start, so this works from inside subroutines too.
@@ -1272,7 +1257,7 @@ CH_Str1:
 	inc hl
 	ld (ReadPtr),hl
 	ld a,e
-	cp 0BBh
+	cp t2ByteTok
 	jr nz,CH_None
 	ld a,d
 	or a
@@ -1455,7 +1440,7 @@ CW_Mul:
 	add hl,de
 CW_MulTest:
 	djnz CW_Mul
-	ld de,saveSScreen
+	ld de,DataOut
 	add hl,de
 	ld a,(hl)
 	ret
@@ -1605,7 +1590,8 @@ ToScreen:
 	ret
 
 ; PlotModule: the module at column B, row C dark (in the graph buffer, offset to the screen);
-; PlotOn: the same at screen column B, row C. Change AF, DE, HL; PlotOn keeps BC.
+; PlotOn: the same at screen column B, row C. PlotModule changes AF, BC (to the screen
+; position), DE, HL; PlotOn keeps BC.
 PlotModule:
 	call ToScreen
 PlotOn:
@@ -1747,8 +1733,8 @@ MA:
 
 ; NF: open the note named in Str2: carry if there is none (no Str2, a name that isn't 1-8
 ; characters, no such appvar, or not a note); else HL = its text length [T] and NH has set
-; NotePage, NoteAddr and NoteSize. The name ends at the first space token (29h) or at the end
-; of Str2; it goes to AppvarName as an OP1 name, 15h, the name, 0. Changes everything.
+; NotePage, NoteAddr and NoteSize. The name ends at the first space token or at the end of
+; Str2; it goes to AppvarName as an OP1 name, 15h, the name, 0. Changes everything.
 NF:
 	ld hl,NameStr2
 	call FindVar
@@ -1766,7 +1752,7 @@ NF_Copy:
 	or c
 	jr z,NF_Copied
 	ld a,(hl)
-	cp 29h
+	cp tSpace
 	jr z,NF_Copied
 	pop af
 	cp 9				; a 9th character: too long (stop here, not after L₁)
@@ -1795,38 +1781,70 @@ NF_Copied:
 	ret c
 	call NH
 	ret c
-; The text runs from byte 24 to a 00h; the appvar size bounds the scan (size-24 bytes at most)
-	ld hl,0
-NF_Measure:
-	push hl
-	ld de,24
-	add hl,de
-	ex de,hl
+; The text runs from byte 24 to a 00h; the appvar size bounds it (size-24 bytes at most, 3 or
+; more since NH wants 27)
 	ld hl,(NoteSize)
-	or a
-	sbc hl,de			; at the size: stop
-	jr z,NF_Measured
-	ex de,hl
-	call RB
-	ld a,c
-	or a
-	jr z,NF_Measured
-	pop hl
-	inc hl
-	jr NF_Measure
-NF_Measured:
-	pop hl
-	or a
-	ret
+	ld de,-24
+	add hl,de
+	ld b,h
+	ld c,l
+	jp NoteTextLen			; HL = the length, no carry
 NF_Fail:
 	scf
+	ret
+
+; NoteTextLen: the open note's text length → HL: the bytes from byte 24 up to the first 00h,
+; but at most BC of them (BC ≥ 1; BC if there is no 00h before). Read without OS calls: a
+; note in RAM with one cpir; one in flash with its page mapped into bank A (4000h-7FFFh)
+; through port 6, going on to the next page at 8000h, and the page that was there put back
+; at the end. Changes AF, BC, DE, HL.
+NoteTextLen:
+	push bc				; the limit, for the answer
+	push bc
+	ld hl,24
+	call NotePtr			; B = the page (0 = RAM), HL = the address of byte 24
+	ld a,b
+	pop bc				; BC = bytes left to look at
+	or a
+	jr nz,TL_Flash
+	cpir				; A = 0: Z if it found the 00h
+	jr TL_End
+TL_Flash:
+	ld d,a				; D = the page
+	in a,(6)
+	ld e,a				; E = the page bank A had, put back at the end
+TL_Map:
+	ld a,d
+	out (6),a
+	xor a
+TL_Byte:
+	cpi				; compare with 00h, HL+1, BC-1: Z for the 00h, PO when BC = 0
+	jr z,TL_Unmap
+	jp po,TL_NoZero
+	bit 7,h				; still below 8000h: the same page
+	jr z,TL_Byte
+	ld h,40h			; the next page, from its start
+	inc d
+	jr TL_Map
+TL_NoZero:
+	inc a				; NZ: no 00h (A was 0)
+TL_Unmap:
+	ld a,e				; (ld and out leave the flags alone)
+	out (6),a
+TL_End:
+	jr nz,TL_Length
+	inc bc				; found: BC counted the bytes after the 00h, not the 00h
+TL_Length:
+	pop hl
+	or a
+	sbc hl,bc			; the limit minus what was left (never negative: no carry)
 	ret
 
 ; NH: after _ChkFindSym found the appvar (B = its page, DE = its data in RAM or its archive
 ; entry in flash): set NotePage, NoteAddr (its data, after the size word) and NoteSize; carry
 ; if it isn't a note (smaller than 27 bytes, or no NoteFolio signature).
 ; An archive entry: FCh, a size word, the VAT entry's 6 bytes, the name length (byte 9), the
-; name, then the data: the size word at 10 + the name length. Changes everything.
+; name, then the data: the size word at 10 + the name length. Changes AF, BC, DE, HL.
 NH:
 	ld a,b
 	ld (NotePage),a
@@ -1888,8 +1906,10 @@ NH_Signature:
 	or a
 	ret
 
-; RB: byte HL of the open note's data → C: from RAM, or from flash with _LoadCIndPaged.
-; Changes AF, B, DE, HL (and everything, for a note in flash: it is a bcall).
+; RB: byte HL of the open note's data → C: from RAM, or from flash with its page mapped into
+; bank A (port 6) for the one read and the old page put back. That is what _LoadCIndPaged
+; does, without a bcall's cost on every byte; Axe reads archived files the same way, with
+; interrupts on. Changes AF, B, DE, HL.
 RB:
 	call NotePtr
 	ld a,b
@@ -1898,7 +1918,13 @@ RB:
 	ld c,(hl)
 	ret
 RB_Flash:
-	bcall(_LoadCIndPaged)		; C = the byte at page B, address HL
+	in a,(6)
+	ld e,a				; E = the page bank A has now
+	ld a,b
+	out (6),a
+	ld c,(hl)
+	ld a,e
+	out (6),a
 	ret
 
 ; NoteSeek: move NoteAddr (and NotePage) HL bytes on. Changes AF, B, DE, HL.
@@ -1943,19 +1969,15 @@ NotePtr:
 	ret
 
 ; NC: copy the VAT name of the entry at ListPtr (its length at P-6, the name from P-7 down)
-; to AppvarName as an OP1 name (15h, the name, 0). Carry unless every character is 0-9, A-Z
-; or θ (5Bh, the 27th "letter"): those are also their own tokens, so prgmQR can show the name
-; and pass it back in Str2. Changes AF, BC, DE, HL.
+; to DE. Carry unless every character is 0-9, A-Z or θ (5Bh, the 27th "letter"): those are
+; also their own tokens, so prgmQR can show the name and pass it back in Str2.
+; Changes AF, BC, DE, HL.
 NC:
 	ld hl,(ListPtr)
-	ld de,-6
-	add hl,de
+	ld bc,-6
+	add hl,bc
 	ld b,(hl)			; B = the length (1-8)
 	dec hl
-	ld de,AppvarName
-	ld a,AppVarObj
-	ld (de),a
-	inc de
 	ld c,0				; C = 1 once a character fails
 NC_Char:
 	ld a,(hl)
@@ -1971,8 +1993,6 @@ NC_Char:
 	ld c,1
 NC_OK:
 	djnz NC_Char
-	xor a
-	ld (de),a
 	ld a,c
 	rra				; carry = a character failed
 	ret
@@ -1984,13 +2004,24 @@ NameToOP1:
 	ldir
 	ret
 
-; IsPrefix: Z if A is the first byte of a two-byte token. Changes F, BC; keeps A, DE, HL.
+; NextToken: HL past the token at HL (one byte, or two after a prefix byte). Changes AF.
+NextToken:
+	ld a,(hl)
+	inc hl
+	call IsPrefix
+	ret nz
+	inc hl
+	ret
+
+; IsPrefix: Z if A is the first byte of a two-byte token. Changes F.
 IsPrefix:
+	push bc
 	push hl
 	ld hl,Prefixes
 	ld bc,11
 	cpir
 	pop hl
+	pop bc
 	ret
 
 ; AV: ASCII A → its alphanumeric value in A (0-9 digits, 10-35 A-Z, 36-44 space $ % * + - .
@@ -2018,6 +2049,21 @@ AV_Punct:
 ; found at position 9-BC (1-9): value 35 + that
 	ld a,44
 	sub c
+	ret
+
+; GVBelow: the OS real variable named A (GV) → A, which must be below C (at most 255), else
+; the program ends with bad input. A value above 255 can't be valid, so it is refused before
+; it is cut to a byte (V=256 must not read as 0). Changes AF, BC, DE, HL, OP1.
+GVBelow:
+	push bc
+	call GV
+	pop bc
+	ld a,h
+	or a
+	jp nz,BadInput
+	ld a,l
+	cp c
+	jp nc,BadInput
 	ret
 
 ; GV: the OS real variable named A ('E', 'V', ...) → HL as an integer (FloatToInt), 0 if it

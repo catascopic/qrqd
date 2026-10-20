@@ -15,9 +15,11 @@ ans, displays, os, mem, full), so the engine tests can run the Z80 port of prgmÎ
   program table (lists, appvars, programs: a length byte and the name) from (progPtr) down to
   (pTemp). `add_appvar` and `add_vat_other` add appvars (notes) and other entries, as in
   axesim.
-- Archive: flash pages of 16 KB (`flash`, page -> bytes), read only through `_LoadCIndPaged`
-  (the byte at page B, address HL in 4000h-7FFFh); nothing is mapped at 4000h-7FFFh, so a
-  direct read (or a jump) there raises, as a write does. An archived variable is an entry there, as the OS
+- Archive: flash pages of 16 KB (`flash`, page -> bytes), read through port 6 (bank A: the
+  page written there shows at 4000h-7FFFh, which is how the engine and Axe read archived
+  data) or with `_LoadCIndPaged` (the byte at page B, address HL in 4000h-7FFFh). Bank A
+  starts with an OS page (`OS_PAGE`) that holds no archive, so a read there before mapping
+  an archive page raises, as does a jump there or a write. An archived variable is an entry there, as the OS
   writes it: FCh (valid), the size of the rest (word), a copy of its VAT entry going up (type,
   T2, version, address low, high, page), the name length and the name, then the data (for an
   appvar: size word, content). Its VAT entry, and so `_ChkFindSym`, gives the page (B) and the
@@ -34,9 +36,11 @@ ans, displays, os, mem, full), so the engine tests can run the Z80 port of prgmÎ
   registers are set to junk every 100,000 T-states, as the OS's interrupt handler would
   change them (assumed: it uses exx and ex af,af').
 - Ports: port 2 reads the model (bit 7 set on a TI-84+ or Silver Edition); port 20h (CPU
-  speed) can be written on those only. Any other port raises.
+  speed) can be written on those only; port 6 (bank A's page) can be read and written. Any
+  other port raises.
 - The final ret must come back to the pushed return address with the stack where it started,
-  IY (the OS flags pointer) unchanged and interrupts still enabled.
+  IY (the OS flags pointer) unchanged, interrupts still enabled and the OS's page back in
+  bank A (the OS may be running code there when the program returns).
 
 build.py writes the program's labels next to the .8xp (`_theta_QR.lab`); with them,
 `call('FloatToInt', de=...)` runs one subroutine, like axesim's call(), under the same checks.
@@ -57,12 +61,13 @@ EXIT = 0x0040                # return address pushed for the program: reaching i
 RET_SLOT = 0xFFDE            # where that return address sits (above it: the OS's own stack)
 VAR_DATA = 0xC000            # where the harness puts OS variables' data
 ARCH_PAGE, ARCH_START = 0x0B, 0x3FF0   # where the archive's entries start: page, offset in it
+OS_PAGE = 0x03               # bank A's page when the program starts: an OS page, no archive on it
 SYMTABLE, PROGPTR, PTEMP = 0xFE66, 0x9830, 0x982E
 BCALL, RST38 = 0x0028, 0x0038
 JUNK = 0x5A5A
 
-REAL, LIST, STRING, PROG, PROTPROG, APPVAR = 0x00, 0x01, 0x04, 0x05, 0x06, 0x15
-PROG_TABLE = {LIST, PROG, PROTPROG, APPVAR, 0x0D, 0x16, 0x17}   # types with variable-length names
+REAL, LIST, STRING, PROG, PROTPROG, CLIST, APPVAR = 0x00, 0x01, 0x04, 0x05, 0x06, 0x0D, 0x15
+PROG_TABLE = {LIST, PROG, PROTPROG, APPVAR, CLIST, 0x16, 0x17}  # types with variable-length names
 
 BCALLS = {0x41BF: '_OP1Set0', 0x4ABF: '_StoAns', 0x42F1: '_ChkFindSym',
           0x4792: '_SetXXXXOP2', 0x4156: '_OP2ToOP1', 0x486A: '_GrBufCpy',
@@ -127,12 +132,13 @@ class AsmMachine:
         self.var_ptr = VAR_DATA
         self.flash = {}             # flash page -> bytearray(16384), the archive
         self.arch_page, self.arch_off = ARCH_PAGE, ARCH_START
+        self.bank_a = OS_PAGE       # port 6: the flash page seen at 4000h-7FFFh
         # every address is write-protected, then the allowed areas are opened
         self.cpu.set_write_callback(self._bad_write)
         self.cpu.mark_addrs(0, 0x10000, self.cpu.WRITE_MARK)
-        # nothing is mapped at 4000h-7FFFh for the program: archived data is read with
-        # _LoadCIndPaged, so a direct read there (or running code there) is a bug
-        self.cpu.set_read_callback(self._bad_read)
+        # 4000h-7FFFh shows the archive page in bank A (port 6); a read with the OS's page
+        # there, or running code there, is a bug
+        self.cpu.set_read_callback(self._read_bank_a)
         self.cpu.mark_addrs(0x4000, 0x4000, self.cpu.READ_MARK)
         for start, size in ((OP1, 66), (L1, 768), (L6, 768), (L3, 768),
                             (USERMEM, len(self.code)), (STACK_LOW, RET_SLOT - STACK_LOW)):
@@ -149,23 +155,31 @@ class AsmMachine:
     def _bad_write(self, addr, value):
         raise Z80Error('write of %02Xh to %04Xh (PC %04Xh)' % (value, addr, self.cpu.pc))
 
-    def _bad_read(self, addr):
+    def _read_bank_a(self, addr):
         if addr == self.cpu.pc:
             raise Z80Error('ran into %04Xh, outside the program' % addr)
-        raise Z80Error('read from %04Xh (PC %04Xh): archived data must be read with '
-                       '_LoadCIndPaged' % (addr, self.cpu.pc))
+        if self.bank_a not in self.flash:
+            raise Z80Error('read from %04Xh (PC %04Xh) with page %02Xh in bank A, which holds no '
+                           'archive: map an archive page through port 6 first'
+                           % (addr, self.cpu.pc, self.bank_a))
+        return self.flash[self.bank_a][addr - 0x4000]
 
     # ---------- ports ----------
     def _port_in(self, port):
         port &= 0xFF
         if port == 2:
             return 0x80 if self.model == '84+' else 0x00
+        if port == 6:
+            return self.bank_a
         raise Z80Error('in from port %02Xh (PC %04Xh)' % (port, self.cpu.pc))
 
     def _port_out(self, port, value):
         port &= 0xFF
         if port == 0x20 and self.model == '84+':
             self.full = bool(value & 1)
+            return
+        if port == 6:
+            self.bank_a = value
             return
         raise Z80Error('out %02Xh to port %02Xh on a %s (PC %04Xh)' % (value, port, self.model, self.cpu.pc))
 
@@ -264,8 +278,17 @@ class AsmMachine:
             self.os[('str', n)] = p + 2
 
     def set_list(self, name, values, archived=False):
-        data = len(values).to_bytes(2, 'little') + b''.join(self.tifloat(v) for v in values)
-        p = self._add_var(('list', name), LIST, b'\x5d' + name.encode(), data, archived)
+        """A real list, or a complex one if any value is complex: type 0Dh, 18 bytes an element
+        (the real part, then the imaginary part, each with 0Ch in its first byte)."""
+        if any(isinstance(v, complex) for v in values):
+            def part(x):
+                f = self.tifloat(x)
+                return bytes([f[0] | 0x0C]) + f[1:]
+            typ, body = CLIST, b''.join(part(v.real) + part(v.imag) for v in map(complex, values))
+        else:
+            typ, body = LIST, b''.join(self.tifloat(v) for v in values)
+        data = len(values).to_bytes(2, 'little') + body
+        p = self._add_var(('list', name), typ, b'\x5d' + name.encode(), data, archived)
         if not archived:
             self.os[('list', name)] = p + 2
 
@@ -443,3 +466,6 @@ class AsmMachine:
             raise Z80Error('IY changed to %04Xh' % cpu.iy)
         if not cpu.iff1:
             raise Z80Error('returned with interrupts disabled')
+        if self.bank_a != OS_PAGE:
+            raise Z80Error('returned with page %02Xh in bank A (port 6), not the OS\'s %02Xh'
+                           % (self.bank_a, OS_PAGE))

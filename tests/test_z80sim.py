@@ -135,7 +135,16 @@ if __name__ == '__main__':
     expect('_LoadCIndPaged: C = the byte at page B, address HL', m.mem[0x86EC] == ord('w'), m.mem[0x86EC])
     def arch(m):
         m.add_appvar('NOTE', b'x', archived=True)
-    fails('a direct read of 4000h-7FFFh raises', '3a0040' 'c9', 'read from 4000h')
+    fails('a read of 4000h-7FFFh with the OS page in bank A raises', '3a0040' 'c9', 'read from 4000h')
+    # port 6: map page 0Ch, read 4006h, put the old page back (in a,(6): ld e,a: ld a,0Ch:
+    # out (6),a: ld a,(4006h): ld (L1),a: ld a,e: out (6),a: ret)
+    m = AsmMachine(HEAD + bytes.fromhex('db06' '5f' '3e0c' 'd306' '3a0640' '32ec86' '7b' 'd306' 'c9'))
+    m.add_appvar('NOTE', b'hello world', archived=True)
+    m.run()
+    expect('port 6: an archive page mapped into bank A reads at 4000h-7FFFh', m.mem[0x86EC] == ord('w'),
+           m.mem[0x86EC])
+    fails('returning with an archive page in bank A raises', '3e0c' 'd306' 'c9', 'bank A')
+    fails('a read with a page that holds no archive in bank A raises', '3e20' 'd306' '3a0040' 'c9', 'holds no')
     m = AsmMachine(HEAD + bytes.fromhex('060c' '210080' 'ef1d50' 'c9'))
     arch(m)
     try:

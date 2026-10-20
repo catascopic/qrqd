@@ -256,6 +256,13 @@ def asm_parameters():
     m.set_list('BIN', [1, 2, 3], archived=True)
     m.run()
     expect('asm: archived list BIN -> 65535', m.ans == 65535, m.ans)
+    m = Machine(SRC)
+    for name, val in zip('EVNM', (BINARY, 1, 2, AUTO)):
+        m.set_real(name, val)
+    m.set_list('BIN', [72 + 0j, 73 + 0j])
+    m.run()
+    expect('asm: a complex list BIN -> 65535 (its 18-byte elements would be read as reals)',
+           m.ans == 65535, m.ans)
     # FloatToInt on its own: the float at DE -> HL
     wrong = []
     for v in (0, 1, 9, 10, 11, 99, 100, 255, 256, 300, 1234, 9999, 10000, 12345, 32765, 54321,

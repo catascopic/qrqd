@@ -57,19 +57,13 @@ sub(WK)
 .cancel key once opened Receive)
 If θ=1
 sub(SD)
-Else
-If θ=2
+ElseIf θ=2
 sub(RC)
-Else
-If θ=3
+ElseIf θ=3
 sub(NK)
-Else
-If θ=4 or (θ=255)
+ElseIf θ=4 or (θ=255)
 ClrHome
 Return
-End
-End
-End
 End
 End
 .
@@ -127,10 +121,8 @@ H+1→H
 .Unsigned compares: A-97<26 means a-z (lower A wraps around)
 If A-97<26
 1→F
-Else
-!If A-48<10 or (A-65<26) or inData(A,GDB5)
+Else!If A-48<10 or (A-65<26) or inData(A,GDB5)
 1→G
-End
 End
 End
 .S=1 compact, 0 8-bit
@@ -153,12 +145,11 @@ sub(YN)
 If θ≠1
 Return
 End
-Else
 .Lowercase only: uppercase it (compact) or send it as typed
 .(8-bit). Both digit counts are shown. Compact bytes =
 .(11 bits per pair + 6 for an odd last + 7)/8 rounds the bits
 .up to bytes, left to right; + 20 for header and tag.
-If F
+ElseIf F
 ClrHome
 Output(0,0,"HAS LOWERCASE")
 Output(0,2,"1 UPPERCASE")
@@ -182,7 +173,6 @@ Else
 For(E,0,H-1)
 If {L₃+E}-97<26
 {L₃+E}-32→{L₃+E}
-End
 End
 End
 End
@@ -350,11 +340,9 @@ Return
 End
 V→{L₁+2+B}
 B+1→B
-Else
-If D
+ElseIf D
 sub(ER,"BAD DIGIT COUNT")
 Return
-End
 End
 .At least header and tag, and format version 1
 If B<20
@@ -467,12 +455,10 @@ sub(RD,6)
 sub(VC,A)
 sub(PC,C)
 End
-Else
 .8-bit: the bytes are character codes already
-If L
+ElseIf L
 For(V,0,L-1)
 sub(PC,{L₁+22+V})
-End
 End
 End
 Fix 6
@@ -725,12 +711,10 @@ If θ>255
 End
 If θ=9
 255→θ
-Else
-If inData(θ,GDB4+8)
+ElseIf inData(θ,GDB4+8)
 inData(θ,GDB4+8)→θ
 Else
 inData(θ,GDB4+15)→θ
-End
 End
 Return
 .

@@ -127,6 +127,8 @@ first, picks the version from the length and mode, then encodes.
 - `{P}` byte, `{P}ʳ` little-endian word. `Pxl-On(X,Y)ʳ`/`pxl-Test(X,Y)ʳ` = back buffer (L₃).
 - `For(V,A,B)` checks the bound before the first pass; `Return` outside a subroutine ends the
   program; Returning from inside `For(V,..)`/`While` is fine. Subroutines share all globals.
+- `ElseIf c` / `Else!If c` (the Else and If tokens on one line) chain conditions in one block
+  with one End; use them instead of an If that is an Else's whole body. axesim supports them.
 - Comments start with `.`; a line starting with `...` opens a multi-line comment. In this
   project comments are whole lines only (axesim skips lines starting with `.`; build.py refuses
   `...` blocks), and build.py strips them all, plus blank lines, except line 1 (the `.NAME`

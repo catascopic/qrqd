@@ -1,4 +1,3 @@
-1 or 2 byte counter
 Asm(HEX)
 Just write it in assembly?
 ElseIf
@@ -34,6 +33,7 @@ Accented
 
 Highlight with 2ND
 
+1 or 2 byte counter
 
 
 

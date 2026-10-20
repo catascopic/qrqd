@@ -249,6 +249,11 @@
    (it goes out as 1Ah with the non-ASCII warning in byte mode, and fails in alphanumeric
    mode). The user's readme says only the minus sign is valid ASCII. The hyphen (D2h) still
    becomes `-`. CodeChat (CHATSRC) refuses ⁻ too (BAD CHARACTER).
+45. ElseIf: Axe's `ElseIf`/`Else!If` (Else followed by If on the same line) replaced every If
+   block that was an Else's whole body (`Else` / `If c` / ... / `End` / `End`): 8 in CodeChat
+   (the main menu became one chain), 1 in the note picker; the engines had none (their two
+   Else+If spots have more code after the inner If). axesim learned the clauses
+   (`next_clause`, `next_branch`).
 
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty

@@ -281,15 +281,26 @@ class Machine:
             self.stmts.append(lex(s))
         stack = []
         self.match = {}
+        # If blocks: each clause (the If, every ElseIf/Else!If, the Else) -> the next clause
+        self.next_clause, last = {}, {}
         for i, t in enumerate(self.stmts):
             h = t[0]
             if h == ('T', 'Lbl '):
                 self.labels[''.join(x[1] for x in t[1:])] = i
             elif h in [('T', 'If '), ('T', '!If '), ('T', 'While '), ('T', 'For(')]:
                 stack.append(i)
-            elif h == ('T', 'Else') and len(t) == 1:
-                self.match[stack[-1], 'else'] = i
-                self.match[i] = stack[-1]
+                last[i] = i
+            elif h == ('T', 'Else'):
+                o = stack[-1]
+                if self.stmts[o][0] not in [('T', 'If '), ('T', '!If ')]:
+                    raise AxeError('Else outside an If block at %s' % self.lines[i])
+                if len(t) > 1 and t[1] not in [('T', 'If '), ('T', '!If ')]:
+                    raise AxeError('unsupported Else line %s' % self.lines[i])
+                if len(self.stmts[last[o]]) == 1 and last[o] != o:
+                    raise AxeError('clause after Else at %s' % self.lines[i])
+                self.next_clause[last[o]] = i
+                last[o] = i
+                self.match[i] = o
             elif h == ('T', 'End') and len(t) == 1:
                 o = stack.pop()
                 self.match[o] = i
@@ -482,6 +493,23 @@ class Machine:
             self.vars['r' + '₁₂₃₄₅₆'[k]] = v
         self.run(start=self.labels[label] + 1)
 
+    def next_branch(self, c):
+        """The If (or ElseIf) clause at c was false: the line to run next. ElseIf/Else!If
+        clauses are tested in turn; a plain Else runs; none left goes past the End."""
+        o = self.match[c] if self.stmts[c][0] == ('T', 'Else') else c   # the block's If line
+        while True:
+            n = self.next_clause.get(c)
+            if n is None:
+                return self.match[o] + 1
+            t = self.stmts[n]
+            if len(t) == 1:
+                return n + 1
+            v, j = self.expr(t, 2)
+            assert j == len(t), self.lines[n]
+            if (v != 0) == (t[1] == ('T', 'If ')):
+                return n + 1
+            c = n
+
     def run(self, max_steps=50_000_000, start=0):
         pc, calls, steps = start, [], 0
         forinfo = {}
@@ -498,12 +526,10 @@ class Machine:
                 v, j = self.expr(t, 1)
                 assert j == len(t), self.lines[pc]
                 cond = (v != 0) if h[1] == 'If ' else (v == 0)
-                if cond: pc += 1
-                else:
-                    e = self.match.get((pc, 'else'))
-                    pc = (e + 1) if e is not None else self.match[pc] + 1
+                pc = pc + 1 if cond else self.next_branch(pc)
                 continue
-            if h == ('T', 'Else') and len(t) == 1:
+            if h == ('T', 'Else'):
+                # reached by finishing the branch above it: skip to the block's End
                 pc = self.match[self.match[pc]] + 1; continue
             if h == ('T', 'While '):
                 v, j = self.expr(t, 1)

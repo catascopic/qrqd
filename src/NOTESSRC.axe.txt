@@ -119,10 +119,8 @@ End
 If Z=3
 If S+8<K
 S+8→S
-Else
-If S/8<(K-1/8)
+ElseIf S/8<(K-1/8)
 K-1→S
-End
 End
 End
 If Z=2 and (S>7)

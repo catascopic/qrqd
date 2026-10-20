@@ -1,22 +1,7 @@
-Asm(HEX)
-ExprOn/ExprOff
-Get rid of negative sign
-fnInt
-FnOn/FnOff
-Stop
-LnReg
-LnRegr
-
-
 Main menu
 loading screen
 drawing
 finished
-
-
-ClrHome
-Remove extra Disp
-
 
 NoteFolio+
 
@@ -34,7 +19,17 @@ Highlight with 2ND
 1 or 2 byte counter
 ElseIf
 Just write it in assembly?
+Asm(HEX)
+ExprOn/ExprOff
+Get rid of negative sign
+fnInt
+FnOn/FnOff
+Stop
+LnReg
+LnRegr
 
+ClrHome
+Remove extra Disp
 
 C and S are always 1, so just remove them from the logic!
 We might still want to provide an actual row/col offset, either a binary C (centered or not)

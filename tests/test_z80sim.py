@@ -7,7 +7,7 @@ can't pass the engine tests by doing something a calculator wouldn't survive.
 import sys
 
 from qrtest import ROOT                          # noqa: F401 (puts tools/ on the path)
-from z80sim import AsmMachine, Z80Error
+from z80sim import AsmMachine, Z80Error, ARCH_PAGE, SYMTABLE, PROGPTR, PTEMP
 
 HEAD = b'\xbb\x6d'
 STO_ANS_0 = bytes.fromhex('efbf41' 'efbf4a')    # bcall(_OP1Set0) : bcall(_StoAns)
@@ -26,6 +26,18 @@ def run(code, **kw):
     m = AsmMachine(HEAD + bytes.fromhex(code) if isinstance(code, str) else HEAD + code, **kw)
     m.run()
     return m
+
+
+def find(setup, name):
+    """Run _ChkFindSym on an OP1 name (9 bytes) in a machine prepared by setup(m): the program
+    copies the name to OP1, calls it, and stores DE, carry (FFh if set) and B in L1."""
+    code = bytes.fromhex('21b09d' '117884' '010900' 'edb0' 'eff142'   # ld hl,name: ld de,OP1:
+                         'ed53ec86' '9f' '32ee86' '78' '32ef86' 'c9')  # ld bc,9: ldir: bcall
+    assert 0x9D95 + len(code) == 0x9DB0                                # the name follows
+    m = AsmMachine(HEAD + code + name.ljust(9, b'\0'))
+    setup(m)
+    m.run()
+    return m.mem[0x86EE] == 0xFF, m.mem[0x86EC] | m.mem[0x86ED] << 8, m.mem[0x86EF], m
 
 
 def fails(name, code, words, **kw):
@@ -59,6 +71,52 @@ if __name__ == '__main__':
     fails('a hang is stopped', '18fe', 'still running', max_ticks=100_000)
     fails('an unknown port raises', 'db01' 'c9', 'port 01h')
     fails('the speed port on a TI-83+ raises', '3e01d320' 'c9', 'port 20h', model='83+')
+    m = run('21d204' 'ef9247' 'ef5641' 'efbf4a' 'c9')     # HL=1234, _SetXXXXOP2, _OP2ToOP1, _StoAns
+    expect('Ans = HL through _SetXXXXOP2, _OP2ToOP1, _StoAns', m.ans == 1234, m.ans)
+    m = run('013412' 'efbf41' 'ed43ec86' 'c9')            # BC survives a bcall?
+    expect('a bcall leaves junk in registers it does not return', m.mem[0x86EC:0x86EE] == b'\x5a\x5a')
+    m = run('d9013412d9' 'efbf41' 'd9ed43ec86d9' 'c9')    # the same in the shadow BC
+    expect('a bcall leaves junk in the shadow registers', m.mem[0x86EC:0x86EE] == b'\x5a\x5a')
+
+    def vars_(m):
+        m.set_real('E', 7)
+        m.set_real('V', 3)
+        m.set_str(1, b'AB')
+        m.set_list('E', [1, 2])          # a list named E: in the program table, not the real
+        m.set_list('BIN', [5])
+        m.set_str(2, b'X', archived=True)
+    real_e, str1, list_bin = b'\x00E', b'\x04\xaa\x00', b'\x01\x5dBIN'
+    carry, de, b, m = find(vars_, real_e)
+    expect('_ChkFindSym finds real E (not list E): DE = its float, B = 0',
+           not carry and de == m.os[('real', 'E')] and b == 0 and m.get_real('E') == 7, (carry, de, b))
+    carry, de, b, m = find(vars_, str1)
+    expect('_ChkFindSym finds Str1: DE = its size word', not carry and de == m.os[('str', 1)] - 2
+           and m.mem[de] == 2, (carry, de))
+    carry, de, b, m = find(vars_, list_bin)
+    expect('_ChkFindSym finds list BIN: DE = its size word', not carry and de == m.os[('list', 'BIN')] - 2
+           and m.mem[de] == 1, (carry, de))
+    carry, de, b, m = find(vars_, b'\x01\x5dE')
+    expect('_ChkFindSym finds list E (not real E)', not carry and de == m.os[('list', 'E')] - 2)
+    carry, de, b, m = find(vars_, b'\x04\xaa\x01')
+    expect('_ChkFindSym finds archived Str2: B = its flash page, DE in 4000h-7FFFh',
+           not carry and b == ARCH_PAGE and 0x4000 <= de < 0x8000, (carry, de, b))
+    for label, name in (('real M', b'\x00M'), ('Str3', b'\x04\xaa\x02'), ('list BI', b'\x01\x5dBI'),
+                        ('list BINX', b'\x01\x5dBINX')):
+        expect('_ChkFindSym: no %s -> carry' % label, find(vars_, name)[0])
+    expect('_ChkFindSym in an empty VAT -> carry', find(lambda m: None, real_e)[0])
+    # the VAT's layout: real E's entry at symTable, names downwards; lists in the program table
+    m = AsmMachine(HEAD + RET)
+    vars_(m)
+    m.build_vat()
+    e = m.mem[SYMTABLE - 8:SYMTABLE + 1]
+    prog = int.from_bytes(m.mem[PROGPTR:PROGPTR + 2], 'little')
+    ptemp = int.from_bytes(m.mem[PTEMP:PTEMP + 2], 'little')
+    p = m.os[('real', 'E')]
+    expect('VAT: real E first in the symbol table (type, T2, version, pointer, page, name)',
+           bytes(e) == bytes([0, 0, ord('E'), 0, p >> 8, p & 0xFF, 0, 0, 0]), bytes(e).hex(' '))
+    expect('VAT: 4 symbol-table entries (E, V, Str1, Str2), then lists E and BIN', prog == SYMTABLE - 36
+           and ptemp == prog - (7 + 2) - (7 + 4) and m.mem[prog] == 1 and m.mem[prog - 6] == 2,
+           (hex(prog), hex(ptemp)))
     try:
         AsmMachine(b'\x3a' + RET)
         expect('a program without BB 6D is refused', False)

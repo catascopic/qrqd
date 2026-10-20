@@ -1,9 +1,17 @@
 # Plan: the standalone engine in Z80 assembly
 
-Status: milestone 1 is done in the harness and not yet tried on the calculator.
-`src/standalone/_theta_QR.z80` is the stub (15 MHz where there is one, Ans = 0, 18 bytes);
-`tools/z80sim.py` runs it; `python tests/test_engine.py --asm` tests it, and
-`tests/test_z80sim.py` checks that the harness catches each kind of mistake.
+Status: milestones 1-4 are done in the harness; 1-3 also on the user's calculator
+(milestone 2 from the home screen: a valid call 0, V=12 and V=256 65535; milestone 3 through
+prgmQR's bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric
+65533 with B = 2; all as in the harness).
+`src/standalone/_theta_QR.z80` (1398 bytes) sets 15 MHz, reads E, V and M, rejects bad
+ones, finds Str1 or ʟBIN (65535 if missing), and answers the check call (V=0): Str1's length
+in tokens, the mode, and a bad character's position in B (65533). A draw call in auto mode
+scans the text the same way, so a bad character fails it. A draw call (V=1-11) then reads N
+and O and packs the data codewords into L₁ (mode, count, data, terminator, padding), and
+answers 0 with nothing drawn (`NotYet`), as do a note (E=3) and the note list (E=4).
+`tools/z80sim.py` runs it; `python tests/test_engine.py --asm` tests it, and `tests/test_z80sim.py` checks that
+the harness catches each kind of mistake and models the OS routines as described below.
 
 ## Goal
 
@@ -92,28 +100,57 @@ What the harness has to provide:
   program, on a stack that isn't back where it started at the final `ret`, on unknown OS calls,
   and if IY (the OS flags pointer) changes.
 
-Built in milestone 1 (`AsmMachine(program, model='84+', max_ticks=1.5e9)`): the code at
-userMem; writes allowed only to OP1-OP6, L₁, L₃, the graph buffer, the program, the stack below
-the return address (FE70h-FFDDh; the address itself sits at FFDEh) and the data of variables a
-test created; ROM filled with FFh (rst 38h) and a breakpoint at 0038h, so a jump into ROM
-raises; registers start at 5A5Ah, so nothing can rely on a start value; at the end the stack,
-IY and interrupts-enabled are checked. Port 2 reads the model (bit 7 set on a TI-84+), port 20h
-may be written on a TI-84+ only (`full`), any other port raises. bcalls so far: `_OP1Set0`,
-`_StoAns` (sets `ans`); `calls` lists them in order, `ticks` is the run's T-states.
-`set_real`/`set_str`/`set_list` put data in RAM at C000h, but nothing finds it yet: the VAT and
-`_ChkFindSym` come with milestone 2. `--asm` implies `--standalone`; `test_engine.py --asm`
-runs `asm_stub()` only, and the existing groups join as the milestones reach them.
-`run_all.py` runs `test_z80sim.py` always and `test_engine.py --asm` when the build has
-`build/standalone/_theta_QR.8xp`.
+Built so far (`AsmMachine(program, model='84+', max_ticks=1.5e9)`):
+
+- **Memory:** the code at userMem; writes allowed only to OP1-OP6, L₁, L₃, the graph buffer,
+  the program, the stack below the return address (FE70h-FFDDh; the address itself sits at
+  FFDEh) and the data of variables in RAM; ROM filled with FFh (rst 38h) and a breakpoint at
+  0038h, so a jump into ROM raises.
+- **Registers:** all start at 5A5Ah, and after every bcall every register the routine doesn't
+  return is 5A5Ah again, the shadow registers too; the shadow registers are also reset every
+  100,000 T-states, standing in for the OS's interrupt handler (assumed to use them). So the
+  program can't count on a value surviving an OS call. At the end the stack, IY and
+  interrupts-enabled are checked.
+- **Ports:** port 2 reads the model (bit 7 set on a TI-84+), port 20h may be written on a
+  TI-84+ only (`full`), any other port raises.
+- **Variables and the VAT:** `set_real`, `set_str`, `set_list` (each with `archived=`) put the
+  data in RAM from C000h, or for an archived one give it a flash page (0Bh) and a pointer into
+  4000h-7FFFh, where nothing is mapped yet. `run()` writes the VAT first (`build_vat`): the
+  symbol table from symTable (FE66h) down, 9-byte entries (type, T2, version, data pointer
+  low, high, page, then a 3-byte name, going down), for reals and strings; then the program
+  table from (progPtr) down to (pTemp), entries with a length byte and the name, for lists
+  (assumed to live there, since their names are up to 6 bytes; test_unprot.py assumes it too),
+  and later appvars. `vat_entries()` reads it back.
+- **bcalls:** `_ChkFindSym` walks that VAT in memory (the symbol table by the 3 name bytes, the
+  program table by name and kind): carry if missing, else HL = the entry, DE = the data, B =
+  the page. `_SetXXXXOP2` (HL → OP2 as a float), `_OP2ToOP1`, `_StoAns` (sets `ans`),
+  `_OP1Set0`. `calls` lists them in order, `ticks` is the run's T-states.
+- **Single routines:** build.py writes the program's labels to `_theta_QR.lab` (spasm's `-L`,
+  filtered to the names the source defines), and `call(label, de=..., ...)` runs one
+  subroutine with the given registers until it returns, under the same checks (the test of
+  `FloatToInt` on 33 values uses it).
+
+`--asm` implies `--standalone`. `test_engine.py --asm` runs the groups shared with the Axe
+engines that the port covers so far: `parameter_errors()` (rejected and missing input) and
+`check_calls()` (the check call, bad characters, B, ʟBIN's check, and the auto-mode draw
+calls that fail before drawing). Plus the port's own: `asm_parameters()` (GV's conversion,
+archived variables, the speed), `asm_characters()` (`CH` on 531 tokens and `AV` on all
+256 bytes, called directly and compared with qrtest's tables) and `asm_codewords()` (the
+data codewords in L₁ after a draw call, compared byte for byte with
+`qrtest.data_codewords`, which builds them from the `qrcode` library's own BitBuffer the
+way its `util.create_data` does: the sweep's payloads at every version, plus skipping and
+clamping; 271 sets in the full run). The other groups join as the milestones reach them;
+`asm_codewords()` can go once the sweep runs, since the drawn symbols cover it. `run_all.py` runs `test_z80sim.py` always and `test_engine.py --asm`
+when the build has `build/standalone/_theta_QR.8xp`.
 
 ## What the engine needs from the OS (first guess, to check)
 
 | Axe engine | Assembly |
 | --- | --- |
-| `GV`: read an OS real, 0 if missing | `_ChkFindSym` with the name in OP1 (type 0, the letter); convert the 9-byte float to an integer ourselves (or `_ConvOP1`: check its range) |
+| `GV`: read an OS real, 0 if missing | done: `_ChkFindSym` with the name in OP1 (type 0, the letter, 0, 0), then our own `FloatToInt` (no `_ConvOP1`, whose range checks would be the OS's) |
 | store B (only if it exists) | `_ChkFindSym`, then write the float into its data |
-| `→Ans` | e.g. `_SetXXXXOP2` + `_OP2ToOP1` + `_StoAns` (check) |
-| Str1, Str2, ʟBIN | `_ChkFindSym` (Str1/Str2 type 4, the list as 5Dh + name) |
+| `→Ans` | done: `_SetXXXXOP2` + `_OP2ToOP1` + `_StoAns` (in `Quit`) |
+| Str1, Str2, ʟBIN | Str1 and ʟBIN done: `_ChkFindSym` (Str1 = type 4, AAh, 00h; the list = type 1, 5Dh, "BIN"); DE = the size word |
 | notes, archived ones read through `Y₁` | `_ChkFindSym`: B = flash page (0 = RAM); skip the archived entry's header; read bytes with `_LoadCIndPaged` (or map the page, then restore port 6) |
 | E=4: list notes into Str3 | walk the VAT; `_DelVarArc` an old Str3, `_CreateStrng` |
 | `Full` | detect an 84+/SE (port 2) and set port 20h; the OS goes back to 6 MHz itself (design.md item 16) |
@@ -122,6 +159,43 @@ runs `asm_stub()` only, and the existing groups join as the milestones reach the
 
 Assembly gotchas to respect: keep IY intact (the OS needs it for bcalls and interrupts),
 leave interrupts on, balance the stack, don't touch RAM the OS owns.
+
+## Decisions made while porting
+
+- **Variables** live at saveSScreen+714 (`Vars`), the last 54 bytes of saveSScreen, where Axe
+  keeps its own: L₁ stays 714 bytes, as the memory map in design.md assumes, and the
+  variables cost no program bytes.
+- **Leaving:** `Quit` (Ans = HL) first restores the stack pointer saved at the start
+  (`SaveSP`), so any routine can end the program, like Axe's `Return` at the top level.
+  `BadInput` is Quit with 65535.
+- **Numbers from the OS** (`FloatToInt`): the integer part, the fraction dropped; a negative
+  number or one of 65536 or more gives 65535, which every parameter rejects or clamps. Axe's
+  `float{` isn't documented for those (axesim refuses them), so this is a choice, not a copy.
+  Values above 255 are rejected before they are cut to a byte (V=256 must not read as 0).
+- **Archived variables** are treated as missing (a real reads as 0, Str1 or ʟBIN is bad
+  input), as the Axe engine's GetCalc does. Notes are the exception (milestone 8).
+- **Order:** E is read and E=4 dispatched before V and M are read, as in the Axe engine.
+- **Tables** are the Axe engine's (GDB0, GDB1, GDB9 as `TokenFirst`/`TokenSecond`,
+  `Prefixes`, `Punct`), generated from QRSRC.axe.txt's hex. `inData(` becomes `cpir`: after
+  a match BC = what was left to search, so the 1-based position is the length minus BC
+  (`CH`: ASCII = 126 - C; `AV`: value = 44 - C).
+- **`AV`** answers with carry (set = no alphanumeric value) instead of Axe's 99.
+- **Storing B** writes only a real B in RAM (the type from its VAT entry, at HL after
+  `_ChkFindSym`): a complex B is left alone, since a real's float in its first half would
+  leave it half real. The float comes from `_SetXXXXOP2`.
+- **Jumps:** `jr` reaches only 128 bytes, so the far ones (to `BadInput`, to `Scanned`) are
+  `jp`; spasm refuses a `jr` that is too far, so this can't go wrong silently.
+- **Bit packing** (`AB`): the value goes in HL, the bit count in B; HL is shifted so the
+  first bit is bit 15, then `add hl,hl` / `rla` moves one bit at a time into the byte being
+  filled (kept in A while AB runs, in `BitAcc` between calls). An alphanumeric pair's
+  45·first is computed as 9·(5·first) with shifts and adds. ʟBIN elements go through
+  `FloatToInt`, so one over 65535 (never sent by prgmQR) gives FFh where Axe's `float{`
+  would wrap around; up to 65535 both take the low 8 bits.
+- **Later:** the test "N far over capacity writes nothing past L1" compares L₁+714 onwards,
+  which is where the port keeps its variables (Axe's live in axesim's Python). At milestone 7
+  it needs to start after the variables (L₁+768) for the port.
+- **Not tested:** 65532 (over 32765 characters) for Str1 or ʟBIN: neither fits in the
+  harness's RAM that long. Milestone 8 tests it with an archived note, as for the Axe engine.
 
 ## How to port
 
@@ -139,14 +213,16 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
 Milestones, each with the tests that cover it:
 
 1. Tools and harness, with a tiny program (`Full`, Ans = 0) through the harness, then on the
-   calculator (safe, and it proves the program format and the Ans handling). Done except the
-   calculator. The stub has the engine's name, so sending it replaces the working prgmθQR;
-   compiling QRSRC in Axe again brings that back.
+   calculator (safe, and it proves the program format and the Ans handling). Done, and run on
+   the user's calculator: Ans = 0, no crash (prgmQR then draws nothing, as expected). The port
+   keeps the engine's name all along (the user's choice): sending it replaces the working
+   prgmθQR, and compiling QRSRC in Axe again brings that back.
 2. Reading parameters (`GV`) and the error answers: the "rejected" and "missing variable"
-   tests.
+   tests. Done, and checked on the calculator.
 3. The check call (V=0) for Str1: lengths, auto/ASCII/alphanumeric, bad characters and B.
+   Done, and checked on the calculator.
 4. Bit packing into the data codewords: compare memory with a Python reference before
-   going on.
+   going on. Done in the harness.
 5. GF(256) tables, the generator polynomial, `RS`.
 6. Drawing: function patterns, format and version information, the zigzag through `CW`. Now
    the sweep's symbols can match.

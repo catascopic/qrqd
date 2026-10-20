@@ -14,6 +14,7 @@ Axe 1.2.1 token table in tools/axe_tokens.json, because Axe renames many TI
 tokens (conj( shows as Copy(, fPart( as float{, the u token as "var", ...).
 """
 import json
+import re
 import shutil
 import struct
 import subprocess
@@ -156,21 +157,27 @@ def find_spasm():
 
 
 def assemble(path, spasm):
-    """Assemble a .z80 source to raw bytes: BB 6D (the compiled-assembly header) then code
-    from userMem. spasm writes raw binary for a .bin output name; it would name an .8xp after
-    the file (_THETA_Q), so the .8xp is written here instead."""
+    """Assemble a .z80 source to raw bytes, BB 6D (the compiled-assembly header) then code
+    from userMem, and its labels: the text of a .lab file ("NAME = $ADDR" lines, names in
+    capitals) with only the names the source defines (spasm's lists every equate in
+    ti83plus.inc too); the tests call subroutines by name. spasm writes raw binary for a .bin
+    output name; it would name an .8xp after the file (_THETA_Q), so the .8xp is written here
+    instead."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / 'out.bin'
-        r = subprocess.run([str(spasm), '-N', '-I', str(spasm.parent), '-I', str(path.parent),
+        r = subprocess.run([str(spasm), '-N', '-L', '-I', str(spasm.parent), '-I', str(path.parent),
                             str(path), str(out)], capture_output=True, text=True)
-        if r.returncode or not out.exists():
+        if r.returncode or not out.exists() or 'error' in (r.stdout + r.stderr).lower():
             raise SystemExit('%s: spasm failed\n%s' % (path.name, (r.stdout + r.stderr).strip()))
         data = out.read_bytes()
+        labels = out.with_suffix('.lab').read_text(encoding='latin-1').splitlines()
     if data[:2] != b'\xbb\x6d':
         raise SystemExit('%s: must start with .db t2ByteTok, tasmCmp (BB 6D)' % path.name)
     if 0x9D95 + len(data) - 2 > 0xC000:   # code past C000h crashes the calculator
         raise SystemExit('%s: %d bytes of code, at most 8811 can run' % (path.name, len(data) - 2))
-    return data
+    src = path.read_text(encoding='utf-8')
+    own = {m.upper() for m in re.findall(r'^([A-Za-z_]\w*)(?::|\s*=)', src, re.M)}
+    return data, ''.join(l + '\n' for l in labels if l.split(' = ')[0] in own)
 
 
 AXE_COMMENTS = {'QRSRC': 'QR engine source - compile with Axe',
@@ -216,8 +223,10 @@ def build_programs(srcdir, outdir):
     for src in asm_sources if spasm else ():
         stem = src.stem
         name = stem.replace('_theta_', 'θ')
-        data = assemble(src, spasm)
         path = outdir / (stem + '.8xp')
+        path.unlink(missing_ok=True)       # so a failed assembly can't leave an old one to test
+        data, labels = assemble(src, spasm)
+        (outdir / (stem + '.lab')).write_text(labels, encoding='ascii')
         prog = TIProtectedAsmProgram(name=name)
         prog.data = data
         prog.save(str(path))

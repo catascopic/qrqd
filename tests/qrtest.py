@@ -131,6 +131,30 @@ def reference(payload, version, mode):
     return [[int(c) for c in r] for r in q.get_matrix()]
 
 
+def data_codewords(payload, version, mode):
+    """The data codewords (before error correction) at EC level L: mode indicator, count,
+    data, up to 4 terminator bits, zero bits to a byte boundary, pad bytes ECh 11h in turn.
+    Built from the qrcode library's own pieces, as its util.create_data does before adding EC,
+    so it doesn't share any code with the engines."""
+    from qrcode.base import rs_blocks
+    from qrcode.util import BitBuffer, length_in_bits, PAD0, PAD1
+    data = QRData(payload.encode() if isinstance(payload, str) else bytes(payload),
+                  mode=MODE_ALPHA_NUM if mode == 'alphanumeric' else MODE_8BIT_BYTE)
+    buf = BitBuffer()
+    buf.put(data.mode, 4)
+    buf.put(len(data), length_in_bits(data.mode, version))
+    data.write(buf)
+    limit = sum(b.data_count * 8 for b in rs_blocks(version, qrcode.constants.ERROR_CORRECT_L))
+    assert len(buf) <= limit, 'payload too long for the version'
+    for _ in range(min(limit - len(buf), 4)):
+        buf.put_bit(False)
+    while len(buf) % 8:
+        buf.put_bit(False)
+    for i in range((limit - len(buf)) // 8):
+        buf.put(PAD1 if i % 2 else PAD0, 8)
+    return bytes(buf.buffer)
+
+
 def check_symbol(m, version, payload, mode):
     """Engine output must equal the reference symbol and decode to the payload."""
     assert m.ans == 0, 'engine returned %r' % m.ans

@@ -19,9 +19,9 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | --- | --- |
 | `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
 | `src/NOTESSRC.axe.txt` | Axe note picker, compiles to prgmθNOTES: menu of Notefolio notes, name → Str2 (Ans 1 picked, 0 cancelled, 2 none) |
-| `docs/asm_port.md` | plan for rewriting the standalone engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing standalone tests run unchanged, milestones. Milestone 1 done (not yet on the calculator) |
-| `src/standalone/_theta_QR.z80` | the Z80 port of the standalone prgmθQR, so far the milestone 1 stub (15 MHz, Ans = 0); build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/standalone/_theta_QR.8xp` |
-| `tools/z80sim.py` | `AsmMachine`: runs a compiled `.8xp` in the `z80` package's emulator with axesim's `Machine` interface (bcalls in Python, strict memory/ports/stack/IY checks); `tests/test_z80sim.py` checks the harness |
+| `docs/asm_port.md` | plan for rewriting the standalone engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing standalone tests run unchanged, milestones, decisions made while porting. Milestones 1-4 done (1-3 also on the calculator) |
+| `src/standalone/_theta_QR.z80` | the Z80 port of the standalone prgmθQR, so far milestone 4 (15 MHz, reads E/V/M, finds Str1/ʟBIN, 65535 for bad input, the check call V=0 with B, a draw call packs the data codewords into L₁ and answers 0 without drawing); build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/standalone/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
+| `tools/z80sim.py` | `AsmMachine`: runs a compiled `.8xp` in the `z80` package's emulator with axesim's `Machine` interface (a real VAT, bcalls in Python, junk in registers after each, strict memory/ports/stack/IY checks; `call(label)` runs one routine); `tests/test_z80sim.py` checks the harness |
 | `docs/API.md` | how other programs call prgmθQR and prgmθNOTES (variables, return values, capacity, a tested example) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
 | `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |

@@ -3,11 +3,13 @@
   python tests/test_engine.py           full sweep (all versions; takes a few minutes)
   python tests/test_engine.py --quick   versions 1, 5, 10 only
   add --standalone to test src/standalone/QRSRC.axe.txt (the QR-only release) instead
+  --asm tests the standalone engine's Z80 port (build/standalone/_theta_QR.8xp) instead; it
+        runs only the groups its milestones cover so far (docs/asm_port.md)
 """
 import random
 import sys
 
-from qrtest import (Machine, SRC, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
+from qrtest import (Machine, SRC, ASM, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
                     ascii_tokens, check_symbol, decode, matrix_from, run_engine,
                     TEXT, BINARY, AUTO, ASCII, ALNUM, BAD, bad)
 from axesim import L1                                          # noqa: E402
@@ -196,9 +198,23 @@ def edge_cases():
     expect('missing list BIN -> 65535', m.ans == 65535)
 
 
+def asm_stub():
+    """Milestone 1 of the Z80 port: the stub only sets 15 MHz where there is one and Ans = 0."""
+    m = Machine(SRC)
+    m.run()
+    expect('asm: returns Ans = 0', m.ans == 0, m.ans)
+    expect('asm: 15 MHz on a TI-84+', m.full)
+    m = Machine(SRC, model='83+')
+    m.run()
+    expect('asm: a TI-83+ keeps its speed port alone, Ans = 0', m.ans == 0 and not m.full, m.ans)
+
+
 if __name__ == '__main__':
-    edge_cases()
-    skipping()
-    sweep([1, 5, 10] if '--quick' in sys.argv else range(1, 12))
+    if ASM:        # the groups below join as the port's milestones reach them
+        asm_stub()
+    else:
+        edge_cases()
+        skipping()
+        sweep([1, 5, 10] if '--quick' in sys.argv else range(1, 12))
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

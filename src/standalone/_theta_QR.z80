@@ -1,0 +1,33 @@
+; prgmθQR in Z80 assembly: the standalone release's QR engine, ported from QRSRC.axe.txt
+; (docs/asm_port.md). Assembled by spasm-ng (tools/build.py runs it), run by prgmQR with
+; Asm(prgmθQR) exactly like the Axe engine.
+;
+; Milestone 1: a stub that only proves the program format, the harness and the Ans handling.
+; It switches to 15 MHz where the calculator has it, stores 0 in Ans and returns.
+;
+; Rules for the whole program (the OS needs them): keep IY (the OS flags pointer), leave
+; interrupts on, return with the stack where it started, and write only the scratch areas of
+; design.md's memory map (saveSScreen = L₁, appBackUpScreen = L₃, plotSScreen = the graph
+; buffer), OP1-OP6 and the program's own variables.
+
+#include "ti83plus.inc"
+
+	.org userMem-2
+	.db t2ByteTok, tasmCmp		; BB 6D: a compiled assembly program, run by Asm(
+
+Start:
+; Full: 15 MHz on a TI-84+ or a Silver Edition, nothing on a plain TI-83+. Port 2 bit 7 is
+; set on the models that have the fast mode; on those, port 20h bit 0 selects 15 MHz. A plain
+; 83+ has no port 20h (it mirrors the link port there), so it is left alone. The OS goes
+; back to 6 MHz itself when the program returns (design.md item 16).
+	in a,(2)
+	rla				; bit 7 → carry
+	jr nc,SlowModel
+	ld a,1
+	out (20h),a
+SlowModel:
+
+; Ans = 0
+	bcall(_OP1Set0)
+	bcall(_StoAns)
+	ret

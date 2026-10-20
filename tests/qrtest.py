@@ -18,8 +18,18 @@ from PIL import Image                           # noqa: E402
 from qrcode.util import QRData, MODE_ALPHA_NUM, MODE_8BIT_BYTE  # noqa: E402
 from axesim import Machine, AxeError            # noqa: E402,F401
 
-SRC_DIR = ROOT / 'src' / 'standalone' if '--standalone' in sys.argv else ROOT / 'src'
-SRC = (SRC_DIR / 'QRSRC.axe.txt').read_text(encoding='utf-8')
+# --asm: the standalone engine's Z80 port (docs/asm_port.md), built by tools/build.py, run in
+# tools/z80sim.py; Machine(SRC) then means AsmMachine(path of the .8xp)
+ASM = '--asm' in sys.argv
+SRC_DIR = ROOT / 'src' / 'standalone' if '--standalone' in sys.argv or ASM else ROOT / 'src'
+if ASM:
+    from z80sim import AsmMachine as Machine, Z80Error  # noqa: E402,F401,F811
+    SRC = ROOT / 'build' / 'standalone' / '_theta_QR.8xp'
+    if not SRC.exists():
+        sys.exit('%s is missing: run tools/build.py (it needs spasm-ng in tools/spasm/)'
+                 % SRC.relative_to(ROOT))
+else:
+    SRC = (SRC_DIR / 'QRSRC.axe.txt').read_text(encoding='utf-8')
 TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 

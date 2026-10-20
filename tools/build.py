@@ -3,8 +3,10 @@
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
                                            and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
                                            src/standalone/ (the QR-only release, same program
-                                           names) goes to build/standalone/
-  python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected)
+                                           names) goes to build/standalone/; *.z80 sources are
+                                           assembled with spasm-ng when it is installed
+  python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected;
+                                           an assembly program as hex)
   python tools/build.py decompile F.8xp -o out.txt
 
 BASIC is tokenized with the tivars library. Axe source is tokenized with the
@@ -14,11 +16,14 @@ tokens (conj( shows as Copy(, fPart( as float{, the u token as "var", ...).
 import json
 import shutil
 import struct
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import tivars.models
 from tivars import TIProgram, TIRealList
+from tivars.types import TIProtectedAsmProgram
 from tivars.types.real import TIReal
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -141,12 +146,40 @@ def save_program(name, tokens, path, comment):
     assert bytes(TIProgram.open(str(path)).data) == tokens
 
 
+def find_spasm():
+    """spasm-ng: tools/spasm/ (gitignored, with ti83plus.inc next to it), else on PATH."""
+    local = ROOT / 'tools' / 'spasm' / 'spasm64.exe'
+    if local.exists():
+        return local
+    found = shutil.which('spasm64') or shutil.which('spasm')
+    return Path(found) if found else None
+
+
+def assemble(path, spasm):
+    """Assemble a .z80 source to raw bytes: BB 6D (the compiled-assembly header) then code
+    from userMem. spasm writes raw binary for a .bin output name; it would name an .8xp after
+    the file (_THETA_Q), so the .8xp is written here instead."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / 'out.bin'
+        r = subprocess.run([str(spasm), '-N', '-I', str(spasm.parent), '-I', str(path.parent),
+                            str(path), str(out)], capture_output=True, text=True)
+        if r.returncode or not out.exists():
+            raise SystemExit('%s: spasm failed\n%s' % (path.name, (r.stdout + r.stderr).strip()))
+        data = out.read_bytes()
+    if data[:2] != b'\xbb\x6d':
+        raise SystemExit('%s: must start with .db t2ByteTok, tasmCmp (BB 6D)' % path.name)
+    if 0x9D95 + len(data) - 2 > 0xC000:   # code past C000h crashes the calculator
+        raise SystemExit('%s: %d bytes of code, at most 8811 can run' % (path.name, len(data) - 2))
+    return data
+
+
 AXE_COMMENTS = {'QRSRC': 'QR engine source - compile with Axe',
                 'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
                 'SPEEDSRC': '15 MHz speed test - compile with Axe',
                 'NOTESSRC': 'Notefolio picker source - compile with Axe',
                 'UNPROSRC': 'Program unprotector - compile with Axe',
                 'CHATSRC': 'CodeChat prototype source - compile with Axe'}
+ASM_COMMENTS = {'θQR': 'QR engine, Z80 assembly'}   # ASCII only (header comment)
 
 
 def build():
@@ -172,7 +205,25 @@ def build_programs(srcdir, outdir):
         if changed:
             raise SystemExit('%s: Axe round trip changed code lines: %r' % (path.name, changed[:3]))
         save_program(name, tokens, outdir / (name + '.8xp'), AXE_COMMENTS.get(name, 'Axe source'))
-        print('%-28s %5d token bytes' % (shown + name + '.8xp', len(tokens)))
+        print('%-32s %5d token bytes' % (shown + name + '.8xp', len(tokens)))
+
+    # Assembly programs (the standalone engine's Z80 port), when spasm-ng is installed
+    asm_sources = sorted(srcdir.glob('*.z80'))
+    spasm = find_spasm() if asm_sources else None
+    if asm_sources and not spasm:
+        print('skipped %s: spasm-ng not found (tools/spasm/spasm64.exe or on PATH)'
+              % ', '.join(p.name for p in asm_sources))
+    for src in asm_sources if spasm else ():
+        stem = src.stem
+        name = stem.replace('_theta_', 'θ')
+        data = assemble(src, spasm)
+        path = outdir / (stem + '.8xp')
+        prog = TIProtectedAsmProgram(name=name)
+        prog.data = data
+        prog.save(str(path))
+        finish_8xp(path, ASM_COMMENTS.get(name, 'Assembly program - run with Asm('))
+        assert bytes(TIProtectedAsmProgram.open(str(path)).data) == data
+        print('%-32s %5d bytes' % (shown + stem + '.8xp', len(data)))
 
     # BASIC programs: the hybrid's front end (prgmQR) and the pure-BASIC generator (prgmQRBASIC
     # + prgmθQRBIT). The pure-BASIC ones use "max" mode, which keeps tokens inside strings (the
@@ -197,7 +248,7 @@ def build_programs(srcdir, outdir):
             raise SystemExit('%s needs a %s token; if max munch picked it, escape it with \\ '
                              '(like R\\edraw)' % (src.name, model))
         save_program(name, bytes(prog.data), outdir / (stem + '.8xp'), BASIC_COMMENTS.get(name, 'TI-BASIC program'))
-        print('%-28s %5d token bytes' % (shown + stem + '.8xp', len(prog.data)))
+        print('%-32s %5d token bytes' % (shown + stem + '.8xp', len(prog.data)))
 
 
 def build_lists():
@@ -220,13 +271,15 @@ def save_list(name, values, comment):
     path = ROOT / 'build' / (name + '.8xl')
     lst.save(str(path))
     finish_8xp(path, comment)
-    print('%-28s %5d entries' % ('build/' + name + '.8xl', len(values)))
+    print('%-32s %5d entries' % ('build/' + name + '.8xl', len(values)))
 
 
 def decompile(path, out=None):
     prog = TIProgram.open(str(path))
     data = bytes(prog.data)
-    if data[:1] == b'\x3a':          # Axe sources start with a "." header line
+    if data[:2] == b'\xbb\x6d':      # a compiled assembly program: no text to show
+        text = 'assembly program, %d bytes:\n%s' % (len(data), data.hex(' '))
+    elif data[:1] == b'\x3a':        # Axe sources start with a "." header line
         text = axe_detokenize(data)
     else:
         text = prog.string()

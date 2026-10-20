@@ -19,6 +19,9 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | --- | --- |
 | `src/QRSRC.axe.txt` | Axe engine source, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`) |
 | `src/NOTESSRC.axe.txt` | Axe note picker, compiles to prgmθNOTES: menu of Notefolio notes, name → Str2 (Ans 1 picked, 0 cancelled, 2 none) |
+| `docs/asm_port.md` | plan for rewriting the standalone engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing standalone tests run unchanged, milestones. Milestone 1 done (not yet on the calculator) |
+| `src/standalone/_theta_QR.z80` | the Z80 port of the standalone prgmθQR, so far the milestone 1 stub (15 MHz, Ans = 0); build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/standalone/_theta_QR.8xp` |
+| `tools/z80sim.py` | `AsmMachine`: runs a compiled `.8xp` in the `z80` package's emulator with axesim's `Machine` interface (bcalls in Python, strict memory/ports/stack/IY checks); `tests/test_z80sim.py` checks the harness |
 | `docs/API.md` | how other programs call prgmθQR and prgmθNOTES (variables, return values, capacity, a tested example) |
 | `src/QR.basic.txt` | TI-BASIC front end, in tivars' text format |
 | `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |
@@ -41,7 +44,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 ## Commands
 
 ```
-pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow, cryptography
+pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow, cryptography, z80
 python tools/build.py                    # -> build/QR.8xp, build/QRSRC.8xp (build.bat does the same, for double-clicking)
 python tests/run_all.py                  # every suite but test_basic, in parallel (~30 s); --quick, --basic
 python tests/test_engine.py --quick      # drop --quick for the full sweep (~30 s)
@@ -55,6 +58,8 @@ python tools/codechat.py loopkey         # build/CCKEYS.8xv test keyring (LOOP0/
 python tests/test_engine.py --quick --standalone   # the standalone engine (modes 0-2)
 python tests/test_standalone_notefolio.py          # its notes, E=4 list
 python tests/test_standalone_frontend.py           # its menus (PYTHONUTF8=1)
+python tests/test_engine.py --asm                  # the Z80 port (build first; only its milestones so far)
+python tests/test_z80sim.py                        # the Z80 harness itself
 python tools/build.py decompile build/QRSRC.8xp
 ```
 

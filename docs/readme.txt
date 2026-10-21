@@ -1,8 +1,10 @@
-QR CODE GENERATOR
+What if I told you... that I can run a program on my calculator to wirelessly transmit data to my phone? Would you believe me?
 
-Draws QR codes on the graph screen from a message you type or a NoteFolio file. A BASIC program (prgmQR) handles the user interface (I do love a good BASIC Menu), and an assembly program (prgmθQR) does the encoding, error correction and drawing. Full credit to Claude for writing the assembly code (yes, Claude can write z80 assembly)!
+That's exactly what this program does. Simply type in a message or select one of your NoteFolio files. A BASIC program (prgmQR) handles the user interface (I do love a good BASIC Menu), and an assembly program (prgmθQR) does the encoding, error correction, and drawing.
 
 Works on the TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83+ is slightly slower.
+
+Full credit to Claude for writing the assembly code (yes, Claude can write z80 assembly)! I take solace in having written a pure BASIC QR code generator all by myself, though it's not exactly practical (see below for details).
 
 SETUP
 
@@ -18,7 +20,7 @@ MAIN MENU
 
 CHARACTERS
 
-ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. Tokens like "sin(" or "π" (or, notably, the calculator's "negative" symbol) have no ASCII equivalent: you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
+ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. Tokens like "sin(" or "π" (or, notably, the calculator's "negative" symbol) have no ASCII equivalent; you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
 
 Alphanumeric mode only has 0-9, A-Z, space and $%*+-./: (no lowercase). With Mode set to Alnum, anything else gives ERR:NOT ALNUM.
 
@@ -63,22 +65,33 @@ USING THE ENGINE FROM YOUR OWN PROGRAM
 
 prgmθQR can be called from any BASIC program: set a few variables, run Asm(prgmθQR), and read Ans. A variable that doesn't exist counts as 0.
 
-Use the E variable to control what input the program uses.
-E=1: the text in Str1
-E=2: the NoteFolio file whose name is in Str2
-E=3: lists the NoteFolio files instead. Ans = how many, Str3 = their names, 8 characters each (padded with spaces)
+E: controls what the program does.
+E=1: Encode the text in Str1
+E=2: Encode the NoteFolio file whose name is in Str2
+E=3: Stores the names of all NoteFolio files into Str3, 8 characters each (padded with spaces); return the number of files in Ans.
 
-V: version. V=0 only checks the text (for a string or NoteFolio file), V=1..11 draws a code of that version
-M: encoding mode. M=0: auto, M=1: ASCII, M=2: alphanumeric (used with E=1 and 2 only). With M=0 the engine picks alphanumeric if every character allows it; a check's Ans tells you which (odd = alphanumeric), so you can set M to 1 or 2 for the drawing calls
+V: the version
+V=0: only check the text (for a string or NoteFolio file)
+V=1..11: draw a code of that version
+
+M: encoding mode (used with E=1 and 2 only)
+M=0: auto: the engine picks alphanumeric if every character allows it
+M=1: ASCII
+M=2: alphanumeric
+
 N: how many characters to encode. It must fit the version; the engine doesn't check
+
 O: how many characters to skip first (for splitting a long message; use 0 normally)
 
-Ans value:
-0: drawn successfully
-2*length+1 or 2*length: from a check (V=0); +1 means it will be encoded alphanumeric
-65533: a character can't be encoded; B holds its position
-65532: longer than 32765 characters
-65535: bad value for E, V, or M, or the input doesn't exist
+Note that if either V or M are 0 when you call prgmθQR, it runs "check mode", and returns a 16-bit integer representing the mode and the number of characters. Then it passes control back to the BASIC program to set V and M, where you can call prgmθQR again to do the actual drawing.
+
+Ans: What the program did.
+Ans=0: QR code drawn successfully
+0<Ans<65533: The result of "check mode"; nothing drawn. The least significant bit is the mode (1 for alphanumeric, 0 for ASCII); use iPart(Ans/2) to get the length and fPart(Ans/2) to get the mode.
+Ans=65533: A character can't be encoded; B holds its position
+Ans=65532: Input was longer than 32765 characters
+Ans=65535: Bad value for E, V, or M, or the input doesn't exist
+
 B (set it to 0 first) gets the position of the first problem character: the one that can't be encoded (65533), or, for a file in ASCII mode, the first non-ASCII character (just a warning; the check still succeeds).
 
 Example: draw "HELLO WORLD" as a version 1 code in ASCII mode.
@@ -89,4 +102,4 @@ Asm(prgmθQR
 
 PURE BASIC VERSION
 
-Just for fun, I have a pure BASIC QR code generator, though it's super slow because there is no bitwise xor in BASIC! For a v11 QR code, it takes 8 minutes to do all the math, and then another 3 to draw the code on the screen. It's completely impractical, but it was an interesting challenge.
+Just for fun, I have a pure BASIC QR code generator, though it's super slow because there is no bitwise xor in BASIC! For a v11 QR code, it takes 8 minutes to do all the math, and then another 3 minutes to draw. It's completely impractical, but it was an interesting challenge.

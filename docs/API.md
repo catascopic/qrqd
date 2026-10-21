@@ -42,10 +42,10 @@ Pause
 
 | Var | Meaning |
 | --- | --- |
-| E | What to encode: **1** Str1, **2** list ʟBIN (one byte per element, 0-255), **3** the Notefolio note named in Str2, **4** list Notefolio notes (see below) |
-| V | **0** = check only (E=1 or 3); **1-11** = draw a code of that version |
-| M | Text mode for E=1 and 3: **0** auto, **1** byte (ASCII), **2** alphanumeric only. Ignored for ʟBIN. Auto uses alphanumeric if every character allows it, else byte; the check's Ans says which (odd = alphanumeric), and the engine never changes M, so set M to 1 or 2 from it before drawing. A draw call with M=0 decides again by reading the text; pick its version by the byte capacity if you haven't checked |
-| N | Number of characters (or list elements) to encode. **Must fit the version's capacity**; the engine doesn't check. It is cut to the input's length |
+| E | What to encode: **1** Str1, **2** the Notefolio note named in Str2, **3** list Notefolio notes (see below) |
+| V | **0** = check only (E=1 or 2); **1-11** = draw a code of that version |
+| M | Text mode: **0** auto, **1** byte (ASCII), **2** alphanumeric only. Auto uses alphanumeric if every character allows it, else byte; the check's Ans says which (odd = alphanumeric), and the engine never changes M, so set M to 1 or 2 from it before drawing. A draw call with M=0 decides again by reading the text; pick its version by the byte capacity if you haven't checked |
+| N | Number of characters to encode. **Must fit the version's capacity**; the engine doesn't check. It is cut to the input's length |
 | O | Number of characters to skip first (for splitting; 0 = from the start) |
 
 A variable that doesn't exist reads as 0, so you only need to set the ones that matter.
@@ -59,7 +59,7 @@ A draw call also reads N and O; the check call reads only E, V and M. (A, which 
 | 2·L + 1, 2·L | Check (V=0): length L (at most 32765); +1 means it will be encoded alphanumeric |
 | 65533 | A character can't be encoded (its position is in B): a token with no ASCII equivalent (`sin(`, `π`, ...), or a character that isn't alphanumeric when M=2 |
 | 65532 | Check: longer than 32765 characters |
-| 65535 | Bad parameters (E, V or M out of range), or the input doesn't exist (no Str1, no ʟBIN, no such note) |
+| 65535 | Bad parameters (E, V or M out of range), or the input doesn't exist (no Str1, no such note) |
 
 Tip: store 65534 to Ans right before `Asm(prgmθQR`. If the engine can't run at all, Ans
 stays 65534, and your error check catches it.
@@ -75,7 +75,7 @@ stays 65534, and your error check catches it.
   - **B**, the position of the first problem character: the one that can't be encoded
     (Ans 65533), or, for a note in byte mode, the first non-ASCII character (a warning:
     the code is still checked or drawn). Left unchanged if there's none, so set B to 0 first.
-  - **Str3**, for E=4.
+  - **Str3**, for E=3.
 - **Scratch RAM:** it uses L₁ (saveSScreen) and L₃ (appBackUpScreen), the usual scratch areas.
 
 ## Capacity per version (error correction level L)
@@ -109,8 +109,8 @@ once, set M from its Ans, and every piece then uses that mode. prgmQR's Lbl Q an
 
 ## Notefolio notes
 
-- **E=4** lists the notes in RAM and archive:
+- **E=3** lists the notes in RAM and archive:
   - Ans = the number of notes;
   - Str3 = their names, 8 characters each (padded with spaces), followed by 48 spaces.
-- **E=3** reads the note whose name is in Str2, padded with spaces or not. Use it like E=1.
+- **E=2** reads the note whose name is in Str2, padded with spaces or not. Use it like E=1.
   Positions count calculator characters. A check also sets B, as described above.

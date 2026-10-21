@@ -1,5 +1,5 @@
 .θQR
-.QR code engine for prgmQR : versions 1-11,
+.QR code engine for prgmQR: versions 1-11,
 .EC level L, mask 0.
 .Called from BASIC with Asm(prgmθQR); inputs are OS variables
 .(a missing one reads as 0), the answer comes back in Ans.
@@ -7,9 +7,9 @@
 .on the calculator. Details: docs/design.md, docs/API.md.
 .
 .Inputs:
-.  E  source: 1 text in Str1 (tokens), 2 bytes in ʟBIN,
-.     3 text of the NoteFolio note named in Str2,
-.     4 list the NoteFolio notes into Str3 (Ans = how many)
+.  E  source: 1 text in Str1 (tokens), 2 text of the NoteFolio
+.     note named in Str2, 3 list the NoteFolio notes into Str3
+.     (Ans = how many)
 .  V  version 1-11, or 0 to only check the text
 .  M  mode: 0 auto, 1 ASCII (byte mode), 2 alphanumeric.
 .     After an auto check, prgmQR sets M from the Ans bit.
@@ -21,7 +21,7 @@
 .  65533 bad character (its position in B)
 .  65532 too long (over 32765 characters)
 .  65535 bad input (bad E/V/M, or the input doesn't exist)
-.  list (E=4): the number of notes
+.  list (E=3): the number of notes
 .B: position of the first problem character (a note in byte
 .  mode only warns: Ans is a normal result with B≠0)
 .
@@ -30,9 +30,6 @@
 .
 .First bytes of two-byte tokens (Str1 holds tokens)
 [5C5D5E606162637EAABBEF00]→GDB1
-.OS name of ʟBIN for GetCalc: type 01h (list), 5Dh (named
-.list prefix), "BIN", 0
-[015D42494E00]→GDB2
 .Data codewords per version at EC L (words, v1 first)
 [13002200370050006C0088009C00C200E80012014401]→GDB3
 .EC codewords per block, v1-11
@@ -72,8 +69,8 @@ Full
 .mode goes into F, because M is used for the codeword count.
 sub(GV,"varE")
 r₁→E
-.E=4 is a separate job: list the notes and return
-If E=4
+.E=3 is a separate job: list the notes and return
+If E=3
 sub(LS)
 Return
 End
@@ -81,25 +78,15 @@ sub(GV,"varV")
 r₁→V
 sub(GV,"varM")
 r₁→F
-.E-1>2 rejects E=0 too: 0-1 wraps around to 65535
-If V>11 or (E-1>2) or (F>2)
+.E-1>1 rejects E=0 too: 0-1 wraps around to 65535
+If V>11 or (E-1>1) or (F>2)
 65535→Ans
 Return
 End
 .
 .Find the input: P points at it, T = its length in characters
-.ʟBIN: P = the first element (9-byte floats), byte mode only
-If E=2
-GetCalc(GDB2)→P
-!If P
-65535→Ans
-Return
-End
-{P-2}ʳ→T
-1→F
-End
 .Note: NF opens it (Q or Y₁) and sets T, X=0 if not found
-If E=3
+If E=2
 sub(NF)
 !If X
 65535→Ans
@@ -138,7 +125,7 @@ End
 .the earlier check. O = position of the character just read,
 .K = first character outside printable ASCII and newline,
 .X = first character that alphanumeric mode can't encode.
-If E≠2 and (V=0 or (F=0))
+If V=0 or (F=0)
 0→O
 0→K
 0→X
@@ -173,7 +160,7 @@ GetCalc("varB")→Z
 If Z
 K→float{Z}
 End
-!If E=3 and (F=1)
+!If E=2 and (F=1)
 65533→Ans
 Return
 End
@@ -230,19 +217,6 @@ sub(AB)
 If E=1
 GetCalc("Str1")→P
 End
-.ʟBIN: skip θ elements (9 bytes each), then 8 bits per element
-.(float{ turns the OS float into an integer)
-If E=2
-P+(θ*9)→P
-1→I
-While I≤N
-float{P}→A
-P+9→P
-8→Z
-sub(AB)
-I+1→I
-End
-Else
 .Skip θ characters. Str1: step over tokens by their length
 .(no table lookup needed); a note: CH reads byte O+24 next, so
 .just set O
@@ -287,7 +261,6 @@ sub(AV)
 J→A
 6→Z
 sub(AB)
-End
 End
 End
 .Terminator: up to 4 zero bits, fewer if the data is full.
@@ -570,7 +543,7 @@ Return
 .the calculator character code.
 Lbl CH
 O+1→O
-If E=3
+If E=2
 sub(RB,O+23)
 sub(MA)
 Return

@@ -277,6 +277,15 @@
    repo before the move. The text of the sections below the history still refers to the legacy
    set where it says prgmθNOTES, E=1-3 only or "main set".
 
+48. ʟBIN input removed from the release (prgmQR's Binary entry, the engine's E=2, in both the
+   Axe engine and the Z80 port): the release is meant to be useful, and nobody was expected to
+   build a list of bytes by hand; the pure-BASIC set keeps Binary as a proof of concept. E was
+   renumbered so there's no hole: 1 Str1, 2 a note (was 3), 3 the list of notes (was 4); E=0
+   and E≥4 are bad input. Byte mode is still reached by text (ASCII mode, notes). The legacy
+   set keeps ʟBIN and its old numbers (E=2 ʟBIN, 3 a note). Sizes: QRSRC 4202 → 4076 token
+   bytes, the Z80 port 3386 → 3289 bytes. The tests read the numbers from qrtest (TEXT, NOTE,
+   LIST; BINARY only with --legacy).
+
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
@@ -368,11 +377,11 @@ P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opene
 
 ## BASIC front end of the release (src/QR.basic.txt)
 
-The legacy front end below, except the NoteFolio entry (Lbl N): it runs the engine with E=4
-(`65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
+The legacy front end below, except the NoteFolio entry (Lbl N) and no Binary entry (item
+48): it runs the engine with E=3 (`65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
 menu), Str3 = their names, 8 characters each. A `Menu(` shows five names at a time
 (`sub(Str3,8P+1,8)` ...) with "More" (P+5) and "Back" (P-5, or the main menu from the first
-page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), then E=3 and the check flow of Lbl C.
+page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), then E=2 and the check flow of Lbl C.
 The main menu also has a Mode entry cycling Auto/ASCII/Alnum (D); a Text-mode label rename
 there is the user's call (the pure-BASIC set's menu says Text).
 

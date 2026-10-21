@@ -1,7 +1,7 @@
 0→U
 0→D
 Lbl 0
-Menu("QR CODE","Message",M,"NoteFolio",N,"Binary (ʟBIN)",B,"Set version",S,"Mode:"+sub("Auto ASCIIAlnum",5D+1,5),T,"Exit",X
+Menu("QR CODE","Message",M,"NoteFolio",N,"Set version",S,"Mode:"+sub("Auto ASCIIAlnum",5D+1,5),T,"Exit",X
 Lbl T
 D+1-3(D=2→D
 Goto 0
@@ -18,7 +18,7 @@ Input "msg=",Str1
 1→E
 Goto C
 Lbl N
-4→E
+3→E
 65534
 Asm(prgmθQR
 Ans→K
@@ -48,7 +48,7 @@ P+Ans→I
 If I>K
 Goto P
 sub(Str3,8I-7,8→Str2
-3→E
+2→E
 Lbl C
 D→M
 0→V
@@ -75,10 +75,6 @@ ClrHome
 Goto Q
 Lbl N0
 Menu("No Files","Back",0,"Exit",X
-Lbl B
-2→E
-dim(ʟBIN→L
-1→M
 Lbl Q
 If M=2
 Then

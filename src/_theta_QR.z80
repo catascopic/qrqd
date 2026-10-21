@@ -2,10 +2,10 @@
 ; (docs/asm_port.md). Assembled by spasm-ng (tools/build.py runs it), run by prgmQR with
 ; Asm(prgmθQR) exactly like the Axe engine; the interface is docs/API.md.
 ;
-; Everything the Axe engine does: for Str1 (E=1), ʟBIN (E=2) and a NoteFolio note (E=3, in
+; Everything the Axe engine does: for Str1 (E=1) and a NoteFolio note (E=2, in
 ; RAM or archived), the check call (V=0: the length, the mode, the first problem character's
 ; position in B) and the draw calls (V=1-11: data codewords, error correction, the drawing,
-; Ans = 0); and E=4, the list of notes in Str3 for prgmQR's menu.
+; Ans = 0); and E=3, the list of notes in Str3 for prgmQR's menu.
 ;
 ; Rules for the whole program (the OS needs them): keep IY (the OS flags pointer), leave
 ; interrupts on, return with the stack where it started, put back the page in bank A (port 6,
@@ -28,10 +28,10 @@ AnsTooLong	= 65532		; a check of more than 32765 characters
 ; engine's letter for each is in brackets.
 Vars		= saveSScreen+714
 SaveSP		= Vars		; word: the stack pointer at the start, for Quit
-Source		= Vars+2	; byte: [E] 1 Str1, 2 ʟBIN, 3 a note
+Source		= Vars+2	; byte: [E] 1 Str1, 2 a note
 Version		= Vars+3	; byte: [V] 0-11, 0 = only check
 Mode		= Vars+4	; byte: [F] 0 auto, 1 ASCII (byte mode), 2 alphanumeric
-InputPtr	= Vars+5	; word: [P] the input's first byte (Str1 token or ʟBIN element)
+InputPtr	= Vars+5	; word: [P] the input's first byte (Str1's first token)
 Length		= Vars+7	; word: [T] the input's length in characters (Str1: tokens)
 ReadPtr		= Vars+9	; word: [P] CH's place in Str1
 Pos		= Vars+11	; word: [O] the position of the character CH read last (1 = first)
@@ -84,7 +84,7 @@ VersionIdx	= DrawVars+23	; byte: its bit number, 0-17
 ; Work areas (design.md's memory map)
 DataOut		= saveSScreen		; the data codewords, block after block (at most 324; a bad
 					; N can run on to L₁+470, short of Align)
-NameList	= saveSScreen		; E=4: the notes' names, 8 bytes each (at most 80)
+NameList	= saveSScreen		; E=3: the notes' names, 8 bytes each (at most 80)
 Map		= appBackUpScreen	; while drawing: the function modules, one pixel each, at
 					; module coordinates (no offset), like a 96×64 screen
 Align		= saveSScreen+500	; alignment pattern coordinates (2 or 3)
@@ -116,9 +116,9 @@ SlowModel:
 ; Read the parameters (GV gives 0 for a missing variable); GVBelow ends with bad input for a
 ; value that is too big
 	ld a,'E'
-	ld c,5
-	call GVBelow			; E = 0-4
-	cp 4				; E=4 is a separate job: list the notes
+	ld c,4
+	call GVBelow			; E = 0-3
+	cp 3				; E=3 is a separate job: list the notes
 	jp z,ListNotes
 	or a
 	jp z,BadInput
@@ -135,38 +135,26 @@ SlowModel:
 ; Find the input. A missing one (or an archived one: the Axe engine's GetCalc doesn't open
 ; those either) is bad input.
 	ld a,(Source)
-	cp 3
-	jr z,FindNote
 	cp 2
+	jr z,FindNote
 	ld hl,NameStr1
-	jr nz,FindInput
-; ʟBIN is always byte mode
-	ld a,1
-	ld (Mode),a
-	ld hl,NameBIN
-FindInput:
-	ld a,(hl)			; the type the name is for: string or real list
+	ld a,(hl)			; the type the name is for: string
 	push af
 	call FindVar
 	pop bc				; B = that type
 	jp c,BadInput
-; A variable of another type is bad input too: a complex list BIN (type 0Dh) has 18-byte
-; elements, which would be read as reals, half of them imaginary parts
+; A variable of another type is bad input too
 	ld a,(hl)			; HL = its VAT entry: the type is in the low 5 bits
 	and 1Fh
 	cp b
 	jp nz,BadInput
-; DE = the size word (Str1: bytes, ʟBIN: elements), then the data
+; DE = the size word (bytes), then the data
 	ex de,hl
 	ld c,(hl)
 	inc hl
 	ld b,(hl)
 	inc hl
 	ld (InputPtr),hl
-	ld (Length),bc			; ʟBIN: one element per character
-	ld a,(Source)
-	cp 1
-	jr nz,Measured
 
 ; Str1: the size word gives bytes, but a character can be a two-byte token, so count the
 ; tokens. HL walks the string (from its first token), DE = the end, BC counts.
@@ -209,10 +197,7 @@ Measured:
 LengthOK:
 
 ; Scan the text: always for a check (V=0), and for a draw in auto mode (M=0: no check told us
-; the mode); otherwise the draw trusts the earlier check. ʟBIN has nothing to scan.
-	ld a,(Source)
-	cp 2
-	jp z,Scanned
+; the mode); otherwise the draw trusts the earlier check.
 	ld a,(Version)
 	or a
 	jr z,Scan
@@ -287,7 +272,7 @@ ModeKnown:
 	jr z,Scanned
 	call StoreB
 	ld a,(Source)
-	cp 3
+	cp 2
 	jr nz,BadChar
 	ld a,(Mode)
 	cp 1
@@ -399,46 +384,13 @@ CountWidth:
 	ld hl,(Count)
 	call AB
 
-	ld a,(Source)
-	cp 2
-	jr nz,PackText
-
-; ʟBIN: skip θ elements (9 bytes each), then 8 bits per element (FloatToInt makes the OS float
-; an integer; AB takes its low 8 bits)
-	ld hl,(Skip)
-	ld d,h
-	ld e,l
-	add hl,hl
-	add hl,hl
-	add hl,hl
-	add hl,de
-	ld de,(InputPtr)
-	add hl,de
-	ld (ReadPtr),hl
-	ld bc,(Count)
-PackList:
-	ld a,b
-	or c
-	jp z,Packed
-	push bc
-	ld de,(ReadPtr)
-	ld hl,9
-	add hl,de
-	ld (ReadPtr),hl
-	call FloatToInt
-	ld b,8
-	call AB
-	pop bc
-	dec bc
-	jr PackList
-
 ; Skip θ characters. A note: CH reads byte Pos+24 next, so setting Pos is enough. Str1: step
 ; over θ tokens by their length (no table lookup needed).
 PackText:
 	ld hl,(Skip)
 	ld (Pos),hl
 	ld a,(Source)
-	cp 3
+	cp 2
 	jr z,TextReady
 	ld b,h
 	ld c,l
@@ -1072,7 +1024,7 @@ ZigDone:
 	ld hl,0
 	jp Quit
 
-; ---------- E=4: list the notes into Str3 ----------
+; ---------- E=3: list the notes into Str3 ----------
 
 ; For prgmQR's pager: 8 characters a name, padded with space tokens, then 48 more spaces, so a
 ; page of 5 names read past the last one stays inside Str3. Ans = the number of notes. The
@@ -1228,7 +1180,7 @@ Quit:
 ; ---------- subroutines ----------
 
 ; CH: the next character → A; adds 1 to Pos (the position of the character read).
-; A note (Source 3): the text starts at byte 24 of the appvar, so the character is byte
+; A note (Source 2): the text starts at byte 24 of the appvar, so the character is byte
 ; Pos+23, its calculator code mapped by MA (never 0: the text ends at the first 00h).
 ; Str1: A = the token's ASCII code, 0 if it has none, and ReadPtr moves past the token. A
 ; token is found in TokenFirst (95 first bytes, one per ASCII 32-126), or, for a two-byte
@@ -1240,7 +1192,7 @@ CH:
 	inc hl
 	ld (Pos),hl
 	ld a,(Source)
-	cp 3
+	cp 2
 	jr nz,CH_Str1
 	ld de,23
 	add hl,de
@@ -2191,7 +2143,6 @@ FindOP1:			; the same, with the name already in OP1
 ; ---------- data ----------
 
 NameStr1:	.db StrngObj, tVarStrng, tStr1, 0, 0, 0, 0, 0, 0
-NameBIN:	.db ListObj, tVarLst, "BIN", 0, 0, 0, 0
 NameStr2:	.db StrngObj, tVarStrng, tStr2, 0, 0, 0, 0, 0, 0
 NameStr3:	.db StrngObj, tVarStrng, tStr3, 0, 0, 0, 0, 0, 0
 

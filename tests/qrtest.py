@@ -71,7 +71,11 @@ def alnum_tokens(s):
     return [ALNUM_TOK[ALNUM_CHARS.index(c)] for c in s]
 
 
-TEXT, BINARY = 1, 2                          # E: Str1 text, list BIN
+# E: Str1 text, a note, the list of notes; list BIN (E=2) only in the legacy engine
+if LEGACY:
+    TEXT, BINARY, NOTE, LIST = 1, 2, 3, None
+else:
+    TEXT, BINARY, NOTE, LIST = 1, None, 2, 3
 AUTO, ASCII, ALNUM = 0, 1, 2                 # M
 BAD = 65533                                  # Ans for a character that can't be encoded (position in B)
 

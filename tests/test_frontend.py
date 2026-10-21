@@ -3,7 +3,7 @@ run in tibasic. Notes: list of names in Str3, the chosen name in Str2.
 
 tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` and a BASIC
 stand-in plays the engine:
-  E=4 (list notes)  copies Str9 to Str3 and returns Z, the note count the test set up
+  E=3 (list notes)  copies Str9 to Str3 and returns Z, the note count the test set up
   V=0 (check text)  returns W, set up by the test (2*length+alnum, or 65533 for a bad character),
                     and sets B to X if X isn't 0 (the bad character's position, or a
                     note's first non-ASCII one; like the engine, it leaves B alone
@@ -21,13 +21,13 @@ from test_basic import (ROOT, TIProgram, Environment, ScriptedConsole, TiList, i
                         get_token, CHAR_TABLE, expect, failures)
 from core import TiString
 
-MESSAGE, NOTEFOLIO, BINARY, SET_VERSION, MODE, EXIT = range(6)   # main menu
+MESSAGE, NOTEFOLIO, SET_VERSION, MODE, EXIT = range(5)   # main menu
 STUB = '''T+1→T
 If T>20
 Stop
 10000N+100V+10M+E→L₆(T
 O→L₅(T
-If E=4
+If E=3
 Str9→Str3
 If not(V
 If X
@@ -37,7 +37,7 @@ H→B
 G
 If not(V
 W
-If E=4
+If E=3
 Z'''                                                            # T>20: stop a runaway loop
 NOTES = ['NOTE%d' % i for i in range(1, 13)]                    # 3 pages: 5, 5, 2
 BAD = 65533
@@ -64,7 +64,7 @@ def tokens(text):
     return bytes(p.data)
 
 
-def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, binary=None, keys=(), warn=0):
+def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, keys=(), warn=0):
     env = Environment(console=MenuLog(inputs=inputs, choices=choices, keys=keys))
     front = tokens((ROOT / "src" / "QR.basic.txt").read_text(encoding='utf-8').rstrip('\n'))
     assert front.count(b'\xbb\x6a\x5f\x5bQR') == 3                  # Asm(prgmθQR
@@ -79,8 +79,6 @@ def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, binary=None, 
     env.numerics.X = float(warn)
     env.numerics.B = 7.0                                        # prgmQR must reset it
     env.strings[8] = TiString.from_str(''.join(n.ljust(8) for n in notes) + ' ' * 48)
-    if binary is not None:
-        env.user_lists['BIN'] = TiList([float(b) for b in binary])
     env.lists[5] = TiList([0.0])
     env.lists[4] = TiList([0.0])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in 'QR')])
@@ -112,7 +110,7 @@ def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_sc
 
 
 def main(mode='Auto'):
-    return ['Message', 'NoteFolio', 'Binary (ʟBIN)', 'Set version', 'Mode:' + mode, 'Exit']
+    return ['Message', 'NoteFolio', 'Set version', 'Mode:' + mode, 'Exit']
 
 
 def page(n):
@@ -133,7 +131,6 @@ if __name__ == '__main__':
     case('a set version bigger than needed is kept', [SET_VERSION, MESSAGE], ['5', 'ABCD'],
          [CHECKED, (4, 5, 1, 1)], [main()], check=2 * 4)
     case('an empty message is one empty code', [MESSAGE], [''], [CHECKED, (0, 1, 2, 1)], [], check=1)
-    case('binary skips the check', [BINARY], [], [(5, 1, 1, 2)], [], binary=range(5))
     # mode
     case('Mode cycles Auto, ASCII, Alnum, Auto', [MODE, MODE, MODE, EXIT], [],
          [], [main('ASCII'), main('Alnum'), main('Auto')])
@@ -153,7 +150,7 @@ if __name__ == '__main__':
          check=2 * 4, encode=BAD, encode_at=4)
 
     # NoteFolio picker: menu options are 5 names, More (5), Back (6)
-    LISTED = [(0, 0, 0, 4)]
+    LISTED = [(0, 0, 0, 3)]
     case('Back on the first page goes to the main menu', [NOTEFOLIO, 6, EXIT], [],
          LISTED, [page(0), main()], notes=NOTES)
     case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
@@ -163,16 +160,16 @@ if __name__ == '__main__':
     case('a blank slot on the last page stays there', [NOTEFOLIO, 5, 5, 3, 6, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 1, 3)], [page(0), page(1), page(2), page(1)],
+         LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0), page(1), page(2), page(1)],
          notes=NOTES, check=2 * 12, want_str2='NOTE7')
     case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 1, 3)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
+         LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
          notes=NOTES, check=2 * 12, warn=40)
     case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 3), (12, 1, 1, 3)], [page(0)], [], ['NON-ASCII'],
+         LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0)], [], ['NON-ASCII'],
          notes=NOTES, check=2 * 12)
     case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
-         LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
+         LISTED + [(0, 0, 0, 2)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
          notes=NOTES, check=BAD, warn=40)
     case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()])
     # too long for one code: always split, into even pieces at the smallest version that fits
@@ -197,8 +194,6 @@ if __name__ == '__main__':
     case('a set version keeps its size', [SET_VERSION, MESSAGE], ['2', 'A' * 70],
          [CHECKED, (24, 2, 1, 1), (24, 2, 1, 1), (22, 2, 1, 1)], [main()], check=2 * 70,
          keys=[NEXT] * 3, want_offsets=[0, 0, 24, 48])
-    case('ʟBIN splits too', [BINARY], [], [(200, 9, 1, 2), (199, 9, 1, 2)], [],
-         binary=[7] * 399, keys=[NEXT] * 2, want_offsets=[0, 200])
 
     def counter(page, pages, version=0):
         """The fraction drawn for code `page` of `pages` (the stand-in draws no QR code)."""

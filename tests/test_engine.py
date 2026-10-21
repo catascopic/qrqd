@@ -1,4 +1,4 @@
-"""Engine tests for Str1 text (E=1) and list BIN (E=2).
+"""Engine tests for Str1 text (E=1), and list BIN (E=2) in the legacy engine.
 
   python tests/test_engine.py           full sweep (all versions; takes a few minutes)
   python tests/test_engine.py --quick   versions 1, 5, 10 only
@@ -14,6 +14,8 @@ from qrtest import (Machine, SRC, ASM, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_t
                     matrix_from, run_engine, TEXT, BINARY, AUTO, ASCII, ALNUM, BAD, bad)
 from axesim import L1, L3                                      # noqa: E402
 
+KINDS = ('alnum', 'ascii') + (('binary',) if BINARY else ())   # ʟBIN: legacy engine only
+
 failures = []
 
 
@@ -28,7 +30,7 @@ def sweep(versions):
     random.seed(1)
     n = 0
     for v in versions:
-        for kind in ('alnum', 'ascii', 'binary'):
+        for kind in KINDS:
             cap = (CAP_ALNUM if kind == 'alnum' else CAP_BYTE)[v - 1]
             for L in sorted({0, 1, 2, 3, cap // 2, cap - 1, cap, random.randint(1, cap)}):
                 if kind == 'alnum':
@@ -77,7 +79,8 @@ def skipping():
     piece('skip 7 of ASCII text', TEXT, ASCII, 7, 6, 'World!', 'byte', str1=ascii_tokens(text))
     piece('skip 6 of alnum text, odd count', TEXT, AUTO, 6, 5, 'WORLD', 'alphanumeric',
           str1=alnum_tokens('HELLO WORLD 123'))
-    piece('skip 5 list elements', BINARY, AUTO, 5, 4, bytes(range(5, 9)), 'byte', lst=list(range(20)))
+    if BINARY:
+        piece('skip 5 list elements', BINARY, AUTO, 5, 4, bytes(range(5, 9)), 'byte', lst=list(range(20)))
     piece('count past the end stops at the end', TEXT, ASCII, 5, 10, 'FG', 'byte',
           str1=ascii_tokens('ABCDEFG'))
     piece('skip past the end gives an empty code', TEXT, ASCII, 100, 10, '', 'byte',
@@ -133,10 +136,11 @@ def check_calls():
     m.set_str(1, b''.join(ascii_tokens('ABc')))
     m.run()
     expect('check with no B: still fails at 3, nothing stored', m.ans == BAD and ('real', 'B') not in m.os, m.ans)
-    m = run_engine(BINARY, 0, 0, AUTO, lst=[65, 200, 0])
-    expect('check list BIN: 2 * its length (byte mode)', m.ans == 2 * 3, m.ans)
-    m = run_engine(BINARY, 0, 0, ALNUM, lst=[])
-    expect('check empty list BIN, M=2 ignored: 0', m.ans == 0, m.ans)
+    if BINARY:
+        m = run_engine(BINARY, 0, 0, AUTO, lst=[65, 200, 0])
+        expect('check list BIN: 2 * its length (byte mode)', m.ans == 2 * 3, m.ans)
+        m = run_engine(BINARY, 0, 0, ALNUM, lst=[])
+        expect('check empty list BIN, M=2 ignored: 0', m.ans == 0, m.ans)
     # the negative sign ⁻ isn't ASCII (only the minus sign is): a bad character in every mode
     for label, toks, mode, pos in (('auto', ascii_tokens('x=') + [NEG] + ascii_tokens('5'), AUTO, 3),
                                    ('ASCII', ascii_tokens('x=') + [NEG] + ascii_tokens('5'), ASCII, 3),
@@ -180,8 +184,9 @@ def edge_cases():
     m.run()
     expect('N far over capacity writes nothing past L1', m.ans == 0 and m.displays and
            bytes(m.mem[end:L1 + 0x800]) == beyond)
-    m = run_engine(BINARY, 2, 999, AUTO, lst=list(range(5)))
-    expect('clamp to list length', m.ans == 0 and decode(matrix_from(m, 2))[0].bytes == bytes(range(5)))
+    if BINARY:
+        m = run_engine(BINARY, 2, 999, AUTO, lst=list(range(5)))
+        expect('clamp to list length', m.ans == 0 and decode(matrix_from(m, 2))[0].bytes == bytes(range(5)))
     expect('runs at full speed (15 MHz)', getattr(m, 'full', False))
     m = bare(E=TEXT, V=1, N=4)
     expect('only E, V, N: auto (M=0) decides alnum itself, from the start (O=0); no M to store in',
@@ -201,7 +206,7 @@ def bare(**reals):
 
 def parameter_errors():
     """Bad parameters or a missing input -> 65535, nothing drawn."""
-    for e, v, mode in ((0, 1, 0), (5, 1, 0), (1, 12, 0), (1, 1, 3)):
+    for e, v, mode in ((0, 1, 0), (4, 1, 0), (1, 12, 0), (1, 1, 3)):
         m = Machine(SRC)
         for name, val in zip('EVNM', (e, v, 0, mode)):
             m.set_real(name, val)
@@ -215,11 +220,12 @@ def parameter_errors():
         m.set_real(name, val)
     m.run()
     expect('missing Str1 -> 65535', m.ans == 65535)
-    m = Machine(SRC)
-    for name, val in zip('EVNM', (BINARY, 1, 1, AUTO)):
-        m.set_real(name, val)
-    m.run()
-    expect('missing list BIN -> 65535', m.ans == 65535)
+    if BINARY:
+        m = Machine(SRC)
+        for name, val in zip('EVNM', (BINARY, 1, 1, AUTO)):
+            m.set_real(name, val)
+        m.run()
+        expect('missing list BIN -> 65535', m.ans == 65535)
 
 
 def asm_parameters():
@@ -250,19 +256,6 @@ def asm_parameters():
     m.set_str(1, b''.join(alnum_tokens('AB12')))
     m.run()
     expect('asm: archived E reads as 0 -> 65535', m.ans == 65535, m.ans)
-    m = Machine(SRC)
-    for name, val in zip('EVNM', (BINARY, 1, 1, AUTO)):
-        m.set_real(name, val)
-    m.set_list('BIN', [1, 2, 3], archived=True)
-    m.run()
-    expect('asm: archived list BIN -> 65535', m.ans == 65535, m.ans)
-    m = Machine(SRC)
-    for name, val in zip('EVNM', (BINARY, 1, 2, AUTO)):
-        m.set_real(name, val)
-    m.set_list('BIN', [72 + 0j, 73 + 0j])
-    m.run()
-    expect('asm: a complex list BIN -> 65535 (its 18-byte elements would be read as reals)',
-           m.ans == 65535, m.ans)
     # FloatToInt on its own: the float at DE -> HL
     wrong = []
     for v in (0, 1, 9, 10, 11, 99, 100, 255, 256, 300, 1234, 9999, 10000, 12345, 32765, 54321,
@@ -302,28 +295,23 @@ def asm_codewords(versions):
             wrong.append((name, m.ans, got.hex(), ref.hex(), got_ec.hex(), ec.hex()))
         n += 1
     for v in versions:
-        for kind in ('alnum', 'ascii', 'binary'):
+        for kind in KINDS:
             cap = (CAP_ALNUM if kind == 'alnum' else CAP_BYTE)[v - 1]
             for L in sorted({0, 1, 2, 3, cap // 2, cap - 1, cap, random.randint(1, cap)}):
                 if kind == 'alnum':
                     p = ''.join(random.choice(ALNUM_CHARS) for _ in range(L))
                     m = run_engine(TEXT, v, L, AUTO, str1=alnum_tokens(p))
-                elif kind == 'ascii':
+                else:
                     p = ''.join(chr(random.randint(32, 126)) for _ in range(L))
                     m = run_engine(TEXT, v, L, ASCII, str1=ascii_tokens(p))
-                else:
-                    p = bytes(random.randint(0, 255) for _ in range(L))
-                    m = run_engine(BINARY, v, L, AUTO, lst=list(p))
                 compare('v%d %s length %d' % (v, kind, L), m, p,
                         v, 'alphanumeric' if kind == 'alnum' else 'byte')
     for name, args, kw, payload, kind in (
             ('skip 7 of ASCII text', (TEXT, 2, 6, ASCII, ), dict(skip=7, str1=ascii_tokens('Hello, World! abc')), 'World!', 'byte'),
             ('skip 2 lowercase (two-byte) tokens', (TEXT, 2, 3, ASCII), dict(skip=2, str1=ascii_tokens('abcde')), 'cde', 'byte'),
             ('skip 6 of alnum text, odd count', (TEXT, 2, 5, AUTO), dict(skip=6, str1=alnum_tokens('HELLO WORLD 123')), 'WORLD', 'alphanumeric'),
-            ('skip 5 list elements', (BINARY, 2, 4, AUTO), dict(skip=5, lst=list(range(20))), bytes(range(5, 9)), 'byte'),
             ('count past the end stops at the end', (TEXT, 2, 10, ASCII), dict(skip=5, str1=ascii_tokens('ABCDEFG')), 'FG', 'byte'),
             ('skip past the end gives no data', (TEXT, 2, 10, ASCII), dict(skip=100, str1=ascii_tokens('ABCDEFG')), '', 'byte'),
-            ('list count past the end', (BINARY, 2, 999, AUTO), dict(lst=list(range(5))), bytes(range(5)), 'byte'),
             ('version 10: 16-bit byte count', (TEXT, 10, 3, ASCII), dict(str1=ascii_tokens('abc')), 'abc', 'byte'),
             ('version 10: 11-bit alnum count', (TEXT, 10, 3, AUTO), dict(str1=alnum_tokens('A:1')), 'A:1', 'alphanumeric')):
         compare(name, run_engine(*args, **kw), payload, args[1], kind)

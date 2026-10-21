@@ -1,6 +1,6 @@
 QR CODE GENERATOR
 
-Draws QR codes on the graph screen from a message you type, a NoteFolio file, or a list of bytes. A BASIC program (prgmQR) handles the menus, and an assembly program (prgmθQR) does the encoding, error correction and drawing.
+Draws QR codes on the graph screen from a message you type or a NoteFolio file. A BASIC program (prgmQR) handles the menus, and an assembly program (prgmθQR) does the encoding, error correction and drawing.
 
 Works on the TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83+ is slightly slower.
 
@@ -12,10 +12,9 @@ MAIN MENU
 
 1. Message: type your text at the msg= prompt.
 2. NoteFolio: pick a NoteFolio file (in RAM or archived) from a list. "More" shows the next page and "Back" the previous one (or the main menu).
-3. Binary: encodes ʟBIN, one byte (0-255) per element. Fill in ʟBIN first, for example in the list editor.
-4. Set version: 0 for automatic mode (the default), the smallest version that fits. 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen.
-5. Mode: Auto, ASCII or Alnum. Press it to cycle. Auto uses alphanumeric mode when every character allows it (it fits more text in the same size) and ASCII otherwise. It applies to messages and files, but not binary.
-6. Exit
+3. Set version: 0 for automatic mode (the default), the smallest version that fits. 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen.
+4. Mode: Auto, ASCII or Alnum. Press it to cycle. Auto uses alphanumeric mode when every character allows it (it fits more text in the same size) and ASCII otherwise. It applies to messages and files.
+5. Exit
 
 LONG MESSAGES
 
@@ -45,12 +44,11 @@ prgmθQR can be called from any BASIC program: set a few variables, run Asm(prgm
 
 Use the E variable to control what input the program uses.
 E=1: the text in Str1
-E=2: ʟBIN
-E=3: the NoteFolio file whose name is in Str2
-E=4: lists the NoteFolio files instead. Ans = how many, Str3 = their names, 8 characters each (padded with spaces)
+E=2: the NoteFolio file whose name is in Str2
+E=3: lists the NoteFolio files instead. Ans = how many, Str3 = their names, 8 characters each (padded with spaces)
 
 V: version. V=0 only checks the text (for a string or NoteFolio file), V=1..11 draws a code of that version
-M: encoding mode. M=0: auto, M=1: ASCII, M=2: alphanumeric (used with E=1 and 3 only). With M=0 the engine picks alphanumeric if every character allows it; a check's Ans tells you which (odd = alphanumeric), so you can set M to 1 or 2 for the drawing calls
+M: encoding mode. M=0: auto, M=1: ASCII, M=2: alphanumeric (used with E=1 and 2 only). With M=0 the engine picks alphanumeric if every character allows it; a check's Ans tells you which (odd = alphanumeric), so you can set M to 1 or 2 for the drawing calls
 N: how many characters to encode. It must fit the version; the engine doesn't check
 O: how many characters to skip first (for splitting a long message; use 0 normally)
 

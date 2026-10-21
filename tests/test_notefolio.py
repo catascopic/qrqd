@@ -1,4 +1,4 @@
-"""Engine tests for Notefolio notes (E=3 check or encode, E=4 list). Name of the note in Str2,
+"""Engine tests for Notefolio notes (E=2 check or encode, E=3 list). Name of the note in Str2,
 list of names in Str3.
 
   python tests/test_notefolio.py
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from qrtest import (ROOT, ASM, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode,
-                    matrix_from, AUTO, ASCII, ALNUM, BAD)
+                    matrix_from, AUTO, ASCII, ALNUM, BAD, NOTE, LIST)
 
 if not ASM:     # with --asm, qrtest's SRC is the Z80 port's .8xp
     SRC = (ROOT / "src" / "QRSRC.axe.txt").read_text(encoding="utf-8")
@@ -18,7 +18,6 @@ failures = []
 SIG = bytes([0xF3, 0x47, 0xBF, 0xAF])
 TI_FROM = {'\n': 0xD6, '[': 0xC1, '$': 0xF2, 'θ': 0x5B, 'é': 0x96, 'ñ': 0xB5, '⁴': 0x24}
 ALNUM_SET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:'
-NOTE = 3
 
 
 def expect(name, cond, detail=''):
@@ -94,7 +93,7 @@ def synthetic():
              ('E', b'', False)]
     notes = [(n, notefolio(n, tb), arch) for n, tb, arch in texts]
 
-    m = machine(notes, {'E': 4})
+    m = machine(notes, {'E': LIST})
     s3 = m.os[("str", 3)]
     s3b = bytes(m.mem[s3:s3 + m.rd16(s3 - 2)])
     want = b''.join(n.encode().ljust(8, b'\x29') for n, _, _ in texts) + b'\x29' * 48
@@ -202,7 +201,7 @@ def asm_list():
             m.add_appvar(name, content, archived=arch)
         if setup:
             setup(m)
-        m.set_real('E', 4)
+        m.set_real('E', LIST)
         m.run()
         return m
     one = [('ONE', notefolio('ONE', b'x'), False)]

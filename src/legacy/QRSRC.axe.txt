@@ -1,15 +1,13 @@
 .θQR
-.QR code engine for prgmQR (standalone release): versions 1-11,
-.EC level L, mask 0.
+.QR code engine for prgmQR: versions 1-11, EC level L, mask 0.
 .Called from BASIC with Asm(prgmθQR); inputs are OS variables
 .(a missing one reads as 0), the answer comes back in Ans.
 .Comments are stripped by tools/build.py, so they cost nothing
-.on the calculator. Details: docs/design.md, docs/standalone/API.md.
+.on the calculator. Details: docs/design.md, docs/API.md.
 .
 .Inputs:
 .  E  source: 1 text in Str1 (tokens), 2 bytes in ʟBIN,
-.     3 text of the NoteFolio note named in Str2,
-.     4 list the NoteFolio notes into Str3 (Ans = how many)
+.     3 text of the NoteFolio note named in Str2
 .  V  version 1-11, or 0 to only check the text
 .  M  mode: 0 auto, 1 ASCII (byte mode), 2 alphanumeric.
 .     After an auto check, prgmQR sets M from the Ans bit.
@@ -21,7 +19,6 @@
 .  65533 bad character (its position in B)
 .  65532 too long (over 32765 characters)
 .  65535 bad input (bad E/V/M, or the input doesn't exist)
-.  list (E=4): the number of notes
 .B: position of the first problem character (a note in byte
 .  mode only warns: Ans is a normal result with B≠0)
 .
@@ -72,11 +69,6 @@ Full
 .mode goes into F, because M is used for the codeword count.
 sub(GV,"varE")
 r₁→E
-.E=4 is a separate job: list the notes and return
-If E=4
-sub(LS)
-Return
-End
 sub(GV,"varV")
 r₁→V
 sub(GV,"varM")
@@ -669,67 +661,6 @@ If U
 End
 Return
 .
-.LS: list the NoteFolio notes into Str3 for prgmQR's pager:
-.8 characters per name, padded with spaces, then 48 more spaces
-.so a page of 5 names read past the last one stays inside Str3.
-.Names are gathered at L₁+8K first (at most 80, L₁+0..639).
-.VAT walk: entries go down from progPtr (word at 9830h) to pTemp
-.(982Eh); type in the low 5 bits at P, name length at P-6, name
-.from P-7 downward, next entry at P-7-length.
-Lbl LS
-{ᴇ9830}ʳ→P
-0→K
-While P>{ᴇ982E}ʳ
-{P-6}→L
-.An appvar (15h) with a name of 1-8 characters
-If {P} and 31=21 and (L-1<8)
-sub(NC)
-.NC: a name we can open by name; NH: really a note
-If X and (K<80)
-sub(NH)
-If X
-For(I,0,7)
-41→{K*8+L₁+I}
-End
-Copy(L₁+701,K*8+L₁,L)
-K+1→K
-End
-End
-End
-P-7-L→P
-End
-.8 bytes a name plus the 48 padding spaces (41 = space token)
-GetCalc("Str3",K*8+48)→W
-!If W
-65535→Ans
-Return
-End
-If K
-Copy(L₁,W,K*8)
-End
-For(I,0,47)
-41→{K*8+W+I}
-End
-K→Ans
-Return
-.
-.NC: copy the VAT name at P (length L) to L₁+700 as an OP1
-.name (15h, name, 0). X=0 unless every character is 0-9, A-Z
-.or θ (5Bh, the 27th "letter"): those are also their own
-.tokens, so prgmQR can show the name and pass it back in Str2.
-Lbl NC
-21→{L₁+700}
-1→X
-For(I,0,L-1)
-{P-7-I}→C
-C→{I+L₁+701}
-!If C-48<10 or (C-65<27)
-0→X
-End
-End
-0→{L+L₁+701}
-Return
-.
 .NH: is the appvar named at L₁+700 (OP1 style: 15h, name, 0) a
 .NoteFolio note? X=1 if so. GetCalc gives a RAM pointer (Q), or
 .0 when the appvar is archived; then it is opened as the file
@@ -756,7 +687,7 @@ Return
 .NF: open the note named in Str2. X=1 if found, T = text
 .length. The name is copied to L₁+701 as tokens, which for A-Z,
 .0-9 and θ are the same bytes as in a VAT name. A space (29h)
-.ends it, so a name padded with spaces (from Str3) works too.
+.ends it, so a name padded with spaces works too.
 Lbl NF
 0→X
 GetCalc("Str2")→Z

@@ -1,8 +1,9 @@
-"""Menu-flow tests for the BASIC front end (src/QR.basic.txt), run in tibasic.
+"""Menu-flow tests for the BASIC front end (src/QR.basic.txt),
+run in tibasic. Notes: list of names in Str3, the chosen name in Str2.
 
-tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` (and the same for
-prgmθNOTES), and BASIC stand-ins play them. The picker logs E=4 and returns Z, set up by
-the test (1 picked, 0 cancelled, 2 no notes), storing "NOTE7" to Str2 if Z=1. The engine:
+tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` and a BASIC
+stand-in plays the engine:
+  E=4 (list notes)  copies Str9 to Str3 and returns Z, the note count the test set up
   V=0 (check text)  returns W, set up by the test (2*length+alnum, or 65533 for a bad character),
                     and sets B to X if X isn't 0 (the bad character's position, or a
                     note's first non-ASCII one; like the engine, it leaves B alone
@@ -18,6 +19,7 @@ import sys
 
 from test_basic import (ROOT, TIProgram, Environment, ScriptedConsole, TiList, install,
                         get_token, CHAR_TABLE, expect, failures)
+from core import TiString
 
 MESSAGE, NOTEFOLIO, BINARY, SET_VERSION, MODE, EXIT = range(6)   # main menu
 STUB = '''T+1→T
@@ -25,6 +27,8 @@ If T>20
 Stop
 10000N+100V+10M+E→L₆(T
 O→L₅(T
+If E=4
+Str9→Str3
 If not(V
 If X
 X→B
@@ -32,15 +36,11 @@ If V and G=65533
 H→B
 G
 If not(V
-W'''                                                            # T>20: stop a runaway loop
-PICKER_STUB = '''T+1→T
-4→L₆(T
-0→L₅(T
-If Z=1
-"NOTE7→Str2
-Z'''
+W
+If E=4
+Z'''                                                            # T>20: stop a runaway loop
+NOTES = ['NOTE%d' % i for i in range(1, 13)]                    # 3 pages: 5, 5, 2
 BAD = 65533
-PICKED, CANCELLED, NO_NOTES = 1, 0, 2
 
 
 class MenuLog(ScriptedConsole):
@@ -64,22 +64,21 @@ def tokens(text):
     return bytes(p.data)
 
 
-def run(choices, inputs, pick=CANCELLED, check=0, encode=0, encode_at=0, binary=None, keys=(), warn=0):
+def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, binary=None, keys=(), warn=0):
     env = Environment(console=MenuLog(inputs=inputs, choices=choices, keys=keys))
-    front = tokens((ROOT / 'src' / 'QR.basic.txt').read_text(encoding='utf-8').rstrip('\n'))
-    asm = b'\xbb\x6a\x5f\x5b'                                     # Asm(prgmθ
-    assert front.count(asm + b'QR') == 2 and front.count(asm + b'NOTES') == 1
-    install(env, 'QR', front.replace(asm, b'\x5f\x5b'))
+    front = tokens((ROOT / "src" / "QR.basic.txt").read_text(encoding='utf-8').rstrip('\n'))
+    assert front.count(b'\xbb\x6a\x5f\x5bQR') == 3                  # Asm(prgmθQR
+    install(env, 'QR', front.replace(b'\xbb\x6a\x5f\x5bQR', b'\x5f\x5bQR'))
     install(env, 'θQR', tokens(STUB))
-    install(env, 'θNOTES', tokens(PICKER_STUB))
     for v in 'TNVO':
         setattr(env.numerics, v, 0.0)
-    env.numerics.Z = float(pick)
+    env.numerics.Z = float(len(notes))
     env.numerics.W = float(check)
     env.numerics.H = float(encode_at)
     env.numerics.G = float(encode)
     env.numerics.X = float(warn)
     env.numerics.B = 7.0                                        # prgmQR must reset it
+    env.strings[8] = TiString.from_str(''.join(n.ljust(8) for n in notes) + ' ' * 48)
     if binary is not None:
         env.user_lists['BIN'] = TiList([float(b) for b in binary])
     env.lists[5] = TiList([0.0])
@@ -116,6 +115,11 @@ def main(mode='Auto'):
     return ['Message', 'NoteFolio', 'Binary (ʟBIN)', 'Set version', 'Mode:' + mode, 'Exit']
 
 
+def page(n):
+    names = NOTES[5 * n:5 * n + 5]
+    return names + [''] * (5 - len(names)) + ['More', 'Back']
+
+
 CHECKED = (0, 0, 0, 1)                         # the check call for a message in auto mode
 
 if __name__ == '__main__':
@@ -148,23 +152,29 @@ if __name__ == '__main__':
          [CHECKED, (4, 1, 1, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Pos=4'],
          check=2 * 4, encode=BAD, encode_at=4)
 
-    # NoteFolio: prgmθNOTES picks (logged as E=4), then the usual check and encode with E=3
-    PICKER = [(0, 0, 0, 4)]
-    case('pick a note, then check and encode it', [NOTEFOLIO], [],
-         PICKER + [(0, 0, 0, 3), (12, 1, 1, 3)], [], pick=PICKED, check=2 * 12, want_str2='NOTE7')
-    case('cancel goes back to the main menu', [NOTEFOLIO, EXIT], [], PICKER, [main()], pick=CANCELLED)
-    case('no notes: back to the main menu (the picker said so)', [NOTEFOLIO, EXIT], [],
-         PICKER, [main()], pick=NO_NOTES)
-    case('picker missing: the Asm error menu', [NOTEFOLIO, 0, EXIT], [],
-         PICKER, [['Back', 'Exit'], main()], pick=65534)
-    case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO], [],
-         PICKER + [(0, 0, 0, 3), (12, 1, 1, 3)], [], ['Non-ASCII chars', 'Pos=40'],
-         pick=PICKED, check=2 * 12, warn=40)
-    case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO], [],
-         PICKER + [(0, 0, 0, 3), (12, 1, 1, 3)], [], [], ['Non-ASCII'], pick=PICKED, check=2 * 12)
-    case('bad char in a note (forced alnum): position only', [NOTEFOLIO, EXIT], [],
-         PICKER + [(0, 0, 0, 3)], [main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
-         pick=PICKED, check=BAD, warn=40)
+    # NoteFolio picker: menu options are 5 names, More (5), Back (6)
+    LISTED = [(0, 0, 0, 4)]
+    case('Back on the first page goes to the main menu', [NOTEFOLIO, 6, EXIT], [],
+         LISTED, [page(0), main()], notes=NOTES)
+    case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
+         LISTED, [page(0), page(1), page(0), main()], notes=NOTES)
+    case('More does nothing on the last page', [NOTEFOLIO, 5, 5, 5, 6, 6, 6, EXIT], [],
+         LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
+    case('a blank slot on the last page stays there', [NOTEFOLIO, 5, 5, 3, 6, 6, 6, EXIT], [],
+         LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
+    case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
+         LISTED + [(0, 0, 0, 3), (12, 1, 1, 3)], [page(0), page(1), page(2), page(1)],
+         notes=NOTES, check=2 * 12, want_str2='NOTE7')
+    case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
+         LISTED + [(0, 0, 0, 3), (12, 1, 1, 3)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
+         notes=NOTES, check=2 * 12, warn=40)
+    case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO, 0], [],
+         LISTED + [(0, 0, 0, 3), (12, 1, 1, 3)], [page(0)], [], ['NON-ASCII'],
+         notes=NOTES, check=2 * 12)
+    case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
+         LISTED + [(0, 0, 0, 3)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
+         notes=NOTES, check=BAD, warn=40)
+    case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()])
     # too long for one code: always split, into even pieces at the smallest version that fits
     # one (or the set version); Enter/→ next,
     # ← back, Clear stops, Enter on the last ends

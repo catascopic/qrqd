@@ -77,7 +77,7 @@
    Not done: reading a note's length from its header (word at +16 = length+24) instead of
    scanning for the 00h; NoteFolioEdit itself scans, and a third header word that is
    documented as the same length isn't, in a real note (XLIB), so the header wasn't trusted.
-19. A public interface for other programs (`docs/API.md`): every OS variable is read through
+19. A public interface for other programs (`docs/legacy/API.md` now; the release's is `docs/API.md`): every OS variable is read through
    `GV`, so a missing one is 0 instead of a read from address 0 (a caller can leave out O
    and A). Version picking stays in the caller (prgmQR's tables, copied into the doc).
 20. The pure-BASIC set became prgmQRBASIC + prgmθQRBIT (θQRBIT is called once per value from
@@ -142,7 +142,7 @@
    the drawing time. The menu text is "R\edraw": in max mode "Redraw" tokenized as the
    TI-84+CE color token Red (EF42) + "raw". build.py now refuses a BASIC program whose
    tokens need more than a monochrome TI-83+/84+ (`get_min_os()`, MONOCHROME).
-28. The note picker became its own Axe program, prgmθNOTES (`src/NOTESSRC.axe.txt`), for an
+28. The note picker became its own Axe program, prgmθNOTES (`src/legacy/NOTESSRC.axe.txt` now), for an
    encryption add-on that will also open notes (design notes, not in the repo:
    https://claude.ai/code/artifact/d8acc6c5-46a9-4ad8-8d6d-6c8d7911a7e0). It is the `filepicker`
    branch's menu (item 12), returning just the name: Ans 1 picked, 0 cancelled, 2 no notes.
@@ -152,12 +152,12 @@
    `Asm(` needs room for the running program only, so a separate picker adds its stored size
    but not to the peak. Still duplicated in both programs: `NH` and `RB` (is it a note, read
    a byte) and the GDB8 signature.
-29. The QR-only release (no encryption) lives in `src/standalone/` on master, so it can be
+29. The QR-only release (no encryption) lived in `src/standalone/` on master, so it could be
    built and tested without switching branches: the previous prgmQR and engine (commit
    14b59a2, branch `basic_notefolio`; the user likes its BASIC pager) with one change, the
    list of names (E=4) now in Str3 and the chosen name in Str2, matching the main set's Str2.
-   Same program names, built to `build/standalone/`. A fix that applies to both engines has
-   to be made in both copies.
+   Same program names, built to `build/standalone/`. A fix that applied to both engines had
+   to be made in both copies (see item 47 for what became of the two sets).
 30. TI-83+ copy of QRBASIC: the stopwatch (`startTmr`, `checkTmr(`) is the only thing in either
    release that needs a TI-84+ (checked token by token against tivars' table; the hybrid needs
    TI-83+ OS 1.03, QRBASIC's ASCII table OS 1.15 for its punctuation tokens such as # $ % & @ ~). build.py writes
@@ -265,11 +265,23 @@
    `length(` for a note's end (can't read archived notes; the scan is bounded on purpose).
    Still open: `getKeyʳ` in the note picker (auto power-down), `#ExprOff` (size).
 
+47. Repo layout: the QR-only release moved out of `src/standalone/` into `src/` (and `docs/`,
+   `build/`, `tests/`: `test_engine.py`, `test_notefolio.py`, `test_frontend.py`), and the older
+   set (the engine with no note list, the separate prgmθNOTES picker, and its prgmQR) moved to
+   `src/legacy/` (`docs/legacy/API.md`, `build/legacy/`, `test_legacy_notefolio.py`,
+   `test_legacy_frontend.py`, `test_engine.py --legacy`). Reasons: the legacy set was the
+   release's duplicate (every engine fix had to be made twice, item 29), and its one extra,
+   the picker meant for an encryption add-on, isn't needed: CodeChat writes its output to the
+   note CCOUT, which the release's prgmQR lists and draws like any note. The legacy set stays
+   built and tested so it keeps working, but gets no fixes. The tag `before-restructure` is the
+   repo before the move. The text of the sections below the history still refers to the legacy
+   set where it says prgmθNOTES, E=1-3 only or "main set".
+
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
 
-## Engine phases (src/QRSRC.axe.txt)
+## Engine phases (src/legacy/QRSRC.axe.txt; the release's src/QRSRC.axe.txt adds E=4, the note list)
 
 1. `Full` (15 MHz where supported). Read `E`.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
@@ -354,7 +366,17 @@ VAT scan (prgmθNOTES): entries from `progPtr` (word at 9830h) down to `pTemp` (
 low 5 bits at P (15h = appvar), name length at P-6, name bytes from P-7 downward, next entry at
 P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opened by name).
 
-## BASIC front end (src/QR.basic.txt)
+## BASIC front end of the release (src/QR.basic.txt)
+
+The legacy front end below, except the NoteFolio entry (Lbl N): it runs the engine with E=4
+(`65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
+menu), Str3 = their names, 8 characters each. A `Menu(` shows five names at a time
+(`sub(Str3,8P+1,8)` ...) with "More" (P+5) and "Back" (P-5, or the main menu from the first
+page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), then E=3 and the check flow of Lbl C.
+The main menu also has a Mode entry cycling Auto/ASCII/Alnum (D); a Text-mode label rename
+there is the user's call (the pure-BASIC set's menu says Text).
+
+## BASIC front end of the legacy set (src/legacy/QR.basic.txt)
 
 Main menu: Message (Lbl M), NoteFolio (N), Binary (ʟBIN) (B), Set version (S),
 Mode:Auto/ASCII/Alnum (T; cycles D 0→1→2→0, label via `sub("Auto ASCIIAlnum",5D+1,5`), Exit (X).
@@ -382,7 +404,7 @@ version flow from Lbl C; anything else → main menu (65534/65535 → the Asm er
 U requested version, D mode setting, M mode for the engine, L length, B first non-ASCII, K, L₁, Str1, Str2; split: J
 codes, C capacity per code, W per code, P current, O skip.
 
-## Note picker (prgmθNOTES, src/NOTESSRC.axe.txt)
+## Note picker (prgmθNOTES, src/legacy/NOTESSRC.axe.txt)
 
 It starts with `Asm(EF7045)` (bcall _RunIndicOff, 4570h): the run indicator, drawn by the OS
 interrupt into the LCD's top right corner, showed over the title bar. (Axe's `DiagnosticOff`

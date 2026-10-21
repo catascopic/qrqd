@@ -18,36 +18,13 @@ Input "msg=",Str1
 1→E
 Goto C
 Lbl N
-4→E
 65534
-Asm(prgmθQR
+Asm(prgmθNOTES
 Ans→K
 If K≥65534
 Goto Y
-If not(K
-Goto N0
-0→P
-Lbl P
-Menu("NoteFolio Files",sub(Str3,8P+1,8),N1,sub(Str3,8P+9,8),N2,sub(Str3,8P+17,8),N3,sub(Str3,8P+25,8),N4,sub(Str3,8P+33,8),N5,"More",PM,"Back",PB
-Lbl PM
-If P+5<K
-P+5→P
-Goto P
-Lbl PB
-If not(P
+If K≠1
 Goto 0
-P-5→P
-Goto P
-Lbl N1:1:Goto L
-Lbl N2:2:Goto L
-Lbl N3:3:Goto L
-Lbl N4:4:Goto L
-Lbl N5:5
-Lbl L
-P+Ans→I
-If I>K
-Goto P
-sub(Str3,8I-7,8→Str2
 3→E
 Lbl C
 D→M
@@ -73,8 +50,6 @@ Output(2,5,B
 Pause 
 ClrHome
 Goto Q
-Lbl N0
-Menu("No Files","Back",0,"Exit",X
 Lbl B
 2→E
 dim(ʟBIN→L

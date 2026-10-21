@@ -2,9 +2,10 @@
 
   python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
                                            and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
-                                           src/standalone/ (the QR-only release, same program
-                                           names) goes to build/standalone/; *.z80 sources are
-                                           assembled with spasm-ng when it is installed
+                                           src/legacy/ (the older set with the separate note
+                                           picker, same program names) goes to build/legacy/;
+                                           *.z80 sources are assembled with spasm-ng when it
+                                           is installed
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected;
                                            an assembly program as hex)
   python tools/build.py decompile F.8xp -o out.txt
@@ -193,10 +194,12 @@ def build():
     (ROOT / 'build').mkdir(exist_ok=True)
     shutil.rmtree(ROOT / 'build' / 'basic', ignore_errors=True)   # where the pure-BASIC set used to go
     (ROOT / 'build' / '83_safe_QRBASIC.8xp').unlink(missing_ok=True)   # the timer-free copy, now QRBASIC
+    shutil.rmtree(ROOT / 'build' / 'standalone', ignore_errors=True)   # the release used to go here
+    (ROOT / 'build' / 'NOTESSRC.8xp').unlink(missing_ok=True)          # the picker is legacy now
     build_programs(ROOT / 'src', ROOT / 'build')
-    # the QR-only release (old engine with E=4 listing, BASIC note pager): same program names
-    (ROOT / 'build' / 'standalone').mkdir(exist_ok=True)
-    build_programs(ROOT / 'src' / 'standalone', ROOT / 'build' / 'standalone')
+    # the older set (engine without the E=4 listing, separate prgmθNOTES picker): same program names
+    (ROOT / 'build' / 'legacy').mkdir(exist_ok=True)
+    build_programs(ROOT / 'src' / 'legacy', ROOT / 'build' / 'legacy')
     build_lists()
 
 
@@ -214,7 +217,7 @@ def build_programs(srcdir, outdir):
         save_program(name, tokens, outdir / (name + '.8xp'), AXE_COMMENTS.get(name, 'Axe source'))
         print('%-32s %5d token bytes' % (shown + name + '.8xp', len(tokens)))
 
-    # Assembly programs (the standalone engine's Z80 port), when spasm-ng is installed
+    # Assembly programs (the engine's Z80 port), when spasm-ng is installed
     asm_sources = sorted(srcdir.glob('*.z80'))
     spasm = find_spasm() if asm_sources else None
     if asm_sources and not spasm:
@@ -234,7 +237,7 @@ def build_programs(srcdir, outdir):
         assert bytes(TIProtectedAsmProgram.open(str(path)).data) == data
         print('%-32s %5d bytes' % (shown + stem + '.8xp', len(data)))
 
-    # BASIC programs: the hybrid's front end (prgmQR) and the pure-BASIC generator (prgmQRBASIC
+    # BASIC programs: the front end (prgmQR) and the pure-BASIC generator (prgmQRBASIC
     # + prgmθQRBIT). The pure-BASIC ones use "max" mode, which keeps tokens inside strings (the
     # r₁ expressions in the drawing need them); they write \= etc. where a string needs single
     # characters ("<\=>" is <,=,> not ≤,>). File names spell θ as _theta_ (TI Connect's way).

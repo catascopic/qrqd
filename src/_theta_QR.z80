@@ -1,6 +1,6 @@
-; prgmθQR in Z80 assembly: the standalone release's QR engine, ported from QRSRC.axe.txt
+; prgmθQR in Z80 assembly: the QR engine, ported from QRSRC.axe.txt
 ; (docs/asm_port.md). Assembled by spasm-ng (tools/build.py runs it), run by prgmQR with
-; Asm(prgmθQR) exactly like the Axe engine; the interface is docs/standalone/API.md.
+; Asm(prgmθQR) exactly like the Axe engine; the interface is docs/API.md.
 ;
 ; Everything the Axe engine does: for Str1 (E=1), ʟBIN (E=2) and a NoteFolio note (E=3, in
 ; RAM or archived), the check call (V=0: the length, the mode, the first problem character's
@@ -17,7 +17,7 @@
 
 #include "ti83plus.inc"
 
-; Answers in Ans besides lengths and 0 (docs/standalone/API.md). 65534 is prgmQR's own: it
+; Answers in Ans besides lengths and 0 (docs/API.md). 65534 is prgmQR's own: it
 ; stores it before Asm(, so it is left if the engine didn't run.
 AnsBadInput	= 65535		; bad E, V or M, or the input doesn't exist
 AnsBadChar	= 65533		; a character the mode can't encode (its position in B)

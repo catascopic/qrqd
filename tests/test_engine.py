@@ -2,8 +2,8 @@
 
   python tests/test_engine.py           full sweep (all versions; takes a few minutes)
   python tests/test_engine.py --quick   versions 1, 5, 10 only
-  add --standalone to test src/standalone/QRSRC.axe.txt (the QR-only release) instead
-  --asm tests the standalone engine's Z80 port (build/standalone/_theta_QR.8xp) instead; it
+  add --legacy to test src/legacy/QRSRC.axe.txt (the older set's engine) instead
+  --asm tests the engine's Z80 port (build/_theta_QR.8xp) instead; it
         runs only the groups its milestones cover so far (docs/asm_port.md)
 """
 import random

@@ -1,24 +1,25 @@
-"""Engine tests for the standalone (QR-only) release: Notefolio notes (E=3 check or encode,
-E=4 list). Name of the note in Str2, list of names in Str3.
+"""Notefolio tests for the older set (src/legacy/): the engine (E=3 check or encode) and the
+picker prgmθNOTES.
 
-  python tests/test_standalone_notefolio.py
-  --asm runs them against the Z80 port (build/standalone/_theta_QR.8xp, docs/asm_port.md)
+  python tests/test_legacy_notefolio.py
 """
 import random
 import struct
 import sys
 from pathlib import Path
 
-from qrtest import (ROOT, ASM, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode,
-                    matrix_from, AUTO, ASCII, ALNUM, BAD)
+from qrtest import (ROOT, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode, matrix_from,
+                    AUTO, ASCII, ALNUM, BAD)
 
-if not ASM:     # with --asm, qrtest's SRC is the Z80 port's .8xp
-    SRC = (ROOT / "src" / "standalone" / "QRSRC.axe.txt").read_text(encoding="utf-8")
+PICKER = (ROOT / 'src' / 'legacy' / 'NOTESSRC.axe.txt').read_text(encoding='utf-8')
+
 failures = []
 SIG = bytes([0xF3, 0x47, 0xBF, 0xAF])
 TI_FROM = {'\n': 0xD6, '[': 0xC1, '$': 0xF2, 'θ': 0x5B, 'é': 0x96, 'ñ': 0xB5, '⁴': 0x24}
 ALNUM_SET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:'
 NOTE = 3
+DOWN, LEFT, RIGHT, UP, ENTER, CLEAR = 1, 2, 3, 4, 9, 15   # getKey codes
+PICKED, CANCELLED, NO_NOTES = 1, 0, 2
 
 
 def expect(name, cond, detail=''):
@@ -63,10 +64,11 @@ def notefolio(title, tb):
             size.to_bytes(2, 'little') + (1).to_bytes(2, 'little') + tb + b'\0' + b'\0\0')
 
 
-def machine(notes, params, str2=None, extra=(), arch_at=None):
-    m = Machine(SRC)
-    if arch_at is not None and not ASM:  # where archived data starts (axesim's default 4000h
-        m.arch_ptr = arch_at             # holds 16 KB; the Z80 harness has real flash pages)
+def machine(notes, params, str2=None, keys=(), src=SRC, before=None, arch_at=None):
+    m = Machine(src)
+    if arch_at is not None:      # where archived data starts (the default 4000h holds 16 KB)
+        m.arch_ptr = arch_at
+    m.keys = list(keys)
     m.add_vat_other(0x05, 'QR')                             # a program
     m.add_appvar('SAVE', bytes(range(40)))                  # ordinary appvar
     m.add_vat_other(0x01, '\x5dBIN')                        # a named list
@@ -80,6 +82,8 @@ def machine(notes, params, str2=None, extra=(), arch_at=None):
         m.set_real(k, v)
     if str2 is not None:
         m.set_str(2, str2.encode().ljust(8, b'\x29'))        # padded with space tokens
+    if before:
+        before(m)
     m.run()
     return m
 
@@ -94,12 +98,7 @@ def synthetic():
              ('E', b'', False)]
     notes = [(n, notefolio(n, tb), arch) for n, tb, arch in texts]
 
-    m = machine(notes, {'E': 4})
-    s3 = m.os[("str", 3)]
-    s3b = bytes(m.mem[s3:s3 + m.rd16(s3 - 2)])
-    want = b''.join(n.encode().ljust(8, b'\x29') for n, _, _ in texts) + b'\x29' * 48
-    expect('list mode finds only the %d real notes (RAM + archived)' % len(texts),
-           m.ans == len(texts) and s3b == want, (m.ans, s3b[:40]))
+    picker(texts, notes)
 
     # checking (V=0): 2*length + 1 if alphanumeric (M left alone); a note never fails in byte mode,
     # B = position of the first non-ASCII character (left alone if none)
@@ -132,12 +131,6 @@ def synthetic():
         # nothing uses, instead of running into L1 (a real one is in flash pages)
         m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='BIG', arch_at=0)
         expect('check a %d-character note -> %d' % (n + len(extra), want), m.ans == want, m.ans)
-    # no 00h after the text: the appvar's size ends it (size 24 + 5)
-    for arch in (False, True):
-        noz = [('NOZ', notefolio('NOZ', b'ABCDE')[:-3], arch)]
-        m = machine(noz, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='NOZ')
-        expect('check a note with no 00h (%s): length 5 -> 11' % ('archived' if arch else 'RAM'),
-               m.ans == 11, m.ans)
     for bad in ('SAVE', 'NOPE', 'TINY', 'FAKE'):
         m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=bad)
         expect('check %s -> 65535' % bad, m.ans == 65535, m.ans)
@@ -175,9 +168,106 @@ def synthetic():
            len(set(expected_bytes(every))) == 255 - 2)
 
 
+def str2(m):
+    p = m.os.get(('str', 2))
+    return p and bytes(m.mem[p:p + m.rd16(p - 2)]).decode()
+
+
+def shown(frame):
+    """Names in a menu frame, in drawing order, and the highlighted slot. The title is an
+    inverted bar (rows 0-6); names are 7 rows apart in columns of 8 from y=8."""
+    texts, rects = frame
+    names = [t for x, y, t in texts if y > 7]
+    slots = [(x, y) for x, y, t in texts if y > 7]
+    assert all(xy == ((k // 8) * 48 + 2, (k % 8) * 7 + 8) for k, xy in enumerate(slots)), slots
+    assert len(rects) == 2 and rects[0] == (0, 0, 95, 7) and rects[1][2:] == (47, 7), rects
+    x, y = rects[1][:2]
+    assert (y - 8) % 7 == 0, y                                  # 1 row above the ink, 1 below
+    return names, x // 48 * 8 + (y - 8) // 7
+
+
+def picker(texts, notes):
+    """prgmθNOTES: lists the real notes sorted, moves with arrows, Enter writes Str2."""
+    names = sorted(n for n, _, _ in texts)
+    m = machine(notes, {}, str2='OLD', keys=[CLEAR], src=PICKER)
+    expect('picker lists the %d real notes (RAM + archived), sorted, first highlighted' % len(names),
+           shown(m.frames[0]) == (names, 0), m.frames[0])
+    x, y, title = m.frames[0][0][0]
+    expect('title "Choose a NoteFolio file:" at the top', (y, title) == (0, 'Choose a NoteFolio file:'),
+           (x, y, title))
+    try:                                      # the small font's widths, from tibasic (if present)
+        sys.path.append(str(ROOT.parent / 'tibasic'))
+        from fonts import SMALL_FONT
+    except ImportError:
+        print('skip  title centering (no ../tibasic for the small font)')
+    else:
+        glyphs = [SMALL_FONT[ord(c)] for c in title]
+        ink = sum(map(len, glyphs)) - (glyphs[-1][-1] == 0)   # minus the blank column after ':'
+        expect('title centered in x=0-94: %d px wide at x=%d (margins %d, %d)' % (ink, x, x, 95 - x - ink),
+               0 <= (95 - x - ink) - x <= 1)
+    expect('the run indicator is turned off', not m.run_indicator)
+    expect('Clear cancels, Str2 unchanged',
+           m.ans == CANCELLED and str2(m).startswith('OLD') and m.fix == 4, (m.ans, str2(m)))
+
+    def pick(keys):
+        m = machine(notes, {}, keys=keys + [ENTER], src=PICKER)
+        return m.ans, str2(m), shown(m.frames[-2])[1]
+    want = lambda k: (PICKED, names[k], k)
+    expect('Down twice picks the third (%s): Str2 = its name, unpadded' % names[2],
+           pick([DOWN] * 2) == want(2))
+    expect('Up and Left stop at the first', pick([UP, LEFT]) == want(0))
+    expect('Down stops at the last', pick([DOWN] * 9) == want(len(names) - 1))
+    expect('Right does nothing with one column', pick([RIGHT]) == want(0))
+
+    many = ['N%02d' % k for k in range(25)]                   # columns of 8, 8, 8, 1
+    lots = [(n, notefolio(n, b'X'), k % 3 == 0) for k, n in enumerate(reversed(many))]
+
+    def scroll(keys):
+        m = machine(lots, {}, keys=keys + [ENTER], src=PICKER)
+        return shown(m.frames[-2]), str2(m)
+    expect('Down past a column bottom continues at the next top', scroll([DOWN] * 8) == ((many[:16], 8), 'N08'))
+    expect('Right twice scrolls a column', scroll([RIGHT] * 2) == ((many[8:24], 8), 'N16'))
+    m = machine(lots, {}, keys=[RIGHT] * 3 + [ENTER], src=PICKER)   # highlight in the right column
+    expect('column 95 (reserved) is never drawn on',
+           not any(d[y * 12 + 11] & 1 for d in m.displays for y in range(64)))
+    expect('Left back stays scrolled', scroll([RIGHT] * 2 + [LEFT]) == ((many[8:24], 0), 'N08'))
+    expect('Left again scrolls back', scroll([RIGHT] * 2 + [LEFT] * 2) == ((many[:16], 0), 'N00'))
+    expect('Right into the short last column goes to its end',
+           scroll([DOWN] * 7 + [RIGHT] * 3) == ((many[16:], 8), 'N24'))
+
+    full = [('F%02d' % k, notefolio('F%02d' % k, b'X'), False) for k in range(85)]
+    m = machine(full, {}, keys=[RIGHT] * 9 + [DOWN] * 8 + [ENTER], src=PICKER)
+    expect('at most 80 notes are listed', (m.ans, str2(m)) == (PICKED, 'F79'), (m.ans, str2(m)))
+
+    m = machine([], {}, keys=[ENTER], src=PICKER)
+    expect('no notes: a message, then Ans=2',
+           m.ans == NO_NOTES and m.frames[0][0] == [(0, 0, 'NO NOTEFOLIO FILES')] and m.fix == 4,
+           m.frames)
+
+    # leaving: the menu is erased and the home screen redrawn from textShadow, cursor kept
+    text = bytes((0x41 + k % 26) if k % 5 else 0x20 for k in range(128))
+    def home(m):
+        m.mem[0x8508:0x8588] = text
+        m.mem[0x844B], m.mem[0x844C] = 3, 0                       # curRow, curCol
+    for keys, what in (([CLEAR], 'cancel'), ([ENTER], 'pick')):
+        m = machine(notes, {}, keys=keys, src=PICKER, before=home)
+        got = bytes(m.home.get((k % 16, k // 16), 0) for k in range(128))
+        expect('%s: menu erased, home screen redrawn, cursor kept' % what,
+               not any(m.displays[-1]) and got == text and (m.mem[0x844B], m.mem[0x844C]) == (3, 0)
+               and (m.fix, m.scroll) == (4, 6), (got, m.mem[0x844B], m.mem[0x844C]))
+    m = machine([], {}, keys=[ENTER], src=PICKER, before=home)
+    expect('no notes: home screen redrawn too', bytes(m.home.get((k % 16, k // 16), 0) for k in range(128)) == text)
+
+    # what the picker writes is what the engine opens
+    m = machine(notes, {}, keys=[DOWN] * 3 + [ENTER], src=PICKER)
+    name = str2(m)
+    m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
+    expect('the engine opens the picked note (%s)' % name, m.ans < 65532, m.ans)
+
+
 def real_file():
     """TEST.8xv as saved by the user's calculator (archived; text with an F1h wrap marker)."""
-    b = (ROOT / 'tests' / 'data' / 'TEST.8xv').read_bytes()
+    b = (Path(__file__).parent / 'data' / 'TEST.8xv').read_bytes()
     data = b[55:55 + struct.unpack_from('<H', b, 53)[0]]
     name = data[5:13].rstrip(b'\0').decode()
     archived = bool(data[14] & 0x80)
@@ -190,51 +280,8 @@ def real_file():
     expect('TEST.8xv decodes to the pangram', got == b'The quick brown fox jumps over the lazy dog.', got)
 
 
-def asm_list():
-    """The Z80 port only: making Str3 with the OS (axesim's GetCalc just allocates)."""
-    def str3(m):
-        p = m.os[('str', 3)]
-        return bytes(m.mem[p:p + m.rd16(p - 2)])
-
-    def run(notes, setup=None):
-        m = Machine(SRC)
-        for name, content, arch in notes:
-            m.add_appvar(name, content, archived=arch)
-        if setup:
-            setup(m)
-        m.set_real('E', 4)
-        m.run()
-        return m
-    one = [('ONE', notefolio('ONE', b'x'), False)]
-    m = run(one, lambda m: m.set_str(3, b'old text that is longer than the list'))
-    expect('asm: an old Str3 is replaced (deleted, then made again)',
-           m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 53 and m.calls.count('_DelVarArc') == 1,
-           (m.ans, str3(m)[:12]))
-    m = run(one, lambda m: m.set_str(3, b'old', archived=True))
-    expect('asm: an archived Str3 is deleted too', m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 53)
-    m = run([])
-    expect('asm: no notes: Ans 0, Str3 is the 48 spaces', m.ans == 0 and str3(m) == b'\x29' * 48)
-
-    def low(m):
-        m.set_str(3, b'keep')
-        m.free_ram = 8 + 48 + 31          # one byte short of the string + 32
-    m = run(one, low)
-    expect('asm: not enough RAM: 65535, the old Str3 kept', m.ans == 65535 and str3(m) == b'keep'
-           and '_CreateStrng' not in m.calls, (m.ans, str3(m)))
-    m = run(one, lambda m: setattr(m, 'free_ram', 8 + 48 + 32))
-    expect('asm: just enough RAM: listed', m.ans == 1, m.ans)
-    many = [('N%d' % k, notefolio('N%d' % k, b'a'), k % 2 == 0) for k in range(85)]
-    m = run(many)
-    names = str3(m)
-    expect('asm: at most 80 notes, the first 80 in VAT order', m.ans == 80 and len(names) == 80 * 8 + 48
-           and names[:8] == b'N0' + b'\x29' * 6 and names[79 * 8:80 * 8] == b'N79' + b'\x29' * 5,
-           (m.ans, len(names)))
-
-
 if __name__ == '__main__':
     real_file()
     synthetic()
-    if ASM:
-        asm_list()
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

@@ -18,13 +18,15 @@ from PIL import Image                           # noqa: E402
 from qrcode.util import QRData, MODE_ALPHA_NUM, MODE_8BIT_BYTE  # noqa: E402
 from axesim import Machine, AxeError            # noqa: E402,F401
 
-# --asm: the standalone engine's Z80 port (docs/asm_port.md), built by tools/build.py, run in
+# --asm: the engine's Z80 port (docs/asm_port.md), built by tools/build.py, run in
 # tools/z80sim.py; Machine(SRC) then means AsmMachine(path of the .8xp)
+# --legacy (or a test_legacy_*.py script): the older Axe engine in src/legacy/ instead
 ASM = '--asm' in sys.argv
-SRC_DIR = ROOT / 'src' / 'standalone' if '--standalone' in sys.argv or ASM else ROOT / 'src'
+LEGACY = '--legacy' in sys.argv or Path(sys.argv[0]).name.startswith('test_legacy')
+SRC_DIR = ROOT / 'src' / 'legacy' if LEGACY else ROOT / 'src'
 if ASM:
     from z80sim import AsmMachine as Machine, Z80Error  # noqa: E402,F401,F811
-    SRC = ROOT / 'build' / 'standalone' / '_theta_QR.8xp'
+    SRC = ROOT / 'build' / '_theta_QR.8xp'
     if not SRC.exists():
         sys.exit('%s is missing: run tools/build.py (it needs spasm-ng in tools/spasm/)'
                  % SRC.relative_to(ROOT))

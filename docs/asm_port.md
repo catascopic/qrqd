@@ -1,15 +1,15 @@
-# Plan: the standalone engine in Z80 assembly
+# Plan: the engine in Z80 assembly
 
 Status: milestones 1-9 are done in the harness, so the port does everything the Axe engine
 does; 1-7 also on the user's calculator (milestone
 2 from the home screen: a valid call 0, V=12 and V=256 65535; milestone 3 through prgmQR's
 bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric 65533
-with B = 2; milestones 6-7 through the standalone prgmQR, drawing codes that scan; all as in
+with B = 2; milestones 6-7 through prgmQR, drawing codes that scan; all as in
 the harness).
-`src/standalone/_theta_QR.z80` (3386 bytes) does everything the Axe engine does for Str1,
+`src/_theta_QR.z80` (3386 bytes) does everything the Axe engine does for Str1,
 ʟBIN and NoteFolio notes (in RAM or archived): the check call (V=0) and the draw calls
 (V=1-11: data codewords, error correction, the drawing, DispGraph, Ans = 0), and the note
-list (E=4) in Str3. Every test of `test_engine.py` and `test_standalone_notefolio.py` passes
+list (E=4) in Str3. Every test of `test_engine.py` and `test_notefolio.py` passes
 against it (the sweep's 262 symbols, the notes' symbols, the 32 KB archived note, the list).
 `NotYet` is gone. Time in the emulator for a full code drawn (OS
 calls not counted): version 1 0.04 s, 5 0.15 s, 10 0.32 s, 11 0.38 s at 15 MHz (0.94 s at
@@ -19,15 +19,15 @@ it (it was 2.43 s and 1.06 s plus one `_LoadCIndPaged` per byte read, 64,008 and
 "Notes" under the decisions). For comparison, the compiled Axe engine was
 6267 bytes (design.md item 33), about 930 of them for the notes.
 `tools/z80sim.py` runs it; `python tests/test_engine.py --asm` and
-`python tests/test_standalone_notefolio.py --asm` test it, and `tests/test_z80sim.py` checks
+`python tests/test_notefolio.py --asm` test it, and `tests/test_z80sim.py` checks
 that the harness catches each kind of mistake and models the OS routines as described below.
 
 ## Goal
 
-Rewrite the standalone release's engine, prgmθQR (`src/standalone/QRSRC.axe.txt`), as a
-hand-written Z80 assembly program with exactly the same interface (`docs/standalone/API.md`):
+Rewrite the engine, prgmθQR (`src/QRSRC.axe.txt`), as a
+hand-written Z80 assembly program with exactly the same interface (`docs/API.md`):
 the same program name, the same OS variables in (E, V, M, N, O, Str1, Str2, ʟBIN), the same
-answers out (Ans, B, Str3), and the same drawing. The standalone prgmQR stays as it is: it
+answers out (Ans, B, Str3), and the same drawing. prgmQR stays as it is: it
 keeps calling `Asm(prgmθQR)`. It is still the hybrid design (BASIC menus, a compiled engine),
 just with assembly in place of Axe.
 
@@ -89,8 +89,8 @@ The engine tests already describe everything the engine must do. They talk to ax
 | `ans`, `displays`, `os`, `mem`, `rd`, `arch_ptr` | Ans, the graph buffer at each display, the OS variables, memory |
 
 So the plan is a new class with the same methods (say `tools/z80sim.py`, `AsmMachine`) that
-loads `build/standalone/_theta_QR.8xp`, and an `--asm` switch in `test_engine.py --standalone`
-and `test_standalone_notefolio.py` that picks it. Then the whole existing sweep (versions 1-11,
+loads `build/_theta_QR.8xp`, and an `--asm` switch in `test_engine.py`
+and `test_notefolio.py` that picks it. Then the whole existing sweep (versions 1-11,
 the three modes, splitting with O, bad characters and their positions, notes in RAM and archive,
 the swaps, the B warning, the E=4 list) runs against the assembly program, unchanged, and each
 symbol is still compared with the `qrcode` library and decoded by zxing-cpp.
@@ -156,7 +156,7 @@ Built so far (`AsmMachine(program, model='84+', max_ticks=1.5e9)`):
   subroutine with the given registers until it returns, under the same checks (the test of
   `FloatToInt` on 33 values uses it).
 
-`--asm` implies `--standalone`. `test_engine.py --asm` runs every group the Axe engines run
+`--asm` runs the release (not the legacy) tests. `test_engine.py --asm` runs every group the Axe engines run
 (`check_calls()`, `edge_cases()`, `parameter_errors()`, `skipping()`, `sweep()`, each drawn
 symbol compared with the `qrcode` library and decoded by zxing-cpp), plus the port's own:
 `asm_parameters()` (GV's conversion,
@@ -171,7 +171,7 @@ same ground, but this one says which codeword is wrong) and `asm_tables()` (`GFT
 called on its own, since the drawing reuses L₃: the exp and log tables, and the generator,
 as logs, for every version, against the `qrcode` library's tables and its product of
 (x + 2^i)). `run_all.py` runs `test_z80sim.py` always and `test_engine.py --asm` when the
-build has `build/standalone/_theta_QR.8xp`; the notes' suite (`test_standalone_notefolio.py`)
+build has `build/_theta_QR.8xp`; the notes' suite (`test_notefolio.py`)
 runs with `--asm` too (its `arch_at`, which moves axesim's 16 KB archive, is ignored: the
 harness's flash pages hold a 32 KB note), plus `asm_list()`: an old Str3 replaced (in RAM or
 archived), no notes, too little RAM (65535, the old Str3 kept) and just enough, at most 80
@@ -327,7 +327,7 @@ Milestones, each with the tests that cover it:
 ## On the calculator
 
 - Back up the calculator with TI Connect first: an assembly bug can clear RAM.
-- Try milestone 1 alone, then the full engine with the standalone prgmQR.
+- Try milestone 1 alone, then the full engine with prgmQR.
 - The things only hardware will show: archived notes, creating Str3, `Full` on an 83+ vs an
   84+, the display. For archived notes the harness assumes, from the OS documentation as
   remembered rather than checked: `_ChkFindSym` gives an archived variable's FCh byte in DE
@@ -343,13 +343,13 @@ Milestones, each with the tests that cover it:
 
 ## Repo layout (proposal)
 
-- `src/standalone/_theta_QR.z80`: the source (file names spell θ as `_theta_`, as TI Connect needs).
-- `build.py` assembles it (when spasm-ng is found) to `build/standalone/_theta_QR.8xp`.
-- `tools/z80sim.py`: the harness; `--asm` in the standalone engine and note tests.
-- When it works: `docs/standalone/readme.txt` and `API.md` say to send `_theta_QR.8xp`
+- `src/_theta_QR.z80`: the source (file names spell θ as `_theta_`, as TI Connect needs).
+- `build.py` assembles it (when spasm-ng is found) to `build/_theta_QR.8xp`.
+- `tools/z80sim.py`: the harness; `--asm` in the engine and note tests.
+- When it works: `docs/readme.txt` and `API.md` say to send `_theta_QR.8xp`
   instead of compiling QRSRC; a design.md item records the port.
 
 ## Questions for the user
 
-- Once it works, replace the Axe engine in the standalone release, or ship both?
+- Once it works, replace the Axe engine in the release, or ship both?
 - How much commenting do you want, given you'd read it less easily than Axe?

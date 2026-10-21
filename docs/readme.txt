@@ -2,7 +2,7 @@ What if I told you... that I can run a program on my calculator to wirelessly tr
 
 That's exactly what this program does. Simply type in a message or select one of your NoteFolio files. A BASIC program (prgmQR) handles the user interface (I do love a good BASIC Menu), and an assembly program (prgmθQR) does the encoding, error correction, and drawing.
 
-Works on the TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83+ is slightly slower.
+Works on the monochrome TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83+ is slightly slower.
 
 Full credit to Claude for writing the assembly code (yes, Claude can write z80 assembly)! I take solace in having written a pure BASIC QR code generator all by myself, though it's not exactly practical (see below for details).
 
@@ -20,7 +20,7 @@ MAIN MENU
 
 CHARACTERS
 
-ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. Tokens like "sin(" or "π" (or, notably, the calculator's "negative" symbol) have no ASCII equivalent; you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
+ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. Tokens like "sin(" or "π" (or, notably, the calculator's "negative" symbol) have no ASCII equivalent; you get ERR:BAD CHAR with the character and its position. Use RCL on Str1 at the msg= prompt to get your message back and fix it.
 
 Alphanumeric mode only has 0-9, A-Z, space and $%*+-./: (no lowercase). With Mode set to Alnum, anything else gives ERR:NOT ALNUM.
 
@@ -53,10 +53,6 @@ Clear: stop
 
 The most you can encode at once is 32765 characters.
 
-ERRORS
-
-ERR:ENGINE with a code means prgmθQR couldn't do the job. Code=65534: prgmθQR didn't run (for unknown reasons). Code=65535: bad input, for example a NoteFolio file that somehow was deleted after the list was shown.
-
 VARIABLES USED
 
 prgmQR overwrites these: Str1 (your message), Str2 (the file name), L6, and the real variables B, C, D, E, I, J, K, L, M, N, O, P, U, V and W. It deletes Str3, which holds the list of file names while you pick one. It also clears the graph screen and turns off functions, plots, axes and the grid.
@@ -66,9 +62,9 @@ USING THE ENGINE FROM YOUR OWN PROGRAM
 prgmθQR can be called from any BASIC program: set a few variables, run Asm(prgmθQR), and read Ans. A variable that doesn't exist counts as 0.
 
 E: controls what the program does.
-E=1: Encode the text in Str1
-E=2: Encode the NoteFolio file whose name is in Str2
-E=3: Stores the names of all NoteFolio files into Str3, 8 characters each (padded with spaces); return the number of files in Ans.
+E=1: Encodes the text in Str1
+E=2: Encodes the NoteFolio file whose name is in Str2
+E=3: Stores the names of all NoteFolio files into Str3, 8 characters each (padded with spaces); returns the number of files in Ans.
 
 V: the version
 V=0: only check the text (for a string or NoteFolio file)
@@ -87,16 +83,17 @@ Note that if either V or M are 0 when you call prgmθQR, it runs "check mode", a
 
 Ans: What the program did.
 Ans=0: QR code drawn successfully
-0<Ans<65533: The result of "check mode"; nothing drawn. The least significant bit is the mode (1 for alphanumeric, 0 for ASCII); use iPart(Ans/2) to get the length and fPart(Ans/2) to get the mode.
+0≤Ans≤65531: The result of check mode; nothing drawn. The least significant bit is the mode (1 for alphanumeric, 0 for ASCII); use iPart(Ans/2) to get the length and fPart(Ans/2) to get the mode.
+Ans=65532: Input was longer than 32765 characters (only for check mode)
 Ans=65533: A character can't be encoded; B holds its position
-Ans=65532: Input was longer than 32765 characters
+Ans=65534: An unknown error occurred
 Ans=65535: Bad value for E, V, or M, or the input doesn't exist
 
 B (set it to 0 first) gets the position of the first problem character: the one that can't be encoded (65533), or, for a file in ASCII mode, the first non-ASCII character (just a warning; the check still succeeds).
 
 Example: draw "HELLO WORLD" as a version 1 code in ASCII mode.
 "HELLO WORLD→Str1
-1→E:1→M:1→V:0→O:17→N
+1→E:1→M:1→V:0→O:11→N
 FnOff:AxesOff:GridOff:PlotsOff:ClrDraw:DispGraph
 Asm(prgmθQR
 

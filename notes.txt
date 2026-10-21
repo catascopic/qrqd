@@ -1,3 +1,7 @@
+FYI, you (or at least, another instance of you) did in fact write z80 without Axe, and it made the program much smaller. I was very impressed! Also, I'm not sure you're right about the V=0 or M=0 correction. Can you read the code here and tell me?
+
+Extra padding for Str3?
+
 Main menu
 loading screen
 drawing

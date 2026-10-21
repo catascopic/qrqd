@@ -4,7 +4,7 @@ If 4≠dim(ʟQROPT
 {0,0,0,1→QROPT
 0→V
 Lbl 0
-Menu("QR CODE","ASCII",A,"Alphanumeric",C,"Binary (ʟBIN)",B,"Set version",S,"Options",O,"R\edraw",R,"Exit",X
+Menu("QR CODE","Text",A,"Alphanumeric",C,"Binary (ʟBIN)",B,"Set version",S,"Options",O,"R\edraw",R,"Exit",X
 Lbl S
 Input "ver=",V
 int(V→V
@@ -152,7 +152,7 @@ int(M/Z→Q
 M-ZQ→Y
 dim(L₂→R
 DelVar L₃Y+ZR+1→dim(L₃
-Disp "ECC Block  /
+Disp "ECC Block  /","
 Output(3,13,Z
 If not(ʟQROPT(4
 seq(2^N,N,8,1,⁻1→L₅
@@ -161,7 +161,7 @@ For(K,1,Z
 P+1→O
 P+Q+(K>Z-Y→P
 Output(3,11,K
-Output(4,1,"0    
+Output(4,1,"0    %
 DelVar L₁R→dim(L₁
 For(I,O,P
 ʟCW(I→B

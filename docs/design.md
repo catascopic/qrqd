@@ -286,6 +286,19 @@
    bytes, the Z80 port 3386 → 3289 bytes. The tests read the numbers from qrtest (TEXT, NOTE,
    LIST; BINARY only with --legacy).
 
+49. Before the release: the Z80 port becomes the release's engine (the user's decision: half
+   the RAM, and users don't need Axe; still to try on the calculator: archived notes read
+   through port 6, the note list). prgmQR deletes Str3 once a note is picked or the pager is
+   left, and shows the engine's error code (ERR:ENGINE, Code=65534 didn't run, 65535 bad
+   input) instead of the "Error in Asm" menu. Kept after discussion: the Mode toggle (forcing
+   Alnum makes sure a message is valid alphanumeric; the user wants full control), Set
+   version. The capacity table moved from L₁ to L₆ (lists are where a user without programs
+   keeps data, for stat plots, and L₁/L₂ are the STAT editor's and the regressions' defaults;
+   strings stay, as Str1 and Str2 are the engine's inputs) and became one line:
+   `{byte capacities}+(M=2){alphanumeric minus byte}→L₆` (M=2 is 1 or 0). Without any list
+   it would need that expression twice (a set version needs it before the piece size, auto
+   after), so a list stays. prgmQR 1351 → 1338 token bytes.
+
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
@@ -381,7 +394,10 @@ The legacy front end below, except the NoteFolio entry (Lbl N) and no Binary ent
 48): it runs the engine with E=3 (`65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
 menu), Str3 = their names, 8 characters each. A `Menu(` shows five names at a time
 (`sub(Str3,8P+1,8)` ...) with "More" (P+5) and "Back" (P-5, or the main menu from the first
-page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), then E=2 and the check flow of Lbl C.
+page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), Str3 is deleted (also on Back from the
+first page and on No Files; it is up to 688 bytes), then E=2 and the check flow of Lbl C.
+An engine answer of 65534 or 65535 goes to Lbl Y: ERR:ENGINE and Code= the answer (K) on
+the home screen, Pause, main menu (it was a Back/Exit menu titled "Error in Asm").
 The main menu also has a Mode entry cycling Auto/ASCII/Alnum (D); a Text-mode label rename
 there is the user's call (the pure-BASIC set's menu says Text).
 

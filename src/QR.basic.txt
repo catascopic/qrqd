@@ -34,10 +34,11 @@ If P+5<K
 P+5→P
 Goto P
 Lbl PB
-If not(P
-Goto 0
 P-5→P
+If P≥0
 Goto P
+DelVar Str3
+Goto 0
 Lbl N1:1:Goto L
 Lbl N2:2:Goto L
 Lbl N3:3:Goto L
@@ -48,6 +49,7 @@ P+Ans→I
 If I>K
 Goto P
 sub(Str3,8I-7,8→Str2
+DelVar Str3
 2→E
 Lbl C
 D→M
@@ -74,24 +76,19 @@ Pause
 ClrHome
 Goto Q
 Lbl N0
+DelVar Str3
 Menu("No Files","Back",0,"Exit",X
 Lbl Q
-If M=2
-Then
-{25,47,77,114,154,195,224,279,335,395,468
-Else
-{17,32,53,78,106,134,154,192,230,271,321
-End
-Ans→L₁
-L₁(11
+{17,32,53,78,106,134,154,192,230,271,321}+(M=2){8,15,24,36,48,61,70,87,105,124,147→L₆
+L₆(11
 If U
-L₁(U
+L₆(U
 Ans→C
 max(1,⁻int(⁻L/C→J
 ⁻int(⁻L/J→W
 U→V
 If not(V
-min(11,1+sum(L₁<W→V
+min(11,1+sum(L₆<W→V
 1→P
 Lbl H
 (P-1)W→O
@@ -134,7 +131,12 @@ Pause
 ClrHome
 Goto 0
 Lbl Y
-Menu("Error in Asm","Back",0,"Exit",X
+ClrHome
+Disp "ERR:ENGINE","Code=
+Output(2,6,K
+Pause 
+ClrHome
+Goto 0
 Lbl Z
 DispGraph
 If J=1

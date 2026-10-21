@@ -9,7 +9,7 @@ stand-in plays the engine:
                     note's first non-ASCII one; like the engine, it leaves B alone
                     otherwise)
   otherwise         returns G (0 = drawn), with B set to H if G is 65533
-Each call is logged in L₆ as 10000N+100V+10M+E (and O, the count to skip, in L₅), so a
+Each call is logged in L₁ as 10000N+100V+10M+E (and O, the count to skip, in L₂), so a
 test can check what the front end asked for, in order. Key presses (getKey) are scripted too;
 running out raises, so a stuck key loop can't hang the suite.
 
@@ -25,8 +25,8 @@ MESSAGE, NOTEFOLIO, SET_VERSION, MODE, EXIT = range(5)   # main menu
 STUB = '''T+1→T
 If T>20
 Stop
-10000N+100V+10M+E→L₆(T
-O→L₅(T
+10000N+100V+10M+E→L₁(T
+O→L₂(T
 If E=3
 Str9→Str3
 If not(V
@@ -79,20 +79,21 @@ def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, keys=(), warn
     env.numerics.X = float(warn)
     env.numerics.B = 7.0                                        # prgmQR must reset it
     env.strings[8] = TiString.from_str(''.join(n.ljust(8) for n in notes) + ' ' * 48)
-    env.lists[5] = TiList([0.0])
-    env.lists[4] = TiList([0.0])
+    env.lists[0] = TiList([0.0])
+    env.lists[1] = TiList([0.0])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in 'QR')])
-    calls = [int(x) for x in env.lists[5].data][:int(env.numerics.T)]
+    calls = [int(x) for x in env.lists[0].data][:int(env.numerics.T)]
     calls = [(c // 10000, c // 100 % 100, c // 10 % 10, c % 10) for c in calls]
-    env.offsets = [int(x) for x in env.lists[4].data][:int(env.numerics.T)]
+    env.offsets = [int(x) for x in env.lists[1].data][:int(env.numerics.T)]
     return calls, env.console.menus, env
 
 
 def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_screen=(),
-         want_str2=None, want_offsets=None, **kw):
+         want_str2=None, want_offsets=None, want_str3=True, **kw):
     """want_calls: (N, V, M, E) per engine call; want_menus: option lists after the first
     main menu (blank-padded options stripped); want_screen: text that must appear on a
-    home-screen frame captured at a Pause; want_str2: the note picked."""
+    home-screen frame captured at a Pause; want_str2: the note picked; want_str3=False: the
+    list of names must be deleted by the end."""
     try:
         calls, menus, env = run(choices, inputs, **kw)
     except Exception as e:
@@ -104,9 +105,10 @@ def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_sc
     ok = (calls == want_calls and got_menus == want_menus and
           all(t in screens for t in want_screen) and not any(t in screens for t in avoid_screen) and
           (want_str2 is None or str2 == want_str2) and
-          (want_offsets is None or env.offsets == want_offsets))
-    expect(name, ok, 'calls %r, offsets %r, menus %r, Str2 %r, screens:\n%s'
-           % (calls, env.offsets, got_menus, str2, screens))
+          (want_offsets is None or env.offsets == want_offsets) and
+          (want_str3 or not env.strings[2]))
+    expect(name, ok, 'calls %r, offsets %r, menus %r, Str2 %r, Str3 %r, screens:\n%s'
+           % (calls, env.offsets, got_menus, str2, env.strings[2], screens))
 
 
 def main(mode='Auto'):
@@ -148,11 +150,17 @@ if __name__ == '__main__':
     case('bad char reported while encoding', [MESSAGE, EXIT], ['ABCD'],
          [CHECKED, (4, 1, 1, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Pos=4'],
          check=2 * 4, encode=BAD, encode_at=4)
+    # the engine's own errors: the code on the home screen, then the main menu
+    case('engine error on the check: ERR:ENGINE with the code', [MESSAGE, EXIT], ['ABCD'],
+         [CHECKED], [main()], ['ERR:ENGINE', 'Code=65535'], check=65535)
+    case('engine error while drawing', [MESSAGE, EXIT], ['ABCD'],
+         [CHECKED, (4, 1, 2, 1)], [main()], ['ERR:ENGINE', 'Code=65534'], check=2 * 4 + 1,
+         encode=65534)
 
     # NoteFolio picker: menu options are 5 names, More (5), Back (6)
     LISTED = [(0, 0, 0, 3)]
-    case('Back on the first page goes to the main menu', [NOTEFOLIO, 6, EXIT], [],
-         LISTED, [page(0), main()], notes=NOTES)
+    case('Back on the first page goes to the main menu, Str3 deleted', [NOTEFOLIO, 6, EXIT], [],
+         LISTED, [page(0), main()], notes=NOTES, want_str3=False)
     case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(0), main()], notes=NOTES)
     case('More does nothing on the last page', [NOTEFOLIO, 5, 5, 5, 6, 6, 6, EXIT], [],
@@ -161,7 +169,7 @@ if __name__ == '__main__':
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
          LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0), page(1), page(2), page(1)],
-         notes=NOTES, check=2 * 12, want_str2='NOTE7')
+         notes=NOTES, check=2 * 12, want_str2='NOTE7', want_str3=False)
     case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
          LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
          notes=NOTES, check=2 * 12, warn=40)
@@ -171,7 +179,7 @@ if __name__ == '__main__':
     case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
          LISTED + [(0, 0, 0, 2)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
          notes=NOTES, check=BAD, warn=40)
-    case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()])
+    case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()], want_str3=False)
     # too long for one code: always split, into even pieces at the smallest version that fits
     # one (or the set version); Enter/→ next,
     # ← back, Clear stops, Enter on the last ends

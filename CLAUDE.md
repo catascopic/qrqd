@@ -7,8 +7,9 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 
 - The release is the QR-only set (no encryption): `src/QR.basic.txt` (BASIC front end) +
   `src/QRSRC.axe.txt` (Axe engine, compiled on-calc into prgmθQR), built to `build/QR.8xp` and
-  `build/QRSRC.8xp`. `src/_theta_QR.z80` is the Z80 port of the engine (not yet the release's
-  engine). The pure-BASIC set (prgmQRBASIC + prgmθQRBIT) was submitted to ticalc.org; the
+  `build/QRSRC.8xp`. `src/_theta_QR.z80` is the Z80 port of the engine; the user has decided
+  it will be the release's engine (design.md item 49), once archived notes and the note list
+  are tried on the calculator. The pure-BASIC set (prgmQRBASIC + prgmθQRBIT) was submitted to ticalc.org; the
   Axe/Z80 release hasn't been submitted yet.
 - The older set (BASIC front end + engine without the note list + a separate Axe note picker,
   prgmθNOTES) is frozen in `src/legacy/`: built to `build/legacy/` and still tested, but not
@@ -27,7 +28,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | --- | --- |
 | `src/QR.basic.txt` | TI-BASIC front end of the release, in tivars' text format: menus, version pick, splitting, a 5-per-page `Menu(` pager for Notefolio notes (names in Str3, the chosen name in Str2) |
 | `src/QRSRC.axe.txt` | Axe engine of the release, Unicode text with Axe token spellings (`→ ʳ L₁ r₁ · ᴇ Y₁`). E=1 Str1, E=2 a note, E=3 lists the notes |
-| `src/_theta_QR.z80` | the Z80 port of prgmθQR (3289 bytes): everything the Axe engine does, E=1-3 (all of `test_engine.py` and `test_notefolio.py` pass with `--asm`); not yet the release's engine; build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
+| `src/_theta_QR.z80` | the Z80 port of prgmθQR (3289 bytes): everything the Axe engine does, E=1-3 (all of `test_engine.py` and `test_notefolio.py` pass with `--asm`); to be the release's engine; build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
 | `docs/asm_port.md` | plan for rewriting the engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing tests run unchanged, milestones, decisions made while porting. Milestones 1-9 done (1-7 also on the calculator) |
 | `tools/z80sim.py` | `AsmMachine`: runs a compiled `.8xp` in the `z80` package's emulator with axesim's `Machine` interface (a real VAT, flash pages read through port 6, bcalls in Python, junk in registers after each, strict memory/ports/stack/IY checks; `call(label)` runs one routine); `tests/test_z80sim.py` checks the harness |
 | `docs/API.md` | how other programs call prgmθQR (variables, return values, capacity, a tested example) |

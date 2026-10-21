@@ -26,6 +26,10 @@ Clear: stop
 
 The most you can encode at once is 32765 characters.
 
+ERRORS
+
+ERR:ENGINE with a code means prgmθQR couldn't do the job. Code=65534: prgmθQR didn't run (check that it's on the calculator and unarchived). Code=65535: bad input, for example a NoteFolio file that was deleted after the list was shown.
+
 CHARACTERS
 
 ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. The negative sign isn't ASCII (only the minus sign is), so it's a bad character too. Tokens like sin( or π have no ASCII equivalent: you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
@@ -36,7 +40,7 @@ NoteFolio files never fail in ASCII mode. If a file has characters outside ASCII
 
 VARIABLES USED
 
-prgmQR overwrites these: Str1 (your message), Str2 (the file name), Str3 (the list of file names), L1, and the real variables B, C, D, E, I, J, K, L, M, N, O, P, U, V and W. It also clears the graph screen and turns off functions, plots, axes and the grid.
+prgmQR overwrites these: Str1 (your message), Str2 (the file name), L6, and the real variables B, C, D, E, I, J, K, L, M, N, O, P, U, V and W. It deletes Str3, which holds the list of file names while you pick one. It also clears the graph screen and turns off functions, plots, axes and the grid.
 
 USING THE ENGINE FROM YOUR OWN PROGRAM
 

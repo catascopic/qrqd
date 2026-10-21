@@ -1,6 +1,6 @@
 QR CODE GENERATOR
 
-Draws QR codes on the graph screen from a message you type or a NoteFolio file. A BASIC program (prgmQR) handles the menus, and an assembly program (prgmθQR) does the encoding, error correction and drawing.
+Draws QR codes on the graph screen from a message you type or a NoteFolio file. A BASIC program (prgmQR) handles the user interface (I do love a good BASIC Menu), and an assembly program (prgmθQR) does the encoding, error correction and drawing. Full credit to Claude for writing the assembly code (yes, Claude can write z80 assembly)!
 
 Works on the TI-83+ family. The engine switches to 15 MHz (fast mode) where the calculator supports it, so a plain TI-83+ is slightly slower.
 
@@ -12,9 +12,34 @@ MAIN MENU
 
 1. Message: type your text at the msg= prompt.
 2. NoteFolio: pick a NoteFolio file (in RAM or archived) from a list. "More" shows the next page and "Back" the previous one (or the main menu).
-3. Set version: 0 for automatic mode (the default), the smallest version that fits. 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen.
+3. Set version: 0 for automatic mode (the default), the smallest version that fits. 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen. Note that "version" in the context of QR codes just refers to the size, as opposed to some previous standard. They are different "versions" in the sense that they may feature different layouts.
 4. Mode: Auto, ASCII or Alnum. Press it to cycle. Auto uses alphanumeric mode when every character allows it (it fits more text in the same size) and ASCII otherwise. It applies to messages and files.
 5. Exit
+
+CHARACTERS
+
+ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. Tokens like "sin(" or "π" (or, notably, the calculator's "negative" symbol) have no ASCII equivalent: you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
+
+Alphanumeric mode only has 0-9, A-Z, space and $%*+-./: (no lowercase). With Mode set to Alnum, anything else gives ERR:NOT ALNUM.
+
+NoteFolio files never fail in ASCII mode. If a file has characters outside ASCII (Greek letters, accented letters), you get a warning with the first position, then it's encoded anyway; each character keeps its calculator code. Scanning it may show arbitrary characters (λ shows as Â).
+
+QR CODE VERSIONS
+
+This table shows the maximum capacity of each version for both ASCII and alphanumeric characters. "Size" is the height/width of the code in pixels.
+
+| Ver | Size | ASCII | Alnum |
+|   1 |   21 |    17 |    25 |
+|   2 |   25 |    32 |    47 |
+|   3 |   29 |    53 |    77 |
+|   4 |   33 |    78 |   114 |
+|   5 |   37 |   106 |   154 |
+|   6 |   41 |   134 |   195 |
+|   7 |   45 |   154 |   224 |
+|   8 |   49 |   192 |   279 |
+|   9 |   53 |   230 |   335 |
+|  10 |   57 |   271 |   395 |
+|  11 |   61 |   321 |   468 |
 
 LONG MESSAGES
 
@@ -28,15 +53,7 @@ The most you can encode at once is 32765 characters.
 
 ERRORS
 
-ERR:ENGINE with a code means prgmθQR couldn't do the job. Code=65534: prgmθQR didn't run (check that it's on the calculator and unarchived). Code=65535: bad input, for example a NoteFolio file that was deleted after the list was shown.
-
-CHARACTERS
-
-ASCII mode encodes letters (including lowercase), digits and the punctuation on the calculator. The negative sign isn't ASCII (only the minus sign is), so it's a bad character too. Tokens like sin( or π have no ASCII equivalent: you get ERR:BAD CHAR with the character and its position. Press 2nd RCL Str1 at the msg= prompt to get your message back and fix it.
-
-Alphanumeric mode only has 0-9, A-Z, space and $%*+-./: (no lowercase). With Mode set to Alnum, anything else gives ERR:NOT ALNUM.
-
-NoteFolio files never fail in ASCII mode. If a file has characters outside ASCII (Greek letters, accented letters), you get a warning with the first position, then it's encoded anyway; each character keeps its calculator code. Scanning it may show arbitrary characters (λ shows as Â).
+ERR:ENGINE with a code means prgmθQR couldn't do the job. Code=65534: prgmθQR didn't run (for unknown reasons). Code=65535: bad input, for example a NoteFolio file that somehow was deleted after the list was shown.
 
 VARIABLES USED
 
@@ -64,10 +81,12 @@ Ans value:
 65535: bad value for E, V, or M, or the input doesn't exist
 B (set it to 0 first) gets the position of the first problem character: the one that can't be encoded (65533), or, for a file in ASCII mode, the first non-ASCII character (just a warning; the check still succeeds).
 
-Before calling it, run FnOff, AxesOff, GridOff, PlotsOff, ClrDraw and DispGraph, or the OS may redraw the graph screen and erase the code. The code is drawn centered on the graph screen.
-
 Example: draw "HELLO WORLD" as a version 1 code in ASCII mode.
 "HELLO WORLD→Str1
 1→E:1→M:1→V:0→O:17→N
 FnOff:AxesOff:GridOff:PlotsOff:ClrDraw:DispGraph
 Asm(prgmθQR
+
+PURE BASIC VERSION
+
+Just for fun, I have a pure BASIC QR code generator, though it's super slow because there is no bitwise xor in BASIC! For a v11 QR code, it takes 8 minutes to do all the math, and then another 3 to draw the code on the screen. It's completely impractical, but it was an interesting challenge.

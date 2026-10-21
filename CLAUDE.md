@@ -44,6 +44,7 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | `src/QRBASIC.basic.txt`, `src/_theta_QRBIT.basic.txt` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/` with everything else; its readme is the root `readme.txt` |
 | `src/XORTEST.basic.txt` | the user's XOR speed test (TI-84+: startTmr): pick complex, ʟXOR table or logical xor, run it N times on one random pair, show the seconds and the result (design.md item 40). Any `src/*.basic.txt` is built: default tokenizing unless listed in `MAX_MODE`, header comment from `BASIC_COMMENTS` (else "TI-BASIC program") |
 | `tests/test_basic.py` | runs build/QRBASIC.8xp and _theta_QRBIT.8xp in the user's TI-BASIC emulator `../tibasic`; `tests/data/basic/` has ʟGFL/ʟGFX |
+| `tools/txt2note.py` | PC tool: text file (UTF-8) → NoteFolio note `.8xv` (archived unless `--ram`; name from the file name or `-n`; Enter, `[`, `$`, θ, accents, Greek etc. mapped to calculator codes, curly quotes/dashes/tabs to ASCII, other characters refused or `--replace`d); `tests/test_txt2note.py` |
 | `src/LOREMSRC.axe.txt` | test tool (Axe, compiles to prgmLOREM): writes note LOREM, lorem ipsum ×N (OS var N, ≤100): deletes an old LOREM first (`DelVar`), archives the new one; `tests/test_lorem.py` |
 | `src/CHATSRC.axe.txt` | CodeChat prototype (Axe, compiles to prgmCODECHAT): encrypted messages as digits, AES-SIV, keyring appvar CCKEYS, counter CCSTATE, output note CCOUT; design.md "CodeChat". `tools/codechat.py` = PC side (keyrings, reference encrypt/decrypt); `tests/test_codechat.py`. The release's prgmQR lists CCOUT like any note, so it draws CodeChat's output |
 | `src/UNPROSRC.axe.txt` | tool (Axe, compiles to prgmUNPROT): unprotects the program named in Str1 (VAT type 06h → 05h; `prgm` prefix allowed, must be in RAM) so TI Connect will copy an Axe-compiled program off the calculator; `tests/test_unprot.py` |
@@ -60,6 +61,8 @@ python tests/test_notefolio.py           # notes and the E=3 list (PYTHONUTF8=1)
 python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1
 python tests/test_basic.py --quick       # pure-BASIC set; same needs; minutes (see the workflow)
 python tests/test_lorem.py               # the LOREM note maker
+python tools/txt2note.py notes.txt       # -> NOTES.8xv, a NoteFolio note (-n NAME, -o OUT, --ram, --replace ?)
+python tests/test_txt2note.py            # the text → note converter
 python tests/test_unprot.py              # the UNPROT tool
 python tests/test_codechat.py            # CodeChat (AES/CMAC vectors, sends vs the PC reference, receives)
 python tools/codechat.py loopkey         # build/CCKEYS.8xv test keyring (LOOP0/LOOP1, one random key)

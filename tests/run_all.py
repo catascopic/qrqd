@@ -26,6 +26,7 @@ SUITES = [['test_engine.py'] + QUICK,
           ['test_frontend.py'],
           ['test_legacy_frontend.py'],
           ['test_lorem.py'],
+          ['test_txt2note.py'],
           ['test_unprot.py'],
           ['test_codechat.py'],
           ['test_z80sim.py']]

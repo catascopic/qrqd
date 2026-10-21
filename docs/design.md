@@ -299,6 +299,16 @@
    it would need that expression twice (a set version needs it before the piece size, auto
    after), so a list stays. prgmQR 1351 → 1338 token bytes.
 
+50. `tools/txt2note.py`: a PC script that turns a text file into a NoteFolio note, so a
+   long text can be sent and drawn without typing it in NoteFolio. Layout as in "Notefolio
+   format" (the 4 unknown bytes copied from TEST.8xv, the 2 at the end written 00 00 like
+   CCOUT). Characters: printable ASCII as is, except `[` → C1h and `$` → F2h; newline → D6h
+   (Enter); θ, ⁴, accented letters, Greek, sub/superscripts and some math symbols get their
+   ti83plus.inc codes; curly quotes, dashes, tabs and no-break spaces become ASCII; anything
+   else is refused with its line and column unless `--replace` gives a substitute. Archived
+   by default (where NoteFolio keeps notes; tivars' default too). Not tried in NoteFolio
+   itself: it writes plain spaces where NoteFolio would write F1h at its own line wraps.
+
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.

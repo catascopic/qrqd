@@ -1,3 +1,38 @@
+Mostly it reads well, and the variable list and error names match prgmQR. Four statements are wrong about how the engine works, though, all in the section for other programmers. Line numbers refer to `docs/readme.txt`.
+
+## Factual errors
+
+1. **Check mode is V=0 only (line 82).** "If either V or M are 0 … it runs check mode" is wrong. M=0 with a version of 1–11 draws a code, deciding auto mode by itself. The paragraph also says the check "passes control back to the BASIC program to set V and M", but the engine never sets anything. Suggested replacement:
+   > With V=0 the engine only checks the text and draws nothing. It returns the length and the mode it would use, so your program can pick a version and set M before calling again with V=1-11 to draw. A draw call with M=0 decides the mode by itself.
+
+2. **`fPart(Ans/2)` gives 0 or 0.5, not 0 or 1 (line 86).** Use `2fPart(Ans/2)` for the mode bit. The range "0≤Ans≤65531" also overlaps "Ans=0: drawn", since an empty ASCII text checks as 0 too. Saying it applies to check calls (V=0) only fixes that.
+
+3. **65534 isn't "an unknown error" (line 89).** The engine never returns it. It's what's left in Ans when the engine didn't run at all, and only if the caller stored 65534 in Ans right before `Asm(`, as prgmQR does. Suggested:
+   > Ans=65534: the engine didn't run (for example, prgmθQR is missing or archived). Store 65534 in Ans right before Asm( to detect this.
+
+   You might also add that line (`65534` alone on a line) to the example before `Asm(prgmθQR`.
+
+4. **E=3 can also answer 65535 (line 67).** It does so when there isn't enough free RAM to make Str3.
+
+## Smaller accuracy points
+
+- **Line 5:** "a plain TI-83+ is slightly slower": it runs at 6 MHz against 15, so the engine is about 2.5 times slower there. A full version 11 code is still under a second either way. "Slower" alone would be accurate.
+- **Line 92:** the warning in B happens for a file in ASCII mode, and also in Auto when the file falls back to ASCII. "A file encoded in ASCII mode (set, or chosen by Auto)" covers both.
+- **Line 27:** "arbitrary characters" undersells it. They're the Latin-1 characters with the same codes, so they're consistent and can be mapped back. Maybe: "Scanning shows the character with the same code in the scanner's character set (λ shows as Â)."
+- **prgmQR's errors:** ERR:TOO LONG (over 32765 characters) and ERR:ENGINE (shown with the code when the engine fails) aren't mentioned. The 32765 limit appears on line 54, so a few words there would cover TOO LONG.
+
+## Wording
+
+- **Line 7:** "z80" → "Z80".
+- **Line 17:** "as opposed to some previous standard" is a bit unclear. Suggest: "'version' only means the size, not a newer edition of the standard."
+- **Line 23:** "Use RCL on Str1" could be more concrete: "press 2nd RCL, then pick Str1 (VARS, 7: String)".
+- **Line 49:** "it enters a waiting state (in the BASIC program), where you can press one of four keys" → "prgmQR waits for a key:".
+- **Line 78:** add a period at the end.
+- **Lines 64–67:** the capital "Encodes"/"Stores" after the colons differs from the lowercase in the V and M lists.
+
+The capacity table, the variable list (it matches what prgmQR writes, L₆ included), and the menu descriptions all check out.
+
+
 Can you explain M=0?
 
 FYI, you (or at least, another instance of you) did in fact write z80 without Axe, and it made the program much smaller. I was very impressed! Also, I'm not sure you're right about the V=0 or M=0 correction. Can you read the code here and tell me?

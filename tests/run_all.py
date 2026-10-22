@@ -8,7 +8,8 @@ src/_theta_QRBIT.basic.txt change.
   python tests/run_all.py --quick    engine sweeps (and test_basic) on versions 1, 5, 10 only
   python tests/run_all.py --basic    also the pure-BASIC generator
 
-Build first (python tools/build.py): the front-end and BASIC tests run the built files.
+Build first (python tools/build.py): the engine tests run the built Z80 engine
+(build/_theta_QR.8xp, which needs spasm-ng), the front-end and BASIC tests the built files.
 """
 import os
 import subprocess
@@ -19,9 +20,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 QUICK = ['--quick'] if '--quick' in sys.argv else []
-SUITES = [['test_engine.py'] + QUICK,
-          ['test_engine.py', '--legacy'] + QUICK,
+SUITES = [['test_engine.py'] + QUICK,                  # the release's engine, the Z80 one
+          ['test_engine.py', '--axe'] + QUICK,         # frozen: the Axe engine
+          ['test_engine.py', '--legacy'] + QUICK,      # frozen: the older set
           ['test_notefolio.py'],
+          ['test_notefolio.py', '--axe'],
           ['test_legacy_notefolio.py'],
           ['test_frontend.py'],
           ['test_legacy_frontend.py'],
@@ -30,10 +33,6 @@ SUITES = [['test_engine.py'] + QUICK,
           ['test_unprot.py'],
           ['test_codechat.py'],
           ['test_z80sim.py']]
-# the Z80 port of the engine, when build.py could assemble it (spasm-ng installed)
-if (HERE.parent / 'build' / '_theta_QR.8xp').exists():
-    SUITES.append(['test_engine.py', '--asm'] + QUICK)
-    SUITES.append(['test_notefolio.py', '--asm'])
 if '--basic' in sys.argv:
     SUITES.append(['test_basic.py'] + QUICK)
 

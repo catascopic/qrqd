@@ -309,11 +309,36 @@
    by default (where NoteFolio keeps notes; tivars' default too). Not tried in NoteFolio
    itself: it writes plain spaces where NoteFolio would write F1h at its own line wraps.
 
+51. The note list (E=3) is sorted, and padded to whole pages. Both engines sort the gathered
+   names by character code (digits, A-Z, θ; the padding space 29h is below them all, so a
+   shorter name comes first; NOTE10 before NOTE2, no number-aware order): the Axe engine
+   with the legacy picker's selection sort and `LT`, the Z80 port with an insertion sort
+   (`SortNames`, `Cmp8`). With more than 80 notes it is still the first 80 found, sorted.
+   Str3's padding was 48 spaces (6 names) after the names; the pager reads the 5 names of a
+   page that starts with a real name, so at most 4 slots past the last name, 32 bytes. Now
+   blank names fill only the last page: Str3 is 40·⌈K/5⌉ bytes (empty with no notes, which
+   prgmQR never reads). Costs: the Z80 port 3289 → 3391 bytes (the sort about 100; the
+   padding, now blank names added to the list before one copy into Str3, about what the old
+   48 spaces took), the Axe source 4076 → 4266 token bytes. Time: at most about 0.1 s at
+   15 MHz (80 notes found in reverse order). The front-end test's stand-in engine pads the
+   same way, so tibasic checks that the pager stays inside Str3.
+
+52. The Z80 engine is the release's engine (item 49's decision carried out), and the Axe
+   engine is frozen: `src/QRSRC.axe.txt` moved to `src/legacy/QRAXE.axe.txt` (a new name,
+   as the legacy set has its own QRSRC; it still compiles to prgmθQR), built to
+   `build/legacy/QRAXE.8xp` and still tested (`test_engine.py --axe`, `test_notefolio.py
+   --axe`), but not maintained: it is the engine as of item 51, the reference the Z80 one was
+   ported from. The engine tests now run the Z80 engine by default (qrtest's `Engine` is
+   z80sim's AsmMachine; `Machine` stays axesim's for the Axe tools), so the release needs
+   spasm-ng to build and test; `--asm` isn't needed any more (it is ignored). Also in prgmQR: the pager's "More" became
+   "Next", blank on the last page (`sub("Next    ",1+4(P+5≥K),4)`: 4 spaces when no page
+   follows; choosing it still just shows the page again). prgmQR 1338 → 1358 token bytes.
+
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
 
-## Engine phases (src/legacy/QRSRC.axe.txt; the release's src/QRSRC.axe.txt adds E=4, the note list)
+## Engine phases (src/legacy/QRSRC.axe.txt; src/legacy/QRAXE.axe.txt, ported to the release's Z80 engine, adds the note list)
 
 1. `Full` (15 MHz where supported). Read `E`.
 2. Read `V` and `M` (into Axe var F). Reject V>11, E outside 1-3, or M>2 with 65535.
@@ -402,8 +427,9 @@ P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opene
 
 The legacy front end below, except the NoteFolio entry (Lbl N) and no Binary entry (item
 48): it runs the engine with E=3 (`65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
-menu), Str3 = their names, 8 characters each. A `Menu(` shows five names at a time
-(`sub(Str3,8P+1,8)` ...) with "More" (P+5) and "Back" (P-5, or the main menu from the first
+menu), Str3 = their names, 8 characters each, sorted, padded to a multiple of 5 names
+(item 51). A `Menu(` shows five names at a time
+(`sub(Str3,8P+1,8)` ...) with "Next" (P+5; blank on the last page, item 52) and "Back" (P-5, or the main menu from the first
 page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), Str3 is deleted (also on Back from the
 first page and on No Files; it is up to 688 bytes), then E=2 and the check flow of Lbl C.
 An engine answer of 65534 or 65535 goes to Lbl Y: ERR:ENGINE and Code= the answer (K) on

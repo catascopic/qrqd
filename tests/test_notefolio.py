@@ -2,18 +2,17 @@
 list of names in Str3.
 
   python tests/test_notefolio.py
-  --asm runs them against the Z80 port (build/_theta_QR.8xp, docs/asm_port.md)
+  The engine is the release's Z80 one (build/_theta_QR.8xp); --axe runs them against the
+  frozen Axe engine (src/legacy/QRAXE.axe.txt) instead
 """
 import random
 import struct
 import sys
 from pathlib import Path
 
-from qrtest import (ROOT, ASM, CAP_ALNUM, CAP_BYTE, Machine, SRC, check_symbol, decode,
+from qrtest import (ROOT, ASM, CAP_ALNUM, CAP_BYTE, Engine as Machine, SRC, check_symbol, decode,
                     matrix_from, AUTO, ASCII, ALNUM, BAD, NOTE, LIST)
 
-if not ASM:     # with --asm, qrtest's SRC is the Z80 port's .8xp
-    SRC = (ROOT / "src" / "QRSRC.axe.txt").read_text(encoding="utf-8")
 failures = []
 SIG = bytes([0xF3, 0x47, 0xBF, 0xAF])
 TI_FROM = {'\n': 0xD6, '[': 0xC1, '$': 0xF2, 'θ': 0x5B, 'é': 0x96, 'ñ': 0xB5, '⁴': 0x24}
@@ -83,6 +82,36 @@ def machine(notes, params, str2=None, extra=(), arch_at=None):
     return m
 
 
+def str3_want(names):
+    """Str3 after E=3: the names, 8 characters each padded with space tokens (29h), sorted by
+    those bytes, then blank names to the end of the last page of 5 (a multiple of 40 bytes)."""
+    s = b''.join(sorted(n.encode('latin-1').ljust(8, b'\x29') for n in names))
+    return s + b'\x29' * (-len(s) % 40)
+
+
+def str3_of(m):
+    p = m.os[('str', 3)]
+    return bytes(m.mem[p:p + m.rd16(p - 2)])
+
+
+def list_order():
+    """The list is sorted by character code (digits, A-Z, then θ, which the simulators spell
+    [, its byte 5Bh), a shorter name before a longer one that starts the same; padded to whole
+    pages of 5 names."""
+    names = ['B', 'A2', 'A10', 'AB', 'A', '9', 'Z', '[', 'A[', 'ZZZZZZZZ', '0']
+    notes = [(n, notefolio(n, b'x'), k % 3 == 0) for k, n in enumerate(names)]
+    m = machine(notes, {'E': LIST})
+    got = str3_of(m)
+    expect('list sorted: 0 9 A A10 A2 AB Aθ B Z ZZZZZZZZ θ, then 4 blank names (120 bytes)',
+           m.ans == len(names) and got == str3_want(names) and len(got) == 120,
+           (m.ans, got))
+    for k in (0, 1, 4, 5, 6, 10):
+        m = machine(notes[:k], {'E': LIST})
+        got = str3_of(m)
+        expect('list of %d: %d bytes (whole pages of 5 names)' % (k, len(str3_want(names[:k]))),
+               m.ans == k and got == str3_want(names[:k]), (m.ans, len(got)))
+
+
 def synthetic():
     random.seed(7)
     texts = [('NOTES', ti_text('Hello [world] costs $5\nLine two'), False),
@@ -96,8 +125,8 @@ def synthetic():
     m = machine(notes, {'E': LIST})
     s3 = m.os[("str", 3)]
     s3b = bytes(m.mem[s3:s3 + m.rd16(s3 - 2)])
-    want = b''.join(n.encode().ljust(8, b'\x29') for n, _, _ in texts) + b'\x29' * 48
-    expect('list mode finds only the %d real notes (RAM + archived)' % len(texts),
+    want = str3_want([n for n, _, _ in texts])
+    expect('list mode finds only the %d real notes (RAM + archived), sorted' % len(texts),
            m.ans == len(texts) and s3b == want, (m.ans, s3b[:40]))
 
     # checking (V=0): 2*length + 1 if alphanumeric (M left alone); a note never fails in byte mode,
@@ -191,9 +220,7 @@ def real_file():
 
 def asm_list():
     """The Z80 port only: making Str3 with the OS (axesim's GetCalc just allocates)."""
-    def str3(m):
-        p = m.os[('str', 3)]
-        return bytes(m.mem[p:p + m.rd16(p - 2)])
+    str3 = str3_of
 
     def run(notes, setup=None):
         m = Machine(SRC)
@@ -207,32 +234,32 @@ def asm_list():
     one = [('ONE', notefolio('ONE', b'x'), False)]
     m = run(one, lambda m: m.set_str(3, b'old text that is longer than the list'))
     expect('asm: an old Str3 is replaced (deleted, then made again)',
-           m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 53 and m.calls.count('_DelVarArc') == 1,
+           m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 37 and m.calls.count('_DelVarArc') == 1,
            (m.ans, str3(m)[:12]))
     m = run(one, lambda m: m.set_str(3, b'old', archived=True))
-    expect('asm: an archived Str3 is deleted too', m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 53)
+    expect('asm: an archived Str3 is deleted too', m.ans == 1 and str3(m) == b'ONE' + b'\x29' * 37)
     m = run([])
-    expect('asm: no notes: Ans 0, Str3 is the 48 spaces', m.ans == 0 and str3(m) == b'\x29' * 48)
+    expect('asm: no notes: Ans 0, Str3 empty', m.ans == 0 and str3(m) == b'', (m.ans, str3(m)))
 
     def low(m):
         m.set_str(3, b'keep')
-        m.free_ram = 8 + 48 + 31          # one byte short of the string + 32
+        m.free_ram = 40 + 31              # one byte short of the string (one page) + 32
     m = run(one, low)
     expect('asm: not enough RAM: 65535, the old Str3 kept', m.ans == 65535 and str3(m) == b'keep'
            and '_CreateStrng' not in m.calls, (m.ans, str3(m)))
-    m = run(one, lambda m: setattr(m, 'free_ram', 8 + 48 + 32))
+    m = run(one, lambda m: setattr(m, 'free_ram', 40 + 32))
     expect('asm: just enough RAM: listed', m.ans == 1, m.ans)
     many = [('N%d' % k, notefolio('N%d' % k, b'a'), k % 2 == 0) for k in range(85)]
     m = run(many)
     names = str3(m)
-    expect('asm: at most 80 notes, the first 80 in VAT order', m.ans == 80 and len(names) == 80 * 8 + 48
-           and names[:8] == b'N0' + b'\x29' * 6 and names[79 * 8:80 * 8] == b'N79' + b'\x29' * 5,
-           (m.ans, len(names)))
+    expect('asm: at most 80 notes: the first 80 found, sorted',
+           m.ans == 80 and names == str3_want(['N%d' % k for k in range(80)]), (m.ans, len(names)))
 
 
 if __name__ == '__main__':
     real_file()
     synthetic()
+    list_order()
     if ASM:
         asm_list()
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))

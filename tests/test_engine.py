@@ -2,14 +2,15 @@
 
   python tests/test_engine.py           full sweep (all versions; takes a few minutes)
   python tests/test_engine.py --quick   versions 1, 5, 10 only
-  add --legacy to test src/legacy/QRSRC.axe.txt (the older set's engine) instead
-  --asm tests the engine's Z80 port (build/_theta_QR.8xp) instead; it
-        runs only the groups its milestones cover so far (docs/asm_port.md)
+  The engine is the release's, the Z80 one (build/_theta_QR.8xp; run tools/build.py first),
+  plus the groups that test its routines on their own (asm_*).
+  --axe tests the frozen Axe engine (src/legacy/QRAXE.axe.txt) instead
+  --legacy tests the older set's engine (src/legacy/QRSRC.axe.txt) instead
 """
 import random
 import sys
 
-from qrtest import (Machine, SRC, ASM, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
+from qrtest import (Engine as Machine, SRC, ASM, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
                     ascii_tokens, check_symbol, data_codewords, decode, ec_codewords,
                     matrix_from, run_engine, TEXT, BINARY, AUTO, ASCII, ALNUM, BAD, bad)
 from axesim import L1, L3                                      # noqa: E402

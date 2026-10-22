@@ -1,4 +1,8 @@
 .θQR
+.Frozen (docs/design.md item 52): the release's engine is now
+.the Z80 one, src/_theta_QR.z80. This is the Axe engine as it
+.was then (the sorted note list of item 51 included), kept as
+.the Z80 port's reference; it isn't maintained.
 .QR code engine for prgmQR: versions 1-11,
 .EC level L, mask 0.
 .Called from BASIC with Asm(prgmθQR); inputs are OS variables
@@ -643,9 +647,14 @@ End
 Return
 .
 .LS: list the NoteFolio notes into Str3 for prgmQR's pager:
-.8 characters per name, padded with spaces, then 48 more spaces
-.so a page of 5 names read past the last one stays inside Str3.
-.Names are gathered at L₁+8K first (at most 80, L₁+0..639).
+.8 characters per name, padded with spaces, in alphabetical
+.order (character codes: digits, then A-Z, then θ; a shorter
+.name before a longer one that starts the same), then blank
+.names up to the end of the last page of 5. The pager reads the
+.5 names of a page that starts with a real name, so it never
+.reads past Str3, and Str3 is no longer than that needs.
+.Names are gathered at L₁+8K first (at most 80, L₁+0..639, the
+.first 80 found).
 .VAT walk: entries go down from progPtr (word at 9830h) to pTemp
 .(982Eh); type in the low 5 bits at P, name length at P-6, name
 .from P-7 downward, next entry at P-7-length.
@@ -671,8 +680,30 @@ End
 End
 P-7-L→P
 End
-.8 bytes a name plus the 48 padding spaces (41 = space token)
-GetCalc("Str3",K*8+48)→W
+.Sort the names (selection sort, as the legacy note picker
+.does): for each slot I, find the smallest name S from there on
+.and swap it into I, through the 8-byte buffer at L₁+690
+If K>1
+For(I,0,K-2)
+I→S
+For(J,I+1,K-1)
+sub(LT,J,S)
+If X
+J→S
+End
+End
+If S≠I
+Copy(I*8+L₁,L₁+690,8)
+Copy(S*8+L₁,I*8+L₁,8)
+Copy(L₁+690,S*8+L₁,8)
+End
+End
+End
+.Str3: 8 bytes a name, then blank names (41 = space token) to
+.the end of the last page: Z = K rounded up to a multiple of 5,
+.read left to right as ((K+4)/5)·5
+K+4/5*5→Z
+GetCalc("Str3",Z*8)→W
 !If W
 65535→Ans
 Return
@@ -680,10 +711,26 @@ End
 If K
 Copy(L₁,W,K*8)
 End
-For(I,0,47)
-41→{K*8+W+I}
+.(Z-K)·8 blank bytes, read left to right
+If Z>K
+Fill(K*8+W,Z-K*8,41)
 End
 K→Ans
+Return
+.
+.LT: X=1 if name r₁ sorts before name r₂ (byte by byte; the
+.padding space, 29h, is below every character a name can have,
+.so a shorter name comes first)
+Lbl LT
+0→X
+For(U,0,7)
+{r₁*8+L₁+U}→A
+{r₂*8+L₁+U}→C
+If A≠C
+A<C→X
+Return
+End
+End
 Return
 .
 .NC: copy the VAT name at P (length L) to L₁+700 as an OP1

@@ -13,7 +13,7 @@ Run prgmQR. It will call prgmθQR, so keep it unarchived. You will also need fre
 MAIN MENU
 
 1. Message: type your text at the msg= prompt.
-2. NoteFolio: pick a NoteFolio file (in RAM or archived) from a list. "More" shows the next page and "Back" the previous one (or the main menu).
+2. NoteFolio: pick a NoteFolio file (in RAM or archived) from an alphabetical list. "Next" shows the next page (it's blank on the last one) and "Back" the previous one (or the main menu).
 3. Set version: 0 for automatic mode (the default), the smallest version that fits. 1-11 always uses that size: 1 is 21x21 pixels, 11 is 61x61, the largest that fits on the screen. Note that "version" in the context of QR codes just refers to the size, as opposed to some previous standard. They are different "versions" in the sense that they may feature different layouts.
 4. Mode: Auto, ASCII or Alnum. Press it to cycle. Auto uses alphanumeric mode when every character allows it (it fits more text in the same size) and ASCII otherwise. It applies to messages and files.
 5. Exit

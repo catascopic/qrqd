@@ -18,20 +18,25 @@ from PIL import Image                           # noqa: E402
 from qrcode.util import QRData, MODE_ALPHA_NUM, MODE_8BIT_BYTE  # noqa: E402
 from axesim import Machine, AxeError            # noqa: E402,F401
 
-# --asm: the engine's Z80 port (docs/asm_port.md), built by tools/build.py, run in
-# tools/z80sim.py; Machine(SRC) then means AsmMachine(path of the .8xp)
-# --legacy (or a test_legacy_*.py script): the older Axe engine in src/legacy/ instead
-ASM = '--asm' in sys.argv
+# The engine under test is SRC, run by Engine(SRC):
+# - by default the release's engine, the Z80 one (src/_theta_QR.z80, docs/asm_port.md): the
+#   build's .8xp in tools/z80sim.py (Engine = AsmMachine). --asm, its old flag, still works.
+# - --axe: the frozen Axe engine (src/legacy/QRAXE.axe.txt) in tools/axesim.py
+# - --legacy (or a test_legacy_*.py script): the older set's Axe engine (src/legacy/QRSRC)
+# Machine stays axesim's, for the Axe tools' tests (LOREM, UNPROT, CodeChat).
+AXE = '--axe' in sys.argv
 LEGACY = '--legacy' in sys.argv or Path(sys.argv[0]).name.startswith('test_legacy')
-SRC_DIR = ROOT / 'src' / 'legacy' if LEGACY else ROOT / 'src'
+ASM = not (AXE or LEGACY)
 if ASM:
-    from z80sim import AsmMachine as Machine, Z80Error  # noqa: E402,F401,F811
+    from z80sim import AsmMachine as Engine, Z80Error  # noqa: E402,F401
     SRC = ROOT / 'build' / '_theta_QR.8xp'
     if not SRC.exists():
         sys.exit('%s is missing: run tools/build.py (it needs spasm-ng in tools/spasm/)'
                  % SRC.relative_to(ROOT))
 else:
-    SRC = (SRC_DIR / 'QRSRC.axe.txt').read_text(encoding='utf-8')
+    Engine = Machine
+    SRC = (ROOT / 'src' / 'legacy' / ('QRSRC.axe.txt' if LEGACY else 'QRAXE.axe.txt')
+           ).read_text(encoding='utf-8')
 TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 
@@ -93,7 +98,7 @@ def run_engine(source, version, count, mode, str1=None, lst=None, skip=0):
         c = run_engine(source, 0, 0, mode, str1=str1)
         if c.ans < 65532:
             mode = 1 + (c.ans & 1)
-    m = Machine(SRC)
+    m = Engine(SRC)
     for name, v in zip('EVNMOB', (source, version, count, mode, skip, 0)):
         m.set_real(name, v)
     if source == BINARY:

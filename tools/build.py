@@ -1,11 +1,12 @@
 """Build and decompile TI-83+ programs for this project.
 
-  python tools/build.py                    build build/QR.8xp and build/QRSRC.8xp from src/,
-                                           and the pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
-                                           src/legacy/ (the older set with the separate note
-                                           picker, same program names) goes to build/legacy/;
-                                           *.z80 sources are assembled with spasm-ng when it
-                                           is installed
+  python tools/build.py                    build build/QR.8xp and build/_theta_QR.8xp (the
+                                           engine, assembled with spasm-ng: skipped with a
+                                           note if it isn't installed) from src/, and the
+                                           pure-BASIC set (QRBASIC, θQRBIT, ʟGFL/ʟGFX/ʟXOR);
+                                           src/legacy/ (frozen: the older set with the separate
+                                           note picker, and QRAXE, the Axe engine; same program
+                                           names) goes to build/legacy/
   python tools/build.py decompile F.8xp    print a program as text (Axe or BASIC, auto-detected;
                                            an assembly program as hex)
   python tools/build.py decompile F.8xp -o out.txt
@@ -182,6 +183,7 @@ def assemble(path, spasm):
 
 
 AXE_COMMENTS = {'QRSRC': 'QR engine source - compile with Axe',
+                'QRAXE': 'QR engine in Axe (frozen) - compile with Axe',
                 'LOREMSRC': 'Lorem ipsum note maker - compile with Axe',
                 'SPEEDSRC': '15 MHz speed test - compile with Axe',
                 'NOTESSRC': 'Notefolio picker source - compile with Axe',
@@ -196,8 +198,10 @@ def build():
     (ROOT / 'build' / '83_safe_QRBASIC.8xp').unlink(missing_ok=True)   # the timer-free copy, now QRBASIC
     shutil.rmtree(ROOT / 'build' / 'standalone', ignore_errors=True)   # the release used to go here
     (ROOT / 'build' / 'NOTESSRC.8xp').unlink(missing_ok=True)          # the picker is legacy now
+    (ROOT / 'build' / 'QRSRC.8xp').unlink(missing_ok=True)   # the Axe engine is legacy/QRAXE now
     build_programs(ROOT / 'src', ROOT / 'build')
-    # the older set (engine without the E=4 listing, separate prgmθNOTES picker): same program names
+    # frozen: the older set (engine without the note list, separate prgmθNOTES picker) and the
+    # release's Axe engine (QRAXE); same program names as the release
     (ROOT / 'build' / 'legacy').mkdir(exist_ok=True)
     build_programs(ROOT / 'src' / 'legacy', ROOT / 'build' / 'legacy')
     build_lists()

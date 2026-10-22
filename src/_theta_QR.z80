@@ -55,7 +55,7 @@ NoteAddr	= Vars+36	; word: [Q] its data (after the size word): the address in RA
 NoteSize	= Vars+38	; word: [U] its size (the appvar's size word)
 ListPtr		= Vars+40	; word: [P] the VAT entry LS is looking at
 ListCount	= Vars+42	; byte: [K] notes listed so far (at most 80)
-ListSize	= Vars+43	; word: Str3's size, 8 per note + 48
+ListSize	= Vars+43	; word: Str3's size: 8 per name, real and blank (whole pages of 5)
 
 ; The drawing's variables don't fit in those 54 bytes, so they go in L₁'s free space at +600
 ; (design.md's memory map leaves L₁+503..699 unused)
@@ -84,7 +84,9 @@ VersionIdx	= DrawVars+23	; byte: its bit number, 0-17
 ; Work areas (design.md's memory map)
 DataOut		= saveSScreen		; the data codewords, block after block (at most 324; a bad
 					; N can run on to L₁+470, short of Align)
-NameList	= saveSScreen		; E=3: the notes' names, 8 bytes each (at most 80)
+NameList	= saveSScreen		; E=3: the notes' names, 8 bytes each (at most 80, then up
+					; to 4 blank ones: L₁+0..671)
+SortBuf		= saveSScreen+690	; E=3: the name SortNames is placing
 Map		= appBackUpScreen	; while drawing: the function modules, one pixel each, at
 					; module coordinates (no offset), like a 96×64 screen
 Align		= saveSScreen+500	; alignment pattern coordinates (2 or 3)
@@ -1026,9 +1028,12 @@ ZigDone:
 
 ; ---------- E=3: list the notes into Str3 ----------
 
-; For prgmQR's pager: 8 characters a name, padded with space tokens, then 48 more spaces, so a
-; page of 5 names read past the last one stays inside Str3. Ans = the number of notes. The
-; names are gathered at L₁+8K first (NameList: at most 80, L₁+0..639). VAT walk: entries go
+; For prgmQR's pager: 8 characters a name, padded with space tokens, in alphabetical order
+; (character codes: digits, then A-Z, then θ; a shorter name before a longer one that starts
+; the same), then blank names up to the end of the last page of 5. The pager reads the 5
+; names of a page that starts with a real name, so it never reads past Str3, and Str3 is no
+; longer than that needs (0-32 bytes of padding). Ans = the number of notes. The names are
+; gathered at L₁+8K first (NameList: at most 80, L₁+0..639, the first 80 found). VAT walk: entries go
 ; down from (progPtr) to (pTemp); the type in the low 5 bits at P, the data pointer at P-3
 ; (low) and P-4 (high), the flash page at P-5 (0 = RAM), the name length at P-6, the name
 ; from P-7 downward, the next entry at P-7-length.
@@ -1062,21 +1067,8 @@ LS_Entry:
 ; Its slot at L₁+8K: 8 space tokens, and NC copies the name over them. It counts only if
 ; the name can be opened by name (NC) and the appvar is really a note (NH); otherwise the
 ; next one gets the slot.
-	ld l,a
-	ld h,0
-	add hl,hl
-	add hl,hl
-	add hl,hl
-	ld de,NameList
-	add hl,de
-	push hl
-	ld (hl),tSpace
-	ld d,h
-	ld e,l
-	inc de
-	ld bc,7
-	ldir
-	pop de
+	call BlankSlot
+	ex de,hl
 	call NC
 	jr c,LS_Next
 ; NH wants what _ChkFindSym would give, which is just what the VAT entry holds: DE = the
@@ -1105,17 +1097,31 @@ LS_Next:
 	ld (ListPtr),hl
 	jr LS_Entry
 
-; Str3 = the names and 48 spaces. Enough free RAM is checked first (the string, its size
-; word and VAT entry, and a margin), so a full calculator gets 65535 instead of the OS's
-; ERR:MEMORY. An old Str3 is deleted first (making one that exists would make a second).
+; Str3 = the names, sorted, and the blank names that end the last page. Enough free RAM is
+; checked first (the string, its size word and VAT entry, and a margin), so a full calculator
+; gets 65535 instead of the OS's ERR:MEMORY. An old Str3 is deleted first (making one that
+; exists would make a second).
 LS_Done:
+	call SortNames
 	ld a,(ListCount)
-	ld l,a
-	ld h,0
-	add hl,hl
-	add hl,hl
-	add hl,hl
-	ld de,48
+	ld c,a				; C = names so far, real and blank
+LS_Round:
+	ld a,c				; C mod 5: subtract 5s until it goes below 0, then add one back
+LS_Mod5:
+	sub 5
+	jr nc,LS_Mod5
+	add a,5
+	jr z,LS_Rounded			; the last page is full
+	ld a,c
+	push bc
+	call BlankSlot
+	pop bc
+	inc c
+	jr LS_Round
+LS_Rounded:
+	ld a,c
+	call NameAddr			; Str3's size = 8C: NameList + 8C, less NameList
+	ld de,-NameList
 	add hl,de
 	ld (ListSize),hl
 	bcall(_MemChk)			; HL = free RAM
@@ -1138,25 +1144,13 @@ LS_NoOld:
 	bcall(_CreateStrng)		; DE = its size word
 	inc de
 	inc de
-	ld a,(ListCount)
-	or a
-	jr z,LS_Pad
-	ld l,a
-	ld h,0
-	add hl,hl
-	add hl,hl
-	add hl,hl
-	ld b,h
-	ld c,l
+	ld bc,(ListSize)		; all the names, real and blank (none: nothing to copy)
+	ld a,b
+	or c
+	jr z,LS_Copied
 	ld hl,NameList
 	ldir
-LS_Pad:
-	ld b,48
-	ld a,tSpace
-LS_PadByte:
-	ld (de),a
-	inc de
-	djnz LS_PadByte
+LS_Copied:
 	ld a,(ListCount)
 	ld l,a
 	ld h,0
@@ -1947,6 +1941,97 @@ NC_OK:
 	djnz NC_Char
 	ld a,c
 	rra				; carry = a character failed
+	ret
+
+; SortNames: sort the ListCount names at NameList (8 bytes each) by insertion sort: each name
+; in turn goes to SortBuf, the names before it that sort after it move up a slot, and it
+; goes into the gap. At most 80 names, so at most 3160 comparisons. Changes AF, BC, DE, HL.
+SortNames:
+	ld a,(ListCount)
+	cp 2
+	ret c
+	ld c,1				; C = the name to place
+SN_Take:
+	ld a,c
+	call NameAddr
+	ld de,SortBuf
+	push bc
+	ld bc,8
+	ldir
+	pop bc
+	ld b,c				; B = its slot so far
+SN_Compare:
+	ld a,b
+	dec a
+	call NameAddr			; HL = the name in the slot before
+	push hl
+	push bc
+	ld de,SortBuf
+	call Cmp8			; carry: SortBuf sorts before it
+	pop bc
+	pop hl
+	jr nc,SN_Place
+	push bc				; move it up a slot
+	ld d,h
+	ld e,l
+	ex de,hl
+	ld bc,8
+	add hl,bc
+	ex de,hl			; DE = HL + 8
+	ldir
+	pop bc
+	djnz SN_Compare			; B = 0: it goes first
+SN_Place:
+	ld a,b
+	call NameAddr
+	ex de,hl
+	ld hl,SortBuf
+	push bc
+	ld bc,8
+	ldir
+	pop bc
+	inc c
+	ld a,(ListCount)
+	cp c
+	jr nz,SN_Take
+	ret
+
+; Cmp8: compare the 8-byte names at DE and HL, character by character: carry if DE's sorts
+; before HL's (Z if they are the same). The padding space (29h) is below every character a
+; name can have, so a shorter name sorts first. Changes AF, B, DE, HL.
+Cmp8:
+	ld b,8
+C8_Char:
+	ld a,(de)
+	cp (hl)
+	ret nz
+	inc de
+	inc hl
+	djnz C8_Char
+	ret
+
+; BlankSlot: name A's slot (HL = NameList + 8A) filled with 8 space tokens. Changes BC, DE.
+BlankSlot:
+	call NameAddr
+	push hl
+	ld (hl),tSpace
+	ld d,h
+	ld e,l
+	inc de
+	ld bc,7
+	ldir
+	pop hl
+	ret
+
+; NameAddr: HL = NameList + 8A, name A's slot. Changes DE, HL.
+NameAddr:
+	ld l,a
+	ld h,0
+	add hl,hl
+	add hl,hl
+	add hl,hl
+	ld de,NameList
+	add hl,de
 	ret
 
 ; NameToOP1: copy a 9-byte OS name from HL to OP1. Changes BC, DE, HL.

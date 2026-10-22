@@ -6,7 +6,7 @@ does; 1-7 also on the user's calculator (milestone
 bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric 65533
 with B = 2; milestones 6-7 through prgmQR, drawing codes that scan; all as in
 the harness).
-`src/_theta_QR.z80` (3289 bytes) does everything the Axe engine does for Str1
+`src/_theta_QR.z80` (3391 bytes since the sorted note list, design.md item 51) does everything the Axe engine does for Str1
 and NoteFolio notes (in RAM or archived): the check call (V=0) and the draw calls
 (V=1-11: data codewords, error correction, the drawing, DispGraph, Ans = 0), and the note
 list (E=3) in Str3. ʟBIN was dropped after the milestones (design.md item 48: E is now 1
@@ -20,13 +20,14 @@ drawing 300 of its characters at version 11 0.44 s (1.09 s), with no OS calls wh
 it (it was 2.43 s and 1.06 s plus one `_LoadCIndPaged` per byte read, 64,008 and 32,308; see
 "Notes" under the decisions). For comparison, the compiled Axe engine was
 6267 bytes (design.md item 33), about 930 of them for the notes.
-`tools/z80sim.py` runs it; `python tests/test_engine.py --asm` and
-`python tests/test_notefolio.py --asm` test it, and `tests/test_z80sim.py` checks
+It is the release's engine now (design.md item 52), and the Axe engine is frozen as
+`src/legacy/QRAXE.axe.txt`. `tools/z80sim.py` runs it; `python tests/test_engine.py` and
+`python tests/test_notefolio.py` test it (by default; `--axe` tests the Axe engine instead), and `tests/test_z80sim.py` checks
 that the harness catches each kind of mistake and models the OS routines as described below.
 
 ## Goal
 
-Rewrite the engine, prgmθQR (`src/QRSRC.axe.txt`), as a
+Rewrite the engine, prgmθQR (`src/QRSRC.axe.txt`, now `src/legacy/QRAXE.axe.txt`), as a
 hand-written Z80 assembly program with exactly the same interface (`docs/API.md`):
 the same program name, the same OS variables in (E, V, M, N, O, Str1, Str2, ʟBIN), the same
 answers out (Ans, B, Str3), and the same drawing. prgmQR stays as it is: it
@@ -158,7 +159,7 @@ Built so far (`AsmMachine(program, model='84+', max_ticks=1.5e9)`):
   subroutine with the given registers until it returns, under the same checks (the test of
   `FloatToInt` on 33 values uses it).
 
-`--asm` runs the release (not the legacy) tests. `test_engine.py --asm` runs every group the Axe engines run
+The engine tests run the Z80 engine by default (it took `--asm` until design.md item 52). `test_engine.py` runs every group the Axe engines run
 (`check_calls()`, `edge_cases()`, `parameter_errors()`, `skipping()`, `sweep()`, each drawn
 symbol compared with the `qrcode` library and decoded by zxing-cpp), plus the port's own:
 `asm_parameters()` (GV's conversion,
@@ -172,9 +173,9 @@ version, plus skipping and clamping; 271 sets in the full run; the drawn symbols
 same ground, but this one says which codeword is wrong) and `asm_tables()` (`GFTables`
 called on its own, since the drawing reuses L₃: the exp and log tables, and the generator,
 as logs, for every version, against the `qrcode` library's tables and its product of
-(x + 2^i)). `run_all.py` runs `test_z80sim.py` always and `test_engine.py --asm` when the
-build has `build/_theta_QR.8xp`; the notes' suite (`test_notefolio.py`)
-runs with `--asm` too (its `arch_at`, which moves axesim's 16 KB archive, is ignored: the
+(x + 2^i)). `run_all.py` runs them, `test_z80sim.py`, and the same suites with `--axe`
+for the frozen Axe engine; the notes' suite (`test_notefolio.py`)
+runs on the Z80 engine too (its `arch_at`, which moves axesim's 16 KB archive, is ignored: the
 harness's flash pages hold a 32 KB note), plus `asm_list()`: an old Str3 replaced (in RAM or
 archived), no notes, too little RAM (65535, the old Str3 kept) and just enough, at most 80
 notes of 85.
@@ -282,7 +283,10 @@ leave interrupts on, balance the stack, don't touch RAM the OS owns.
   `_MemChk` first and answers 65535 unless the string plus 32 bytes is free (11 for its size
   word and VAT entry, the rest a margin), so the OS never stops with ERR:MEMORY. That check
   comes before deleting the old Str3, so a refusal keeps it (and a large old Str3 doesn't
-  count as free space).
+  count as free space). Since design.md item 51 the names are sorted (`SortNames`: an
+  insertion sort through `SortBuf` at L₁+690, with `Cmp8` comparing 8 bytes), and blank
+  names (`BlankSlot`, which the VAT walk uses too) are added to the list up to a multiple
+  of 5 before the one copy into Str3; L₁+0..671 holds 80 names and 4 blanks.
 - **65532** (over 32765 characters) is tested with a 32 KB archived note, as for the Axe
   engine; a Str1 or ʟBIN that long doesn't fit in the harness's RAM.
 
@@ -347,7 +351,8 @@ Milestones, each with the tests that cover it:
 
 - `src/_theta_QR.z80`: the source (file names spell θ as `_theta_`, as TI Connect needs).
 - `build.py` assembles it (when spasm-ng is found) to `build/_theta_QR.8xp`.
-- `tools/z80sim.py`: the harness; `--asm` in the engine and note tests.
+- `tools/z80sim.py`: the harness; the engine and note tests run the Z80 engine by default
+  (`--asm` until design.md item 52).
 - When it works: `docs/readme.txt` and `API.md` say to send `_theta_QR.8xp`
   instead of compiling QRSRC; a design.md item records the port.
 

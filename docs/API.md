@@ -111,6 +111,12 @@ once, set M from its Ans, and every piece then uses that mode. prgmQR's Lbl Q an
 
 - **E=3** lists the notes in RAM and archive:
   - Ans = the number of notes;
-  - Str3 = their names, 8 characters each (padded with spaces), followed by 48 spaces.
+  - Str3 = their names, 8 characters each (padded with spaces), in alphabetical order
+    (by character code: digits, then A-Z, then θ; a shorter name before a longer one that
+    starts the same), then blank names (8 spaces each) up to the end of the last group of 5.
+    So Str3's length is a multiple of 40, and reading 5 names from any name that exists
+    stays inside it, as prgmQR's pager does; with no notes it is empty;
+  - at most 80 notes are listed (the first 80 found);
+  - Ans = 65535 if there isn't enough free RAM to make Str3.
 - **E=2** reads the note whose name is in Str2, padded with spaces or not. Use it like E=1.
   Positions count calculator characters. A check also sets B, as described above.

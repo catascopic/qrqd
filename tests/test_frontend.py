@@ -78,7 +78,8 @@ def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, keys=(), warn
     env.numerics.G = float(encode)
     env.numerics.X = float(warn)
     env.numerics.B = 7.0                                        # prgmQR must reset it
-    env.strings[8] = TiString.from_str(''.join(n.ljust(8) for n in notes) + ' ' * 48)
+    names = ''.join(n.ljust(8) for n in notes)   # the engine's Str3: pages of 5, no more
+    env.strings[8] = TiString.from_str(names + ' ' * (-len(names) % 40))
     env.lists[0] = TiList([0.0])
     env.lists[1] = TiList([0.0])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in 'QR')])
@@ -115,9 +116,11 @@ def main(mode='Auto'):
     return ['Message', 'NoteFolio', 'Set version', 'Mode:' + mode, 'Exit']
 
 
-def page(n):
-    names = NOTES[5 * n:5 * n + 5]
-    return names + [''] * (5 - len(names)) + ['More', 'Back']
+def page(n, notes=NOTES):
+    """Menu n of the pager: 5 names (blank past the last), Next (blank on the last page), Back."""
+    names = notes[5 * n:5 * n + 5]
+    nxt = 'Next' if 5 * n + 5 < len(notes) else ''
+    return names + [''] * (5 - len(names)) + [nxt, 'Back']
 
 
 CHECKED = (0, 0, 0, 1)                         # the check call for a message in auto mode
@@ -157,14 +160,19 @@ if __name__ == '__main__':
          [CHECKED, (4, 1, 2, 1)], [main()], ['ERR:ENGINE', 'Code=65534'], check=2 * 4 + 1,
          encode=65534)
 
-    # NoteFolio picker: menu options are 5 names, More (5), Back (6)
+    # NoteFolio picker: menu options are 5 names, Next (5), Back (6)
     LISTED = [(0, 0, 0, 3)]
     case('Back on the first page goes to the main menu, Str3 deleted', [NOTEFOLIO, 6, EXIT], [],
          LISTED, [page(0), main()], notes=NOTES, want_str3=False)
     case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(0), main()], notes=NOTES)
-    case('More does nothing on the last page', [NOTEFOLIO, 5, 5, 5, 6, 6, 6, EXIT], [],
+    case('Next is blank on the last page and does nothing', [NOTEFOLIO, 5, 5, 5, 6, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
+    case('one full page: Next is blank', [NOTEFOLIO, 5, 6, EXIT], [],
+         LISTED, [page(0, NOTES[:5]), page(0, NOTES[:5]), main()], notes=NOTES[:5])
+    case('two full pages: Next on the first only', [NOTEFOLIO, 5, 5, 6, 6, EXIT], [],
+         LISTED, [page(0, NOTES[:10]), page(1, NOTES[:10]), page(1, NOTES[:10]), page(0, NOTES[:10]),
+                  main()], notes=NOTES[:10])
     case('a blank slot on the last page stays there', [NOTEFOLIO, 5, 5, 3, 6, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],

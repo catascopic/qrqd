@@ -2,7 +2,7 @@
 
 AsmMachine has the interface of axesim's Machine (set_real, get_real, set_str, set_list, run,
 ans, displays, os, mem, full), so the engine tests can run the Z80 port of prgmθQR
-(docs/asm_port.md) with `--asm` instead of the Axe source. The CPU is the `z80` package
+(docs/asm_port.md), the release's engine, rather than an Axe source. The CPU is the `z80` package
 (Ivan Kosarev's emulator, C++ core). What the calculator's OS does is modelled here:
 
 - Memory: the TI-83+ RAM map. The program's code is copied to userMem (9D95h), as Asm( does.

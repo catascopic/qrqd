@@ -205,10 +205,10 @@ def receiving():
 
 def qr_engine_reads_ccout():
     """The note CodeChat writes is one prgmθQR opens: all digits, so alphanumeric."""
-    from qrtest import SRC as ENGINE, NOTE
+    from qrtest import SRC as ENGINE, Engine, NOTE
     m = machine([SEND, K1, ENTER, QUIT], ['FOR THE QR CODE'])
     note, _ = m.appvar('CCOUT')
-    q = Machine(ENGINE)
+    q = Engine(ENGINE)
     q.add_appvar('CCOUT', note)
     q.build_vat()
     for k, v in {'E': NOTE, 'V': 0, 'M': 0, 'B': 0}.items():

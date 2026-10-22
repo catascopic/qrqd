@@ -1,3 +1,8 @@
+Remove auto M mode, use M=0 for ascii and M=1 for alphanumeric
+
+Why do we even set N?
+
+
 Mostly it reads well, and the variable list and error names match prgmQR. Four statements are wrong about how the engine works, though, all in the section for other programmers. Line numbers refer to `docs/readme.txt`.
 
 ## Factual errors
@@ -31,6 +36,11 @@ Mostly it reads well, and the variable list and error names match prgmQR. Four s
 - **Lines 64–67:** the capital "Encodes"/"Stores" after the colons differs from the lowercase in the V and M lists.
 
 The capacity table, the variable list (it matches what prgmQR writes, L₆ included), and the menu descriptions all check out.
+
+
+
+What if I told you... that I can run a program on my calculator to wirelessly transmit data to my phone? Would you believe me?
+A BASIC program handles the user interface, while an assembly program does the encoding, error correction, and drawing. Accepts direct user input or NoteFolio files. Breaks long inputs into multiple codes. Nearly instantaneous.
 
 
 Can you explain M=0?

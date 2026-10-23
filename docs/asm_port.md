@@ -6,12 +6,14 @@ does; 1-7 also on the user's calculator (milestone
 bad-character screen and from the home screen: HELLO 11, A=B 6, forced alphanumeric 65533
 with B = 2; milestones 6-7 through prgmQR, drawing codes that scan; all as in
 the harness).
-`src/_theta_QR.z80` (3391 bytes since the sorted note list, design.md item 51) does everything the Axe engine does for Str1
-and NoteFolio notes (in RAM or archived): the check call (V=0) and the draw calls
-(V=1-11: data codewords, error correction, the drawing, DispGraph, Ans = 0), and the note
-list (E=3) in Str3. ʟBIN was dropped after the milestones (design.md item 48: E is now 1
-Str1, 2 a note, 3 the list), so the plan below still has ʟBIN, E=3 for a note and E=4 for
-the list, and 3386 bytes. Every test of `test_engine.py` and `test_notefolio.py` passes
+`src/_theta_QR.z80` (3409 bytes since the new interface, design.md item 53) does everything the Axe engine does for Str1
+and NoteFolio notes (in RAM or archived): the check call and the draw calls
+(data codewords, error correction, the drawing, DispGraph, Ans = 0), and the note
+list in Str3. Its interface has changed twice since the milestones: ʟBIN was dropped
+(design.md item 48: E 1 Str1, 2 a note, 3 the list), then the command became its own
+variable (item 53: C 0 check, 1 draw, 2 list; I 0 Str1, 1 a note; V 1-11 only for a draw;
+a draw needs M 1 or 2). The plan below still speaks the interface it was written for: ʟBIN,
+E=3 for a note and E=4 for the list, V=0 for a check, and 3386 bytes. Every test of `test_engine.py` and `test_notefolio.py` passes
 against it (the sweep's 262 symbols, the notes' symbols, the 32 KB archived note, the list).
 `NotYet` is gone. Time in the emulator for a full code drawn (OS
 calls not counted): version 1 0.04 s, 5 0.15 s, 10 0.32 s, 11 0.38 s at 15 MHz (0.94 s at

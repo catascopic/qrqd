@@ -11,7 +11,7 @@ import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path
 
-from qrtest import ROOT, decode, matrix_from, AUTO, NOTE
+from qrtest import ROOT, decode, matrix_from, AUTO, CHECK, DRAW, NOTE
 from test_notefolio import machine, expect, failures
 
 sys.path.insert(0, str(ROOT / 'tools'))
@@ -92,11 +92,11 @@ def engine_reads_it():
     included); an accented letter only warns, in byte mode."""
     text = 'Shopping [week 3]:\n- milk $2\n- eggs\nTOTAL: 5'
     _, name, _, data = convert(text, '-n', 'SHOP', '--ram')
-    m = machine([(name, data, False)], {'E': NOTE, 'V': 3, 'N': len(text), 'M': AUTO}, str2=name)
+    m = machine([(name, data, False)], {'C': DRAW, 'I': NOTE, 'V': 3, 'N': len(text), 'M': AUTO}, str2=name)
     got = m.ans == 0 and decode(matrix_from(m, 3))[0].bytes
     expect('engine draws the note; it scans as the text file', got == text.encode(), got)
     _, name, _, data = convert('café', '-n', 'CAFE')
-    m = machine([(name, data, True)], {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
+    m = machine([(name, data, True)], {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2=name)
     expect('archived, an é: the check warns at 4 (byte mode)', (m.ans, m.get_real('B')) == (2 * 4, 4),
            (m.ans, m.get_real('B')))
 

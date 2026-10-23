@@ -21,10 +21,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 QUICK = ['--quick'] if '--quick' in sys.argv else []
 SUITES = [['test_engine.py'] + QUICK,                  # the release's engine, the Z80 one
-          ['test_engine.py', '--axe'] + QUICK,         # frozen: the Axe engine
-          ['test_engine.py', '--legacy'] + QUICK,      # frozen: the older set
+          ['test_legacy_engine.py'] + QUICK,           # frozen: the older set's engine
           ['test_notefolio.py'],
-          ['test_notefolio.py', '--axe'],
           ['test_legacy_notefolio.py'],
           ['test_frontend.py'],
           ['test_legacy_frontend.py'],

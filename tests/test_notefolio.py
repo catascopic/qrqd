@@ -10,8 +10,8 @@ import struct
 import sys
 from pathlib import Path
 
-from qrtest import (ROOT, ASM, CAP_ALNUM, CAP_BYTE, Engine as Machine, SRC, check_symbol, decode,
-                    matrix_from, AUTO, ASCII, ALNUM, BAD, NOTE, LIST)
+from qrtest import (ROOT, CAP_ALNUM, CAP_BYTE, Engine as Machine, SRC, check_symbol, decode,
+                    matrix_from, AUTO, ASCII, ALNUM, BAD, CHECK, DRAW, LIST, NOTE)
 
 failures = []
 SIG = bytes([0xF3, 0x47, 0xBF, 0xAF])
@@ -62,9 +62,17 @@ def notefolio(title, tb):
 
 
 def machine(notes, params, str2=None, extra=(), arch_at=None):
+    """One engine call with these notes (and some appvars that aren't notes) in the VAT. A draw
+    in auto mode is a check first, then the draw with M from the check's Ans (odd: 2
+    alphanumeric, else 1 ASCII), as prgmQR does; a check that fails is returned instead.
+    (arch_at moved axesim's archive for the Axe engine; the Z80 harness has real flash
+    pages, so it is ignored.)"""
+    if params.get('C') == DRAW and params.get('M', AUTO) == AUTO:
+        c = machine(notes, {**params, 'C': CHECK}, str2, extra, arch_at)
+        if c.ans >= 65532:
+            return c
+        params = {**params, 'M': 1 + (c.ans & 1)}
     m = Machine(SRC)
-    if arch_at is not None and not ASM:  # where archived data starts (axesim's default 4000h
-        m.arch_ptr = arch_at             # holds 16 KB; the Z80 harness has real flash pages)
     m.add_vat_other(0x05, 'QR')                             # a program
     m.add_appvar('SAVE', bytes(range(40)))                  # ordinary appvar
     m.add_vat_other(0x01, '\x5dBIN')                        # a named list
@@ -100,13 +108,13 @@ def list_order():
     pages of 5 names."""
     names = ['B', 'A2', 'A10', 'AB', 'A', '9', 'Z', '[', 'A[', 'ZZZZZZZZ', '0']
     notes = [(n, notefolio(n, b'x'), k % 3 == 0) for k, n in enumerate(names)]
-    m = machine(notes, {'E': LIST})
+    m = machine(notes, {'C': LIST})
     got = str3_of(m)
     expect('list sorted: 0 9 A A10 A2 AB Aθ B Z ZZZZZZZZ θ, then 4 blank names (120 bytes)',
            m.ans == len(names) and got == str3_want(names) and len(got) == 120,
            (m.ans, got))
     for k in (0, 1, 4, 5, 6, 10):
-        m = machine(notes[:k], {'E': LIST})
+        m = machine(notes[:k], {'C': LIST})
         got = str3_of(m)
         expect('list of %d: %d bytes (whole pages of 5 names)' % (k, len(str3_want(names[:k]))),
                m.ans == k and got == str3_want(names[:k]), (m.ans, len(got)))
@@ -122,7 +130,7 @@ def synthetic():
              ('E', b'', False)]
     notes = [(n, notefolio(n, tb), arch) for n, tb, arch in texts]
 
-    m = machine(notes, {'E': LIST})
+    m = machine(notes, {'C': LIST})
     s3 = m.os[("str", 3)]
     s3b = bytes(m.mem[s3:s3 + m.rd16(s3 - 2)])
     want = str3_want([n for n, _, _ in texts])
@@ -134,23 +142,23 @@ def synthetic():
     for name, tb, _ in texts:
         alnum = all(chr(c) in ALNUM_SET for c in expected_bytes(tb))
         want = (2 * len(tb) + alnum, first_non_ascii(tb), AUTO)
-        m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
+        m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2=name)
         got = (m.ans, m.get_real('B'), m.get_real('M'))
         expect('check %s = %d, B=%d, M=%d' % ((name,) + want), got == want, got)
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='NOTES')
+    m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': ALNUM}, str2='NOTES')
     expect('check NOTES forced alnum: lowercase at 2', (m.ans, m.get_real('B')) == (BAD, 2), m.ans)
     up = [('UP', notefolio('UP', ti_text('AB θ')), False)]
-    m = machine(up, {'E': NOTE, 'V': 0, 'M': ALNUM}, str2='UP')
+    m = machine(up, {'C': CHECK, 'I': NOTE, 'M': ALNUM}, str2='UP')
     expect('check θ forced alnum fails at 4 (in B)', (m.ans, m.get_real('B')) == (BAD, 4),
            (m.ans, m.get_real('B')))
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='SHOUT')
+    m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': ASCII}, str2='SHOUT')
     expect('check SHOUT forced ASCII', m.ans == 2 * len(texts[3][1]), m.ans)
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': ASCII}, str2='ODD')
+    m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': ASCII}, str2='ODD')
     expect('check ODD forced ASCII warns at 10', (m.ans, m.get_real('B')) == (2 * len(texts[4][1]), 10),
            (m.ans, m.get_real('B')))
     every = bytes(range(1, 256))
     allnote = [('ALL', notefolio('ALL', every), False)]
-    m = machine(allnote, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='ALL')
+    m = machine(allnote, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2='ALL')
     expect('check every byte 1-255: length 255, first non-ASCII at 1',
            (m.ans, m.get_real('B')) == (2 * 255, 1), (m.ans, m.get_real('B')))
     # 2*32765+1 stays below the error codes; longer is "too long", even with a bad char past it
@@ -158,19 +166,19 @@ def synthetic():
         big = [('BIG', notefolio('BIG', b'A' * n + extra), True)]
         # a 32 KB archived note: start the archive at 0 so it ends just past 8000h, in RAM
         # nothing uses, instead of running into L1 (a real one is in flash pages)
-        m = machine(big, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='BIG', arch_at=0)
+        m = machine(big, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2='BIG', arch_at=0)
         expect('check a %d-character note -> %d' % (n + len(extra), want), m.ans == want, m.ans)
     # no 00h after the text: the appvar's size ends it (size 24 + 5)
     for arch in (False, True):
         noz = [('NOZ', notefolio('NOZ', b'ABCDE')[:-3], arch)]
-        m = machine(noz, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='NOZ')
+        m = machine(noz, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2='NOZ')
         expect('check a note with no 00h (%s): length 5 -> 11' % ('archived' if arch else 'RAM'),
                m.ans == 11, m.ans)
     for bad in ('SAVE', 'NOPE', 'TINY', 'FAKE'):
-        m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=bad)
+        m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2=bad)
         expect('check %s -> 65535' % bad, m.ans == 65535, m.ans)
 
-    # drawing in auto mode with no check first: the engine decides the mode itself
+    # drawing in auto mode, as prgmQR does it: a check decides the mode, then the draws
     count = 0
     for name, tb, _ in texts:
         payload = expected_bytes(tb)
@@ -178,7 +186,7 @@ def synthetic():
         for v in range(1, 12):
             cap = (CAP_ALNUM if alnum else CAP_BYTE)[v - 1]
             for N in sorted({min(len(tb), cap), min(len(tb), cap) // 2}):
-                m = machine(notes, {'E': NOTE, 'V': v, 'N': N, 'M': AUTO}, str2=name)
+                m = machine(notes, {'C': DRAW, 'I': NOTE, 'V': v, 'N': N, 'M': AUTO}, str2=name)
                 try:
                     check_symbol(m, v, payload[:N], 'alphanumeric' if alnum else 'byte')
                 except AssertionError as e:
@@ -187,15 +195,15 @@ def synthetic():
                 count += 1
     expect('%d note symbols match the reference and decode' % count, True)
 
-    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 4, 'M': AUTO, 'O': 4}, str2='TODO2')
+    m = machine(notes, {'C': DRAW, 'I': NOTE, 'V': 2, 'N': 4, 'M': AUTO, 'O': 4}, str2='TODO2')
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('skip 4 characters of a note', got == b'milk', got)
 
     # non-ASCII characters keep their calculator codes, with the swaps (θ -> C1h, ⁴ -> F2h)
-    m = machine(notes, {'E': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str2='ODD')
+    m = machine(notes, {'C': DRAW, 'I': NOTE, 'V': 2, 'N': 16, 'M': AUTO}, str2='ODD')
     got = decode(matrix_from(m, 2))[0].bytes if m.ans == 0 else m.ans
     expect('ODD encodes θ ⁴ é ñ as C1 F2 96 B5', got == b'Line two \xc1 \xf2 \x96 \xb5', got)
-    m = machine(allnote, {'E': NOTE, 'V': 11, 'N': 255, 'M': AUTO}, str2='ALL')
+    m = machine(allnote, {'C': DRAW, 'I': NOTE, 'V': 11, 'N': 255, 'M': AUTO}, str2='ALL')
     got = decode(matrix_from(m, 11))[0].bytes if m.ans == 0 else m.ans
     expect('every byte 1-255 encodes as mapped', got == expected_bytes(every), got)
     # one-to-one except the deliberate merges: wrap space with space, hyphen with -
@@ -211,9 +219,9 @@ def real_file():
     archived = bool(data[14] & 0x80)
     content = data[19:19 + struct.unpack_from('<H', data, 17)[0]]
     notes = [(name, content, archived)]
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2=name)
+    m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2=name)
     expect('TEST.8xv checks as 44 ASCII characters', m.ans == 2 * 44, m.ans)
-    m = machine(notes, {'E': NOTE, 'V': 3, 'N': 44, 'M': AUTO}, str2=name)
+    m = machine(notes, {'C': DRAW, 'I': NOTE, 'V': 3, 'N': 44, 'M': AUTO}, str2=name)
     got = decode(matrix_from(m, 3))[0].bytes if m.ans == 0 else m.ans
     expect('TEST.8xv decodes to the pangram', got == b'The quick brown fox jumps over the lazy dog.', got)
 
@@ -228,7 +236,7 @@ def asm_list():
             m.add_appvar(name, content, archived=arch)
         if setup:
             setup(m)
-        m.set_real('E', LIST)
+        m.set_real('C', LIST)
         m.run()
         return m
     one = [('ONE', notefolio('ONE', b'x'), False)]
@@ -260,7 +268,6 @@ if __name__ == '__main__':
     real_file()
     synthetic()
     list_order()
-    if ASM:
-        asm_list()
+    asm_list()
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

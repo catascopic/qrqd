@@ -8,7 +8,8 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 - The release is the QR-only set (no encryption): `src/QR.basic.txt` (BASIC front end) +
   `src/_theta_QR.z80` (the engine, prgmθQR, in Z80 assembly), built to `build/QR.8xp` and
   `build/_theta_QR.8xp` (needs spasm-ng). The Axe engine it was ported from is frozen as
-  `src/legacy/QRAXE.axe.txt` (design.md item 52): built and tested (`--axe`), not maintained.
+  `src/legacy/QRAXE.axe.txt` (design.md item 52): built, not maintained, and no longer tested
+  (it keeps the interface from before design.md item 53).
   Still to try on the calculator: archived notes and the note list with the Z80 engine.
   The pure-BASIC set (prgmQRBASIC + prgmθQRBIT) was submitted to ticalc.org; the
   hybrid release hasn't been submitted yet.
@@ -29,17 +30,17 @@ and `docs/design.md` (imported at the bottom) carry what was built and decided. 
 | Path | What |
 | --- | --- |
 | `src/QR.basic.txt` | TI-BASIC front end of the release, in tivars' text format: menus, version pick, splitting, a 5-per-page `Menu(` pager for Notefolio notes (names in Str3, the chosen name in Str2) |
-| `src/_theta_QR.z80` | the release's engine, prgmθQR, in Z80 assembly (3391 bytes): E=1 Str1, E=2 a note, E=3 lists the notes (sorted, in Str3). The engine tests run it by default (`test_engine.py`, `test_notefolio.py`). build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
+| `src/_theta_QR.z80` | the release's engine, prgmθQR, in Z80 assembly (3409 bytes): C=0 check, 1 draw, 2 list the notes (sorted, in Str3); I=0 Str1, 1 a note. The engine tests run it by default (`test_engine.py`, `test_notefolio.py`). build.py assembles it with spasm-ng from `tools/spasm/` (gitignored: `spasm64.exe` + `ti83plus.inc`, v0.5-beta.3) or PATH, else skips it, to `build/_theta_QR.8xp` plus `_theta_QR.lab` (its labels, for the tests) |
 | `docs/asm_port.md` | plan for rewriting the engine in Z80 assembly: spasm-ng, a Z80-emulator harness with axesim's `Machine` interface so the existing tests run unchanged, milestones, decisions made while porting. Milestones 1-9 done (1-7 also on the calculator) |
 | `tools/z80sim.py` | `AsmMachine`: runs a compiled `.8xp` in the `z80` package's emulator with axesim's `Machine` interface (a real VAT, flash pages read through port 6, bcalls in Python, junk in registers after each, strict memory/ports/stack/IY checks; `call(label)` runs one routine); `tests/test_z80sim.py` checks the harness |
 | `docs/API.md` | how other programs call prgmθQR (variables, return values, capacity, a tested example) |
 | `docs/readme.txt` | the release's user guide (the root `readme.txt` is the pure-BASIC set's) |
-| `src/legacy/` | frozen, built to `build/legacy/` and tested, not maintained: `QRAXE.axe.txt`, the release's engine in Axe (Unicode text with Axe token spellings, `→ ʳ L₁ r₁ · ᴇ Y₁`; compiles to prgmθQR; as of design.md item 51, the reference the Z80 engine was ported from; tests: `test_engine.py --axe`, `test_notefolio.py --axe`); and the older set: `QR.basic.txt`, `QRSRC.axe.txt` (E=1-3, no note list) and `NOTESSRC.axe.txt` (prgmθNOTES: menu of Notefolio notes, name → Str2; Ans 1 picked, 0 cancelled, 2 none), interface in `docs/legacy/API.md`, tests `tests/test_legacy_notefolio.py`, `tests/test_legacy_frontend.py` and `test_engine.py --legacy` |
+| `src/legacy/` | frozen, built to `build/legacy/` and tested, not maintained: `QRAXE.axe.txt`, the release's engine in Axe (Unicode text with Axe token spellings, `→ ʳ L₁ r₁ · ᴇ Y₁`; compiles to prgmθQR; as of design.md item 51, the reference the Z80 engine was ported from; the old interface, not tested since item 53); and the older set: `QR.basic.txt`, `QRSRC.axe.txt` (E=1-3, no note list) and `NOTESSRC.axe.txt` (prgmθNOTES: menu of Notefolio notes, name → Str2; Ans 1 picked, 0 cancelled, 2 none), interface in `docs/legacy/API.md`, tests `tests/test_legacy_engine.py`, `tests/test_legacy_notefolio.py` and `tests/test_legacy_frontend.py` |
 | `build/` | generated, ready-to-send `.8xp` files (ignored by Git; rebuild with `build.bat`) |
 | `tools/build.py` | builds everything; `decompile` turns any `.8xp` back into text |
 | `tools/axe_tokens.json` | Axe 1.2.1 token table (from TokenIDE's AxeTokens.xml by Runer112; reuse permitted) |
 | `tools/axesim.py` | interpreter for the Axe subset the engine uses; the tests run the engine in it |
-| `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (notes, E=3 list), `test_frontend.py` (menus), `qrtest.py` helpers |
+| `tests/` | `test_engine.py` (modes 0-2), `test_notefolio.py` (notes, the C=2 list), `test_frontend.py` (menus), `qrtest.py` helpers |
 | `tests/data/TEST.8xv` | a real Notefolio file saved by the user's calculator (archived) |
 | `originals/` | the user's original pure-BASIC programs (QR, QRCW, QRBIT, QRECC, QRDRAW) |
 | `src/QRBASIC.basic.txt`, `src/_theta_QRBIT.basic.txt` | the pure-BASIC generator, cleaned up: prgmQRBASIC (menus, codewords, ECC, drawing in one) + prgmθQRBIT (bit appender); built to `build/` with everything else; its readme is the root `readme.txt` |
@@ -58,7 +59,7 @@ pip install -r requirements.txt          # tivars, qrcode, zxing-cpp, pillow, cr
 python tools/build.py                    # -> build/QR.8xp, build/_theta_QR.8xp, ... (build.bat does the same, for double-clicking)
 python tests/run_all.py                  # every suite but test_basic, in parallel (~30 s); --quick, --basic
 python tests/test_engine.py --quick      # drop --quick for the full sweep (~30 s)
-python tests/test_notefolio.py           # notes and the E=3 list (PYTHONUTF8=1)
+python tests/test_notefolio.py           # notes and the C=2 list (PYTHONUTF8=1)
 python tests/test_frontend.py            # front-end menus; needs ../tibasic and PYTHONUTF8=1
 python tests/test_basic.py --quick       # pure-BASIC set; same needs; minutes (see the workflow)
 python tests/test_lorem.py               # the LOREM note maker
@@ -67,10 +68,8 @@ python tests/test_txt2note.py            # the text → note converter
 python tests/test_unprot.py              # the UNPROT tool
 python tests/test_codechat.py            # CodeChat (AES/CMAC vectors, sends vs the PC reference, receives)
 python tools/codechat.py loopkey         # build/CCKEYS.8xv test keyring (LOOP0/LOOP1, one random key)
-python tests/test_engine.py --axe        # the frozen Axe engine (the engine tests run the Z80 one by default)
-python tests/test_notefolio.py --axe     # its notes and note list (PYTHONUTF8=1)
 python tests/test_z80sim.py              # the Z80 harness itself
-python tests/test_engine.py --quick --legacy   # the frozen older set: also test_legacy_notefolio.py, test_legacy_frontend.py
+python tests/test_legacy_engine.py --quick     # the frozen older set: also test_legacy_notefolio.py, test_legacy_frontend.py
 python tools/build.py decompile build/QR.8xp
 ```
 
@@ -109,31 +108,34 @@ token). `build.py` also teaches tivars the `π` spelling, which version 1.1.1 ca
 
 ## Engine interface (BASIC sets OS variables, runs `Asm(prgmθQR)`, reads Ans)
 
-prgmQR's NoteFolio entry calls E=3 for the list of names (in Str3), pages through them with
-`Menu(` and puts the chosen name in Str2, then uses E=2. (The legacy set ran
-`Asm(prgmθNOTES)` for the name instead; its engine has E=1 Str1, 2 ʟBIN, 3 a note.)
+Since design.md item 53 one variable says what the engine does (docs/API.md):
 
-| E | Source |
+| Var | Meaning |
 | --- | --- |
-| 1 | text in Str1 (tokens) |
-| 2 | text of the Notefolio note named in Str2 (calculator character codes) |
-| 3 | not an encoding: Ans = number of notes, Str3 = their names, 8 characters each, sorted, padded to whole pages of 5 (docs/API.md) |
+| C | command: 0 check, 1 draw one code, 2 list the notes into Str3 (Ans = the count; sorted, 8 characters a name, padded to whole pages of 5) |
+| I | input (C=0, 1): 0 Str1 (tokens), 1 the Notefolio note named in Str2 (calculator character codes) |
+| M | mode (C=0, 1): 0 auto (a check only; a draw with M=0 is bad input), 1 ASCII, 2 alphanumeric |
+| V | version (C=1): 1-11 |
+| N, O | (C=1) characters to encode, and to skip first (split messages) |
 
-A missing OS variable reads as 0 (subroutine `GV`). For E=1-2 the engine reads `V` and `M` (mode: 0 auto, 1 ASCII, 2 alphanumeric). `V=0` only checks the text: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for
-ASCII (length ≤ 32765). `V`=1-11 also reads `O` (count to skip first, for split messages) and `N` (count to encode; the engine clamps it to the input length, but
+A missing OS variable reads as 0 (subroutine `GV`), so a call with none is a check of Str1 in
+auto mode. A check: Ans = 2·length + 1 if it will be encoded alphanumeric, +0 for ASCII
+(length ≤ 32765); 65533 with the position in OS var B if a character can't be encoded (a Str1
+token with no ASCII equivalent, or not alphanumeric when M=2); 65532 if the text is longer
+than 32765 (2·32765+1 stays below the error codes). A note in byte mode never fails: its bytes
+go out as calculator codes (θ/⁴/Enter swapped with `[`/`$`/newline), and the check stores the
+first non-ASCII position in OS var B, which prgmQR zeroes first. A draw doesn't read the text
+first (it trusts the check), encodes N characters after O (N clamped to the input's length;
 BASIC must keep it within the version's capacity: the engine only caps it at 468 so a bad N
-can't write past L₁), draws, and returns 0. The check returns 65533, with the position in OS var B, if a character can't be encoded
-(a Str1 token with no ASCII equivalent, or not alphanumeric when M=2). A note in byte mode never
-fails: its bytes go out as calculator codes (θ/⁴/Enter swapped with `[`/`$`/newline), and the
-check stores the first non-ASCII position in OS var B, which prgmQR zeroes first. 65532 from the check call if the text is longer
-than 32765 (2·32765+1 stays below the error codes), and 65535 for bad parameters or a missing input.
-Auto picks alphanumeric when every character allows it; the engine never writes M: prgmQR
-sets M from the check's Ans bit (`If not(M:1+K-2L→M`) so the draw calls use that mode, and a
-draw with M=0 decides by itself. prgmQR keeps the menu's mode in D and copies it to M before
-each check. (A, the old
-way of passing the decision back, is gone.) Always centered, EC level L, mask 0.
-The engine draws into the graph buffer and calls DispGraph; BASIC handles display. BASIC checks
-first, picks the version from the length and mode, then encodes.
+can't write past L₁), draws, and returns 0. 65535 for bad parameters, a missing input, or no
+RAM for Str3. The engine never writes M. prgmQR keeps the user's settings in M and V
+themselves (0 = auto for both): the check passes them as they are, prgmQR then sets M from
+the check's Ans bit (`If not(M:1+K-2L→M`) and V from the capacity table, and draws; it never
+goes back to the main menu after that (an engine error while drawing ends the program).
+Always centered, EC level L, mask 0. The engine draws into the graph buffer and calls
+DispGraph; BASIC handles display. (The legacy set ran `Asm(prgmθNOTES)` for the note name,
+and its engine has the old interface: E=1 Str1, 2 ʟBIN, 3 a note, V=0 a check; the frozen
+QRAXE has E=1 Str1, 2 a note, 3 the list, V=0 a check.)
 
 ## Axe rules that bite (Axe 1.2.2)
 
@@ -181,7 +183,7 @@ The release's engine is Z80 assembly now; its rules are in docs/asm_port.md.
 
 The engine tests run the release's Z80 engine, the built `.8xp`, in `tools/z80sim.py` (the
 `z80` package's emulator, with the OS routines it calls modelled in Python and strict checks;
-docs/asm_port.md). `--axe` and `--legacy` run the frozen Axe engines' sources in `axesim.py`
+docs/asm_port.md). The `test_legacy_*` scripts run the older set's Axe engine source in `axesim.py`
 (left-to-right, 16-bit, byte/word memory, VAT, archive files, graph buffers), which also runs
 the Axe tools. Each drawn symbol is compared with the `qrcode` library
 (forced version, EC L, mask 0) plus a zxing-cpp decode. Not a valid reference: segno (adds an

@@ -2,15 +2,15 @@
 run in tibasic. Notes: list of names in Str3, the chosen name in Str2.
 
 tibasic can't run assembly, so `Asm(prgmθQR` becomes `prgmθQR` and a BASIC
-stand-in plays the engine:
-  E=3 (list notes)  copies Str9 to Str3 and returns Z, the note count the test set up
-  V=0 (check text)  returns W, set up by the test (2*length+alnum, or 65533 for a bad character),
+stand-in plays the engine (C is the command, docs/API.md):
+  C=2 (list notes)  copies Str9 to Str3 and returns Z, the note count the test set up
+  C=0 (check)       returns W, set up by the test (2*length+alnum, or 65533 for a bad character),
                     and sets B to X if X isn't 0 (the bad character's position, or a
                     note's first non-ASCII one; like the engine, it leaves B alone
                     otherwise)
-  otherwise         returns G (0 = drawn), with B set to H if G is 65533
-Each call is logged in L₁ as 10000N+100V+10M+E (and O, the count to skip, in L₂), so a
-test can check what the front end asked for, in order. Key presses (getKey) are scripted too;
+  C=1 (draw)        returns G (0 = drawn)
+Each call is logged in L₁ as 100000N+1000V+100M+10C+I (and O, the count to skip, in L₂),
+read back as (C, I, V, M, N), so a test can check what the front end asked for, in order. Key presses (getKey) are scripted too;
 running out raises, so a stuck key loop can't hang the suite.
 
   PYTHONUTF8=1 python tests/test_frontend.py
@@ -25,19 +25,16 @@ MESSAGE, NOTEFOLIO, SET_VERSION, MODE, EXIT = range(5)   # main menu
 STUB = '''T+1→T
 If T>20
 Stop
-10000N+100V+10M+E→L₁(T
+100000N+1000V+100M+10C+I→L₁(T
 O→L₂(T
-If E=3
+If C=2
 Str9→Str3
-If not(V
-If X
+If X and not(C
 X→B
-If V and G=65533
-H→B
 G
-If not(V
+If not(C
 W
-If E=3
+If C=2
 Z'''                                                            # T>20: stop a runaway loop
 NOTES = ['NOTE%d' % i for i in range(1, 13)]                    # 3 pages: 5, 5, 2
 BAD = 65533
@@ -64,17 +61,16 @@ def tokens(text):
     return bytes(p.data)
 
 
-def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, keys=(), warn=0):
+def run(choices, inputs, notes=(), check=0, encode=0, keys=(), warn=0):
     env = Environment(console=MenuLog(inputs=inputs, choices=choices, keys=keys))
     front = tokens((ROOT / "src" / "QR.basic.txt").read_text(encoding='utf-8').rstrip('\n'))
     assert front.count(b'\xbb\x6a\x5f\x5bQR') == 3                  # Asm(prgmθQR
     install(env, 'QR', front.replace(b'\xbb\x6a\x5f\x5bQR', b'\x5f\x5bQR'))
     install(env, 'θQR', tokens(STUB))
-    for v in 'TNVO':
+    for v in 'TNVOCI':
         setattr(env.numerics, v, 0.0)
     env.numerics.Z = float(len(notes))
     env.numerics.W = float(check)
-    env.numerics.H = float(encode_at)
     env.numerics.G = float(encode)
     env.numerics.X = float(warn)
     env.numerics.B = 7.0                                        # prgmQR must reset it
@@ -84,14 +80,14 @@ def run(choices, inputs, notes=(), check=0, encode=0, encode_at=0, keys=(), warn
     env.lists[1] = TiList([0.0])
     env.submit([get_token(0x5F), *(CHAR_TABLE[c] for c in 'QR')])
     calls = [int(x) for x in env.lists[0].data][:int(env.numerics.T)]
-    calls = [(c // 10000, c // 100 % 100, c // 10 % 10, c % 10) for c in calls]
+    calls = [(c // 10 % 10, c % 10, c // 1000 % 100, c // 100 % 10, c // 100000) for c in calls]
     env.offsets = [int(x) for x in env.lists[1].data][:int(env.numerics.T)]
     return calls, env.console.menus, env
 
 
 def case(name, choices, inputs, want_calls, want_menus, want_screen=(), avoid_screen=(),
          want_str2=None, want_offsets=None, want_str3=True, **kw):
-    """want_calls: (N, V, M, E) per engine call; want_menus: option lists after the first
+    """want_calls: (C, I, V, M, N) per engine call; want_menus: option lists after the first
     main menu (blank-padded options stripped); want_screen: text that must appear on a
     home-screen frame captured at a Pause; want_str2: the note picked; want_str3=False: the
     list of names must be deleted by the end."""
@@ -123,45 +119,56 @@ def page(n, notes=NOTES):
     return names + [''] * (5 - len(names)) + [nxt, 'Back']
 
 
-CHECKED = (0, 0, 0, 1)                         # the check call for a message in auto mode
+def check(i=0, v=0, m=0):
+    """A check call (C=0) of Str1 (i=0) or a note (i=1); V and M are the user's settings."""
+    return (0, i, v, m, 0)
+
+
+def draw(n, v, m, i=0):
+    """A draw call (C=1): N characters at version V in mode M (1 ASCII, 2 alphanumeric)."""
+    return (1, i, v, m, n)
+
+
+CHECKED = check()                              # a message, auto mode, auto version
 
 if __name__ == '__main__':
     # messages: a check call, then the version from the check's length and mode
     case('alphanumeric message, auto version', [MESSAGE], ['ABCD'],
-         [CHECKED, (4, 1, 2, 1)], [], check=2 * 4 + 1)
+         [CHECKED, draw(4, 1, 2)], [], check=2 * 4 + 1)
     case('20 ASCII characters need version 2', [MESSAGE], ['A' * 20],
-         [CHECKED, (20, 2, 1, 1)], [], check=2 * 20)
+         [CHECKED, draw(20, 2, 1)], [], check=2 * 20)
     case('20 alphanumeric characters fit version 1', [MESSAGE], ['A' * 20],
-         [CHECKED, (20, 1, 2, 1)], [], check=2 * 20 + 1)
+         [CHECKED, draw(20, 1, 2)], [], check=2 * 20 + 1)
     case('a set version bigger than needed is kept', [SET_VERSION, MESSAGE], ['5', 'ABCD'],
-         [CHECKED, (4, 5, 1, 1)], [main()], check=2 * 4)
-    case('an empty message is one empty code', [MESSAGE], [''], [CHECKED, (0, 1, 2, 1)], [], check=1)
+         [check(v=5), draw(4, 5, 1)], [main()], check=2 * 4)
+    case('an empty message is one empty code', [MESSAGE], [''], [CHECKED, draw(0, 1, 2)], [], check=1)
     # mode
     case('Mode cycles Auto, ASCII, Alnum, Auto', [MODE, MODE, MODE, EXIT], [],
          [], [main('ASCII'), main('Alnum'), main('Auto')])
     case('the mode is passed to the engine', [MODE, MESSAGE], ['ABCD'],
-         [(0, 0, 1, 1), (4, 1, 1, 1)], [main('ASCII')], check=2 * 4)
+         [check(m=1), draw(4, 1, 1)], [main('ASCII')], check=2 * 4)
     # bad characters: an error screen, then back to the main menu
     case('bad char in a message', [MESSAGE, EXIT], ['ABCD'],
          [CHECKED], [main()], ['ERR:BAD CHAR', 'Char: C', 'Pos=3'], check=BAD, warn=3)
     case('forced alnum says NOT ALNUM', [MODE, MODE, MESSAGE, EXIT], ['AbCD'],
-         [(0, 0, 2, 1)], [main('ASCII'), main('Alnum'), main('Alnum')],
+         [check(m=2)], [main('ASCII'), main('Alnum'), main('Alnum')],
          ['ERR:NOT ALNUM', 'Char: b', 'Pos=2'], check=BAD, warn=2)
     case('too long: an error, nothing encoded', [MESSAGE, EXIT], ['ABCD'],
          [CHECKED], [main()], ['ERR:TOO LONG', 'Max 32765 chars'], check=65532)
-    # the check stored 1 in M; the Mode setting (D) is still Auto afterwards
-    case('bad char reported while encoding', [MESSAGE, EXIT], ['ABCD'],
-         [CHECKED, (4, 1, 1, 1)], [main()], ['ERR:BAD CHAR', 'Char: D', 'Pos=4'],
-         check=2 * 4, encode=BAD, encode_at=4)
-    # the engine's own errors: the code on the home screen, then the main menu
+    # the check's errors leave the settings alone: the menu still says Auto, the version
+    # stays as set
+    case('after a check error the settings are unchanged', [SET_VERSION, MESSAGE, MESSAGE, EXIT],
+         ['3', 'ABCD', 'ABCD'], [check(v=3), check(v=3)], [main(), main(), main()],
+         ['ERR:BAD CHAR'], check=BAD, warn=1)
+    # the engine's own errors: the code on the home screen; on the check, then the main menu
     case('engine error on the check: ERR:ENGINE with the code', [MESSAGE, EXIT], ['ABCD'],
          [CHECKED], [main()], ['ERR:ENGINE', 'Code=65535'], check=65535)
-    case('engine error while drawing', [MESSAGE, EXIT], ['ABCD'],
-         [CHECKED, (4, 1, 2, 1)], [main()], ['ERR:ENGINE', 'Code=65534'], check=2 * 4 + 1,
-         encode=65534)
+    case('engine error while drawing: ERR:ENGINE, then the program ends', [MESSAGE], ['ABCD'],
+         [CHECKED, draw(4, 1, 2)], [], ['ERR:ENGINE', 'Code=65535'], check=2 * 4 + 1,
+         encode=65535)
 
     # NoteFolio picker: menu options are 5 names, Next (5), Back (6)
-    LISTED = [(0, 0, 0, 3)]
+    LISTED = [(2, 0, 0, 0, 0)]
     case('Back on the first page goes to the main menu, Str3 deleted', [NOTEFOLIO, 6, EXIT], [],
          LISTED, [page(0), main()], notes=NOTES, want_str3=False)
     case('Back goes back a page', [NOTEFOLIO, 5, 6, 6, EXIT], [],
@@ -176,23 +183,23 @@ if __name__ == '__main__':
     case('a blank slot on the last page stays there', [NOTEFOLIO, 5, 5, 3, 6, 6, 6, EXIT], [],
          LISTED, [page(0), page(1), page(2), page(2), page(1), page(0), main()], notes=NOTES)
     case('pick a note after paging back', [NOTEFOLIO, 5, 5, 6, 1], [],
-         LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0), page(1), page(2), page(1)],
+         LISTED + [check(i=1), draw(12, 1, 1, i=1)], [page(0), page(1), page(2), page(1)],
          notes=NOTES, check=2 * 12, want_str2='NOTE7', want_str3=False)
     case('non-ASCII in a note: warning with the position, Pause, then encode', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
+         LISTED + [check(i=1), draw(12, 1, 1, i=1)], [page(0)], ['Non-ASCII chars', 'Pos=40'],
          notes=NOTES, check=2 * 12, warn=40)
     case('a plain note: no warning (B is reset before the check)', [NOTEFOLIO, 0], [],
-         LISTED + [(0, 0, 0, 2), (12, 1, 1, 2)], [page(0)], [], ['NON-ASCII'],
+         LISTED + [check(i=1), draw(12, 1, 1, i=1)], [page(0)], [], ['NON-ASCII'],
          notes=NOTES, check=2 * 12)
     case('bad char in a note (forced alnum): position only', [NOTEFOLIO, 0, EXIT], [],
-         LISTED + [(0, 0, 0, 2)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
+         LISTED + [check(i=1)], [page(0), main()], ['ERR:BAD CHAR', 'Pos=40'], ['Char:'],
          notes=NOTES, check=BAD, warn=40)
     case('no notes', [NOTEFOLIO, 0, EXIT], [], LISTED, [['Back', 'Exit'], main()], want_str3=False)
     # too long for one code: always split, into even pieces at the smallest version that fits
     # one (or the set version); Enter/→ next,
     # ← back, Clear stops, Enter on the last ends
     NEXT, RIGHT, LEFT, CLEAR = 105, 26, 24, 45
-    piece = lambda n: (n, 10, 1, 1)            # 700 bytes: 3 pieces of 234, 234, 232 at v10
+    piece = lambda n: draw(n, 10, 1)           # 700 bytes: 3 pieces of 234, 234, 232 at v10
     case('split 700 bytes into 3 at version 10', [MESSAGE], ['A' * 700],
          [CHECKED, piece(234), piece(234), piece(232)], [], check=2 * 700,
          keys=[NEXT] * 3, want_offsets=[0, 0, 234, 468])
@@ -205,10 +212,10 @@ if __name__ == '__main__':
     case('Clear stops', [MESSAGE], ['A' * 700], [CHECKED, piece(234)], [],
          check=2 * 700, keys=[CLEAR], want_offsets=[0, 0])
     case('alphanumeric splits by the alnum table', [MESSAGE], ['A' * 1000],
-         [CHECKED, (334, 9, 2, 1), (334, 9, 2, 1), (332, 9, 2, 1)], [], check=2 * 1000 + 1,
+         [CHECKED, draw(334, 9, 2), draw(334, 9, 2), draw(332, 9, 2)], [], check=2 * 1000 + 1,
          keys=[NEXT] * 3, want_offsets=[0, 0, 334, 668])
     case('a set version keeps its size', [SET_VERSION, MESSAGE], ['2', 'A' * 70],
-         [CHECKED, (24, 2, 1, 1), (24, 2, 1, 1), (22, 2, 1, 1)], [main()], check=2 * 70,
+         [check(v=2), draw(24, 2, 1), draw(24, 2, 1), draw(22, 2, 1)], [main()], check=2 * 70,
          keys=[NEXT] * 3, want_offsets=[0, 0, 24, 48])
 
     def counter(page, pages, version=0):

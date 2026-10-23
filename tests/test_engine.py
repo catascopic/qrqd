@@ -1,21 +1,20 @@
-"""Engine tests for Str1 text (E=1), and list BIN (E=2) in the legacy engine.
+"""Engine tests for Str1 text (I=0): the release's engine, the Z80 one (build/_theta_QR.8xp;
+run tools/build.py first), with the interface of docs/API.md (C the command, I the input, V
+the version, M the mode), plus the groups that test its routines on their own (asm_*). The
+older set's engine has its own copy of these tests, test_legacy_engine.py.
 
-  python tests/test_engine.py           full sweep (all versions; takes a few minutes)
+  python tests/test_engine.py           full sweep (all versions)
   python tests/test_engine.py --quick   versions 1, 5, 10 only
-  The engine is the release's, the Z80 one (build/_theta_QR.8xp; run tools/build.py first),
-  plus the groups that test its routines on their own (asm_*).
-  --axe tests the frozen Axe engine (src/legacy/QRAXE.axe.txt) instead
-  --legacy tests the older set's engine (src/legacy/QRSRC.axe.txt) instead
 """
 import random
 import sys
 
-from qrtest import (Engine as Machine, SRC, ASM, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
+from qrtest import (Engine as Machine, SRC, ALNUM_CHARS, CAP_ALNUM, CAP_BYTE, alnum_tokens,
                     ascii_tokens, check_symbol, data_codewords, decode, ec_codewords,
-                    matrix_from, run_engine, TEXT, BINARY, AUTO, ASCII, ALNUM, BAD, bad)
+                    matrix_from, run_engine, CHECK, DRAW, STR1, AUTO, ASCII, ALNUM, BAD, bad)
 from axesim import L1, L3                                      # noqa: E402
 
-KINDS = ('alnum', 'ascii') + (('binary',) if BINARY else ())   # ʟBIN: legacy engine only
+KINDS = ('alnum', 'ascii')
 
 failures = []
 
@@ -27,7 +26,7 @@ def expect(name, cond, detail=''):
 
 
 def sweep(versions):
-    """Alphanumeric text in auto mode, any ASCII text forced to ASCII, and bytes."""
+    """Alphanumeric text in auto mode, and any ASCII text forced to ASCII."""
     random.seed(1)
     n = 0
     for v in versions:
@@ -36,13 +35,10 @@ def sweep(versions):
             for L in sorted({0, 1, 2, 3, cap // 2, cap - 1, cap, random.randint(1, cap)}):
                 if kind == 'alnum':
                     p = ''.join(random.choice(ALNUM_CHARS) for _ in range(L))
-                    m = run_engine(TEXT, v, L, AUTO, str1=alnum_tokens(p))
-                elif kind == 'ascii':
-                    p = ''.join(chr(random.randint(32, 126)) for _ in range(L))
-                    m = run_engine(TEXT, v, L, ASCII, str1=ascii_tokens(p))
+                    m = run_engine(STR1, v, L, AUTO, str1=alnum_tokens(p))
                 else:
-                    p = bytes(random.randint(0, 255) for _ in range(L))
-                    m = run_engine(BINARY, v, L, AUTO, lst=list(p))
+                    p = ''.join(chr(random.randint(32, 126)) for _ in range(L))
+                    m = run_engine(STR1, v, L, ASCII, str1=ascii_tokens(p))
                 try:
                     check_symbol(m, v, p, 'alphanumeric' if kind == 'alnum' else 'byte')
                 except AssertionError as e:
@@ -54,21 +50,21 @@ def sweep(versions):
 
 
 def check_text(toks, mode):
-    """Ans of the check-only call (V=0), or (BAD, B) for a bad character."""
-    m = run_engine(TEXT, 0, 0, mode, str1=toks)
+    """Ans of a check call (C=0), or (BAD, B) for a bad character."""
+    m = run_engine(STR1, 0, 0, mode, str1=toks)
     return (m.ans, m.get_real('B')) if m.ans == BAD else m.ans
 
 
 def drawn(toks, mode, version=2):
-    """(Ans, decoded bytes or None) of an encode call."""
-    m = run_engine(TEXT, version, len(toks), mode, str1=toks)
+    """(Ans, decoded bytes or None) of an encode, as prgmQR does it (a check first in auto)."""
+    m = run_engine(STR1, version, len(toks), mode, str1=toks)
     if m.ans:
         return m.ans, None if not m.displays else 'drawn anyway'
     return 0, decode(matrix_from(m, version))[0].bytes
 
 
 def skipping():
-    """O skips characters (or list elements) before encoding: one piece of a split message."""
+    """O skips characters before encoding: one piece of a split message."""
     def piece(name, source, mode, skip, count, payload, kind, **kw):
         m = run_engine(source, 2, count, mode, skip=skip, **kw)
         try:
@@ -77,33 +73,33 @@ def skipping():
             ok = e
         expect(name, ok is True, ok)
     text = 'Hello, World! abc'                     # lowercase letters are 2-byte tokens
-    piece('skip 7 of ASCII text', TEXT, ASCII, 7, 6, 'World!', 'byte', str1=ascii_tokens(text))
-    piece('skip 6 of alnum text, odd count', TEXT, AUTO, 6, 5, 'WORLD', 'alphanumeric',
+    piece('skip 7 of ASCII text', STR1, ASCII, 7, 6, 'World!', 'byte', str1=ascii_tokens(text))
+    piece('skip 6 of alnum text, odd count', STR1, AUTO, 6, 5, 'WORLD', 'alphanumeric',
           str1=alnum_tokens('HELLO WORLD 123'))
-    if BINARY:
-        piece('skip 5 list elements', BINARY, AUTO, 5, 4, bytes(range(5, 9)), 'byte', lst=list(range(20)))
-    piece('count past the end stops at the end', TEXT, ASCII, 5, 10, 'FG', 'byte',
+    piece('count past the end stops at the end', STR1, ASCII, 5, 10, 'FG', 'byte',
           str1=ascii_tokens('ABCDEFG'))
-    piece('skip past the end gives an empty code', TEXT, ASCII, 100, 10, '', 'byte',
+    piece('skip past the end gives an empty code', STR1, ASCII, 100, 10, '', 'byte',
           str1=ascii_tokens('ABCDEFG'))
 
 
 Q, PI, NEG, SIN = b'\x2a', b'\xac', b'\xb0', b'\xc2'
 
 
-def draw_auto(toks, **extra):
-    """A draw call in auto mode with no check first (V=1, M=0)."""
+def call(toks=None, **reals):
+    """One engine call with just the given reals (a missing one reads as 0) and Str1 = toks
+    (no Str1 if None)."""
     m = Machine(SRC)
-    for name, val in {'E': TEXT, 'V': 1, 'N': 17, 'M': AUTO, 'O': 0, 'B': 0, **extra}.items():
+    for name, val in reals.items():
         m.set_real(name, val)
-    m.set_str(1, b''.join(toks))
+    if toks is not None:
+        m.set_str(1, b''.join(toks))
     m.run()
     return m
 
 
 def check_calls():
-    """The check call (V=0) and the bad-character answers: no drawing involved."""
-    # checking text (V=0): 2*length + 1 if alphanumeric, or BAD with the position in B
+    """The check call (C=0) and the bad-character answers: no drawing involved."""
+    # checking text: 2*length + 1 if alphanumeric, or BAD with the position in B
     expect('check: auto picks alnum', check_text(alnum_tokens('AB 12'), AUTO) == 2 * 5 + 1)
     expect('check: auto picks ASCII for lowercase', check_text(ascii_tokens('Hello'), AUTO) == 2 * 5)
     expect('check: forced ASCII on alnum text', check_text(alnum_tokens('AB'), ASCII) == 2 * 2)
@@ -123,52 +119,39 @@ def check_calls():
                               ('auto, lowercase', ascii_tokens('Hello'), AUTO),
                               ('forced ASCII', alnum_tokens('AB'), ASCII),
                               ('forced alnum', alnum_tokens('AB'), ALNUM)):
-        c = run_engine(TEXT, 0, 0, mode, str1=toks)
+        c = run_engine(STR1, 0, 0, mode, str1=toks)
         expect('check, %s: M left at %d' % (label, mode), c.get_real('M') == mode, c.get_real('M'))
-    m = Machine(SRC)
-    for name, val in zip('EV', (TEXT, 0)):
-        m.set_real(name, val)
-    m.set_str(1, b''.join(alnum_tokens('AB')))
-    m.run()
+    m = call(alnum_tokens('AB'), C=CHECK, I=STR1)
     expect('check with no M: auto, nothing stored', m.ans == 2 * 2 + 1 and ('real', 'M') not in m.os, m.ans)
-    m = Machine(SRC)
-    for name, val in zip('EVM', (TEXT, 0, ALNUM)):
-        m.set_real(name, val)
-    m.set_str(1, b''.join(ascii_tokens('ABc')))
-    m.run()
+    m = call(ascii_tokens('ABc'), C=CHECK, M=ALNUM)
     expect('check with no B: still fails at 3, nothing stored', m.ans == BAD and ('real', 'B') not in m.os, m.ans)
-    if BINARY:
-        m = run_engine(BINARY, 0, 0, AUTO, lst=[65, 200, 0])
-        expect('check list BIN: 2 * its length (byte mode)', m.ans == 2 * 3, m.ans)
-        m = run_engine(BINARY, 0, 0, ALNUM, lst=[])
-        expect('check empty list BIN, M=2 ignored: 0', m.ans == 0, m.ans)
+    m = call(alnum_tokens('AB'), C=CHECK, V=12, N=99, O=99)
+    expect('a check ignores V, N and O (V=12 is not refused)', m.ans == 2 * 2 + 1, m.ans)
     # the negative sign ⁻ isn't ASCII (only the minus sign is): a bad character in every mode
     for label, toks, mode, pos in (('auto', ascii_tokens('x=') + [NEG] + ascii_tokens('5'), AUTO, 3),
                                    ('ASCII', ascii_tokens('x=') + [NEG] + ascii_tokens('5'), ASCII, 3),
                                    ('alnum', alnum_tokens('A') + [NEG] + alnum_tokens('1'), ALNUM, 2)):
         expect('%s: negative sign is a bad character at %d' % (label, pos), check_text(toks, mode) == bad(pos),
                check_text(toks, mode))
-    # a draw call in auto mode with no check scans too: a bad character fails before drawing
-    m = draw_auto(ascii_tokens('a') + [PI])
-    expect('draw, auto, no check: a bad character fails, nothing drawn', (m.ans, m.get_real('B')) == bad(2) and not m.displays, m.ans)
+    # prgmQR's way: a bad character fails at the check, so nothing is drawn
     toks = ascii_tokens('x=') + [NEG] + ascii_tokens('5')
-    expect('auto draw with no check: negative sign fails, nothing drawn', drawn(toks, AUTO) == (65533, None),
+    expect('auto: the negative sign fails at the check, nothing drawn', drawn(toks, AUTO) == (65533, None),
            drawn(toks, AUTO))
-    m = bare(E=TEXT)
-    expect('only E: a check (V=0) in auto mode (M=0)', m.ans == 2 * 4 + 1, m.ans)
+    m = bare()
+    expect('no variables at all: a check of Str1 in auto mode', m.ans == 2 * 4 + 1, m.ans)
 
 
 def edge_cases():
-    m = draw_auto(alnum_tokens('ABC'))
-    expect('draw, auto, no check: decides alnum itself, M left at 0',
-           m.ans == 0 and check_symbol(m, 1, 'ABC', 'alphanumeric') is not None and m.get_real('M') == 0)
-    m = draw_auto(ascii_tokens('abc'), A=1)
-    expect('draw, auto, no check: lowercase is ASCII; a leftover A=1 is ignored',
-           m.ans == 0 and check_symbol(m, 1, 'abc', 'byte') is not None and m.get_real('M') == 0)
+    # a draw never scans the text: auto (M=0) is the check's, so a draw with it is refused
+    m = call(alnum_tokens('ABC'), C=DRAW, V=1, N=3, M=AUTO)
+    expect('a draw in auto mode (M=0) is bad input, nothing drawn', m.ans == 65535 and not m.displays, m.ans)
+    m = call(ascii_tokens('a') + [PI], C=DRAW, V=1, N=2, M=ASCII)
+    expect('a draw trusts the check: no scan, so a bad character is drawn as 0, not refused',
+           m.ans == 0 and m.displays, m.ans)
     expect('encode: auto, lowercase -> byte mode', drawn(ascii_tokens('Hi there'), AUTO) == (0, b'Hi there'))
     expect('encode: forced ASCII on alnum text', drawn(alnum_tokens('ABC'), ASCII) == (0, b'ABC'))
     expect('encode: forced alnum', drawn(alnum_tokens('ABC 1'), ALNUM) == (0, b'ABC 1'))
-    m = run_engine(TEXT, 1, 3, ASCII, str1=alnum_tokens('ABC'))
+    m = run_engine(STR1, 1, 3, ASCII, str1=alnum_tokens('ABC'))
     expect('forced ASCII really uses byte mode', m.ans == 0 and check_symbol(m, 1, 'ABC', 'byte'))
     # special characters
     expect('ascii: real quote token',
@@ -177,21 +160,18 @@ def edge_cases():
     # count larger than the message or the capacity is clamped
     # prgmQR keeps N within capacity; a bad N may give a wrong symbol but stays inside L1
     m = Machine(SRC)
-    for name, val in zip('EVNMO', (TEXT, 1, 9999, ASCII, 0)):
+    for name, val in zip('CIVNMO', (DRAW, STR1, 1, 9999, ASCII, 0)):
         m.set_real(name, val)
     m.set_str(1, b''.join(ascii_tokens('x' * 800)))
-    end = L1 + (768 if ASM else 714)   # the Z80 port keeps its variables in L₁+714..767, as Axe does
+    end = L1 + 768                     # the engine keeps its variables in L₁+714..767, as Axe does
     beyond = bytes(m.mem[end:L1 + 0x800])
     m.run()
     expect('N far over capacity writes nothing past L1', m.ans == 0 and m.displays and
            bytes(m.mem[end:L1 + 0x800]) == beyond)
-    if BINARY:
-        m = run_engine(BINARY, 2, 999, AUTO, lst=list(range(5)))
-        expect('clamp to list length', m.ans == 0 and decode(matrix_from(m, 2))[0].bytes == bytes(range(5)))
     expect('runs at full speed (15 MHz)', getattr(m, 'full', False))
-    m = bare(E=TEXT, V=1, N=4)
-    expect('only E, V, N: auto (M=0) decides alnum itself, from the start (O=0); no M to store in',
-           m.ans == 0 and check_symbol(m, 1, 'AB12', 'alphanumeric') is not None and ('real', 'M') not in m.os)
+    m = bare(C=DRAW, V=1, N=4, M=ALNUM)
+    expect('a draw with no I or O: Str1 from the start', m.ans == 0 and
+           check_symbol(m, 1, 'AB12', 'alphanumeric') is not None)
 
 
 def bare(**reals):
@@ -207,26 +187,12 @@ def bare(**reals):
 
 def parameter_errors():
     """Bad parameters or a missing input -> 65535, nothing drawn."""
-    for e, v, mode in ((0, 1, 0), (4, 1, 0), (1, 12, 0), (1, 1, 3)):
-        m = Machine(SRC)
-        for name, val in zip('EVNM', (e, v, 0, mode)):
-            m.set_real(name, val)
-        m.set_str(1, b'')
-        m.run()
-        expect('E=%d V=%d M=%d rejected' % (e, v, mode), m.ans == 65535 and not m.displays)
-    m = bare()
-    expect('no variables at all -> 65535 (E reads as 0)', m.ans == 65535 and not m.displays)
-    m = Machine(SRC)
-    for name, val in zip('EVNM', (TEXT, 1, 1, AUTO)):
-        m.set_real(name, val)
-    m.run()
-    expect('missing Str1 -> 65535', m.ans == 65535)
-    if BINARY:
-        m = Machine(SRC)
-        for name, val in zip('EVNM', (BINARY, 1, 1, AUTO)):
-            m.set_real(name, val)
-        m.run()
-        expect('missing list BIN -> 65535', m.ans == 65535)
+    for c, i, v, mode in ((3, 0, 1, 1), (0, 2, 1, 1), (1, 2, 1, 1), (1, 0, 0, 1), (1, 0, 12, 1),
+                          (1, 0, 1, 0), (0, 0, 1, 3), (1, 0, 1, 3)):
+        m = call([], C=c, I=i, V=v, N=0, M=mode)
+        expect('C=%d I=%d V=%d M=%d rejected' % (c, i, v, mode), m.ans == 65535 and not m.displays)
+    expect('missing Str1: a check -> 65535', call(C=CHECK).ans == 65535)
+    expect('missing Str1: a draw -> 65535', call(C=DRAW, V=1, N=1, M=ASCII).ans == 65535)
 
 
 def asm_parameters():
@@ -234,29 +200,29 @@ def asm_parameters():
     Axe engine's float{ isn't defined for fractions, negatives or values over 65535, so
     axesim refuses those.) A call that gets past the checks doesn't answer 65535."""
     def accepted(**reals):
-        return bare(**{'E': TEXT, 'N': 4, 'M': AUTO, **reals}).ans != 65535
+        return bare(**{'C': DRAW, 'V': 1, 'N': 4, 'M': ASCII, **reals}).ans != 65535
     expect('asm: V=11 and M=2 accepted', accepted(V=11, M=2))
     expect('asm: V=256 rejected (not read as its low byte, 0)', not accepted(V=256))
     expect('asm: V=65547 rejected (not wrapped to 11)', not accepted(V=65536 + 11))
     expect('asm: V=10^20 rejected', not accepted(V=10 ** 20))
     expect('asm: V=-1 rejected', not accepted(V=-1))
     expect('asm: V=11.9 accepted (the fraction is dropped)', accepted(V=11.9))
-    expect('asm: V=0.5 accepted (reads as 0)', accepted(V=0.5))
+    expect('asm: V=0.5 reads as 0, refused for a draw', not accepted(V=0.5))
     expect('asm: M=2.5 accepted, M=3 not', accepted(M=2.5) and not accepted(M=3))
-    expect('asm: E=1.5 is E=1', accepted(E=1.5))
+    expect('asm: C=1.5 is C=1 (a draw)', accepted(C=1.5) and bare(C=1.5, V=1, N=4, M=ASCII).displays)
     m = Machine(SRC)
-    for name, val in zip('EVNM', (TEXT, 1, 4, AUTO)):
+    for name, val in zip('CVNM', (DRAW, 1, 4, ASCII)):
         m.set_real(name, val)
     m.set_str(1, b''.join(alnum_tokens('AB12')), archived=True)
     m.run()
     expect('asm: archived Str1 -> 65535 (like a missing one)', m.ans == 65535, m.ans)
     m = Machine(SRC)
-    for name, val in zip('VNM', (1, 4, AUTO)):
+    for name, val in zip('VNM', (1, 4, ASCII)):
         m.set_real(name, val)
-    m.set_real('E', TEXT, archived=True)
+    m.set_real('C', DRAW, archived=True)
     m.set_str(1, b''.join(alnum_tokens('AB12')))
     m.run()
-    expect('asm: archived E reads as 0 -> 65535', m.ans == 65535, m.ans)
+    expect('asm: archived C reads as 0: a check, nothing drawn', m.ans == 2 * 4 and not m.displays, m.ans)
     # FloatToInt on its own: the float at DE -> HL
     wrong = []
     for v in (0, 1, 9, 10, 11, 99, 100, 255, 256, 300, 1234, 9999, 10000, 12345, 32765, 54321,
@@ -301,20 +267,20 @@ def asm_codewords(versions):
             for L in sorted({0, 1, 2, 3, cap // 2, cap - 1, cap, random.randint(1, cap)}):
                 if kind == 'alnum':
                     p = ''.join(random.choice(ALNUM_CHARS) for _ in range(L))
-                    m = run_engine(TEXT, v, L, AUTO, str1=alnum_tokens(p))
+                    m = run_engine(STR1, v, L, AUTO, str1=alnum_tokens(p))
                 else:
                     p = ''.join(chr(random.randint(32, 126)) for _ in range(L))
-                    m = run_engine(TEXT, v, L, ASCII, str1=ascii_tokens(p))
+                    m = run_engine(STR1, v, L, ASCII, str1=ascii_tokens(p))
                 compare('v%d %s length %d' % (v, kind, L), m, p,
                         v, 'alphanumeric' if kind == 'alnum' else 'byte')
     for name, args, kw, payload, kind in (
-            ('skip 7 of ASCII text', (TEXT, 2, 6, ASCII, ), dict(skip=7, str1=ascii_tokens('Hello, World! abc')), 'World!', 'byte'),
-            ('skip 2 lowercase (two-byte) tokens', (TEXT, 2, 3, ASCII), dict(skip=2, str1=ascii_tokens('abcde')), 'cde', 'byte'),
-            ('skip 6 of alnum text, odd count', (TEXT, 2, 5, AUTO), dict(skip=6, str1=alnum_tokens('HELLO WORLD 123')), 'WORLD', 'alphanumeric'),
-            ('count past the end stops at the end', (TEXT, 2, 10, ASCII), dict(skip=5, str1=ascii_tokens('ABCDEFG')), 'FG', 'byte'),
-            ('skip past the end gives no data', (TEXT, 2, 10, ASCII), dict(skip=100, str1=ascii_tokens('ABCDEFG')), '', 'byte'),
-            ('version 10: 16-bit byte count', (TEXT, 10, 3, ASCII), dict(str1=ascii_tokens('abc')), 'abc', 'byte'),
-            ('version 10: 11-bit alnum count', (TEXT, 10, 3, AUTO), dict(str1=alnum_tokens('A:1')), 'A:1', 'alphanumeric')):
+            ('skip 7 of ASCII text', (STR1, 2, 6, ASCII, ), dict(skip=7, str1=ascii_tokens('Hello, World! abc')), 'World!', 'byte'),
+            ('skip 2 lowercase (two-byte) tokens', (STR1, 2, 3, ASCII), dict(skip=2, str1=ascii_tokens('abcde')), 'cde', 'byte'),
+            ('skip 6 of alnum text, odd count', (STR1, 2, 5, AUTO), dict(skip=6, str1=alnum_tokens('HELLO WORLD 123')), 'WORLD', 'alphanumeric'),
+            ('count past the end stops at the end', (STR1, 2, 10, ASCII), dict(skip=5, str1=ascii_tokens('ABCDEFG')), 'FG', 'byte'),
+            ('skip past the end gives no data', (STR1, 2, 10, ASCII), dict(skip=100, str1=ascii_tokens('ABCDEFG')), '', 'byte'),
+            ('version 10: 16-bit byte count', (STR1, 10, 3, ASCII), dict(str1=ascii_tokens('abc')), 'abc', 'byte'),
+            ('version 10: 11-bit alnum count', (STR1, 10, 3, AUTO), dict(str1=alnum_tokens('A:1')), 'A:1', 'alphanumeric')):
         compare(name, run_engine(*args, **kw), payload, args[1], kind)
     expect('asm: %d sets of data and EC codewords match the reference' % n, not wrong, wrong[:3])
 
@@ -336,7 +302,7 @@ def asm_tables():
         for i in range(R):
             g = g * Polynomial([1, gexp(i)], 0)
         want = bytes([1] + [LOG_TABLE[g[k]] for k in range(1, R + 1)])
-        m = run_engine(TEXT, v, 1, ASCII, str1=ascii_tokens('a'))
+        m = run_engine(STR1, v, 1, ASCII, str1=ascii_tokens('a'))
         if bytes(m.mem[L1 + 420:L1 + 421 + R]) != want:
             wrong.append(v)
     expect('asm: generator polynomial (as logs) for each version', not wrong, wrong)
@@ -383,10 +349,10 @@ if __name__ == '__main__':
     parameter_errors()
     skipping()
     sweep(versions)
-    if ASM:        # the Z80 port's own: its routines on their own, its memory, its choices
-        asm_parameters()
-        asm_characters()
-        asm_codewords(versions)
-        asm_tables()
+    # the Z80 engine's own: its routines on their own, its memory, its choices
+    asm_parameters()
+    asm_characters()
+    asm_codewords(versions)
+    asm_tables()
     print('\n%s' % ('ALL PASSED' if not failures else '%d FAILED' % len(failures)))
     sys.exit(1 if failures else 0)

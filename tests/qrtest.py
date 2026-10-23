@@ -19,14 +19,15 @@ from qrcode.util import QRData, MODE_ALPHA_NUM, MODE_8BIT_BYTE  # noqa: E402
 from axesim import Machine, AxeError            # noqa: E402,F401
 
 # The engine under test is SRC, run by Engine(SRC):
-# - by default the release's engine, the Z80 one (src/_theta_QR.z80, docs/asm_port.md): the
-#   build's .8xp in tools/z80sim.py (Engine = AsmMachine). --asm, its old flag, still works.
-# - --axe: the frozen Axe engine (src/legacy/QRAXE.axe.txt) in tools/axesim.py
-# - --legacy (or a test_legacy_*.py script): the older set's Axe engine (src/legacy/QRSRC)
-# Machine stays axesim's, for the Axe tools' tests (LOREM, UNPROT, CodeChat).
-AXE = '--axe' in sys.argv
-LEGACY = '--legacy' in sys.argv or Path(sys.argv[0]).name.startswith('test_legacy')
-ASM = not (AXE or LEGACY)
+# - the release's engine, the Z80 one (src/_theta_QR.z80, docs/asm_port.md): the build's
+#   .8xp in tools/z80sim.py (Engine = AsmMachine), with the interface of docs/API.md
+# - for a test_legacy_*.py script: the older set's Axe engine (src/legacy/QRSRC.axe.txt), with
+#   its own interface (docs/legacy/API.md), in tools/axesim.py
+# Machine stays axesim's, for the Axe tools' tests (LOREM, UNPROT, CodeChat). The frozen Axe
+# engine (src/legacy/QRAXE.axe.txt) keeps the interface before design.md item 53 and isn't
+# tested any more.
+LEGACY = Path(sys.argv[0]).name.startswith('test_legacy')
+ASM = not LEGACY
 if ASM:
     from z80sim import AsmMachine as Engine, Z80Error  # noqa: E402,F401
     SRC = ROOT / 'build' / '_theta_QR.8xp'
@@ -35,8 +36,7 @@ if ASM:
                  % SRC.relative_to(ROOT))
 else:
     Engine = Machine
-    SRC = (ROOT / 'src' / 'legacy' / ('QRSRC.axe.txt' if LEGACY else 'QRAXE.axe.txt')
-           ).read_text(encoding='utf-8')
+    SRC = (ROOT / 'src' / 'legacy' / 'QRSRC.axe.txt').read_text(encoding='utf-8')
 TWO_BYTE = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF}
 
 
@@ -76,12 +76,10 @@ def alnum_tokens(s):
     return [ALNUM_TOK[ALNUM_CHARS.index(c)] for c in s]
 
 
-# E: Str1 text, a note, the list of notes; list BIN (E=2) only in the legacy engine
-if LEGACY:
-    TEXT, BINARY, NOTE, LIST = 1, 2, 3, None
-else:
-    TEXT, BINARY, NOTE, LIST = 1, None, 2, 3
-AUTO, ASCII, ALNUM = 0, 1, 2                 # M
+# The engine's interface (docs/API.md); the legacy tests define the old one themselves
+CHECK, DRAW, LIST = 0, 1, 2                  # C: the command
+STR1, NOTE = 0, 1                            # I: the input
+AUTO, ASCII, ALNUM = 0, 1, 2                 # M: the mode (auto only for a check)
 BAD = 65533                                  # Ans for a character that can't be encoded (position in B)
 
 
@@ -90,21 +88,20 @@ def bad(k):
     return (BAD, k)
 
 
-def run_engine(source, version, count, mode, str1=None, lst=None, skip=0):
-    """Run the engine the way prgmQR calls it (version 0 = check text only). An auto-mode
-    encode runs a check first and draws with M set from its Ans (odd: 2 alphanumeric, else
-    1 ASCII), as prgmQR does."""
-    if version and mode == AUTO and source == TEXT:
+def run_engine(source, version, count, mode, str1=None, skip=0):
+    """Run the engine on Str1 the way prgmQR does: version 0 = a check (C=0), else a draw
+    (C=1) of `count` characters after `skip`. A draw in auto mode is a check first, then
+    the draw with M from the check's Ans (odd: 2 alphanumeric, else 1 ASCII); a check that
+    fails is returned instead, as prgmQR would stop there."""
+    if version and mode == AUTO:
         c = run_engine(source, 0, 0, mode, str1=str1)
-        if c.ans < 65532:
-            mode = 1 + (c.ans & 1)
+        if c.ans >= 65532:
+            return c
+        mode = 1 + (c.ans & 1)
     m = Engine(SRC)
-    for name, v in zip('EVNMOB', (source, version, count, mode, skip, 0)):
+    for name, v in zip('CIVNMOB', (DRAW if version else CHECK, source, version, count, mode, skip, 0)):
         m.set_real(name, v)
-    if source == BINARY:
-        m.set_list('BIN', lst)
-    else:
-        m.set_str(1, b''.join(str1))
+    m.set_str(1, b''.join(str1))
     m.run()
     return m
 

@@ -49,43 +49,43 @@ Then there's the "masking" phase, where, after processing the input, the generat
 
 VARIABLES USED
 
-prgmQR overwrites these: Str1 (your message), Str2 (the file name), L6, and the real variables B, C, D, E, I, J, K, L, M, N, O, P, U, V and W. It deletes Str3, which holds the list of file names while you pick one. It also clears the graph screen and turns off functions, plots, axes and the grid.
+prgmQR overwrites these: Str1 (your message), Str2 (the file name), L6, and the real variables A, B, C, I, J, K, L, M, N, O, P, U, V and W. It deletes Str3, which holds the list of file names while you pick one. It also clears the graph screen and turns off functions, plots, axes and the grid.
 
 USING THE ENGINE FROM YOUR OWN PROGRAM
 
 prgmθQR can be called from any BASIC program: set a few variables, run Asm(prgmθQR), and read Ans. A variable that doesn't exist counts as 0.
 
-E: Input type
-E=1: Use Str1 as input
-E=2: Use the NoteFolio file whose name is in Str2 as input
-E=3: Override normal operation. Store the names of all NoteFolio files in Str3 (8 characters each, padded with spaces); return the number of files in Ans.
+C: Command
+C=0: Check input. Return a 16-bit integer representing the mode and the number of characters. The least significant bit is the mode (1 for alphanumeric, 0 for ASCII); use iPart(Ans/2) to get the length and 2fPart(Ans/2) to get the mode. A value over 65531 represents an error.
+C=1: Generate QR code. This mode trusts the check and doesn't look for bad characters itself.
+C=2: Scan NoteFolio files. Store the names of all NoteFolio files in Str3, in alphabetical order (8 characters each, padded with spaces, then blank names to the end of the last group of five); return the number of files in Ans. Ignores every other variable.
 
-V: Version
-V=0: Check the input without drawing a code. Return a 16-bit integer representing the mode and the number of characters. The least significant bit is the mode (1 for alphanumeric, 0 for ASCII); use iPart(Ans/2) to get the length and 2fPart(Ans/2) to get the mode. A value over 65531 represents an error.
-V=1..11: Draw a code of that version.
+I: Input
+I=0: Use Str1 as input
+I=1: Use the NoteFolio file whose name is in Str2 as input
 
-M: Encoding mode
-M=0: ASCII
-M=1: alphanumeric
+M: Mode
+M=0: auto (check only): alphanumeric if every character allows it, otherwise ASCII. The check's Ans says which; set M to 1 or 2 from it before drawing.
+M=1: ASCII
+M=2: alphanumeric
 
-O: Offset
-How many characters to skip first (for splitting a long message; use 0 normally)
-
-N: Length
-How many characters to encode. It must fit for the given version; the engine doesn't check
+The following three variable apply to drawing only.
+V: Version, from 1 to 11
+N: Length of message. (It must fit for the given version and mode; the engine doesn't check.)
+O: Offset of message. Normally the offset is 0 and the length is the full length of the message (as given by the check), but these will change for long messages that have to be broken up.
 
 Ans: Return code
 Ans=0: QR code drawn successfully
-Ans=65532: Input was longer than 32765 characters (only for check mode)
-Ans=65533: A character can't be encoded; B holds its position
-Ans=65534: The engine failed to run for unknown reasons
-Ans=65535: Argument error. E, V, or M held an invalid value, or the input doesn't exist. Alternatively, NoteFolio scan mode (E=3) ran out of memory.
+Ans=65532: Input was longer than 32765 characters (only for a check)
+Ans=65533: A character can't be encoded; B holds its position (only for a check)
+Ans=65534: The engine failed to run (store 65534 in Ans right before Asm( to catch this)
+Ans=65535: Argument error. C, I, V or M held an invalid value (a draw needs V=1..11 and M=1 or 2), or the input doesn't exist. Alternatively, listing NoteFolio files (C=2) ran out of memory.
 
 In the case of bad input, B holds the position of the first problem character: the one that can't be encoded (65533), or, for a file in ASCII mode, the first non-ASCII character (just a warning; the check still succeeds).
 
-Example: draw "HELLO WORLD" as a version 1 code in ASCII mode.
+Example: draw "HELLO WORLD" as a version 1 code in ASCII mode (the text is known to be valid and to fit, so it skips the check).
 "HELLO WORLD→Str1
-1→E:1→M:1→V:0→O:length(Str1→N
+1→C:0→I:1→M:1→V:0→O:length(Str1→N
 FnOff:AxesOff:GridOff:PlotsOff:ClrDraw:DispGraph
 Asm(prgmθQR
 

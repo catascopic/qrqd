@@ -334,6 +334,31 @@
    "Next", blank on the last page (`sub("Next    ",1+4(P+5≥K),4)`: 4 spaces when no page
    follows; choosing it still just shows the page again). prgmQR 1338 → 1358 token bytes.
 
+53. The engine's interface redone with the user (the old one was confusing: what the engine
+   did depended on E, V=0 and M together). Now one variable is the command: C=0 check, 1 draw
+   one code, 2 list the notes into Str3; I the input (0 Str1, 1 the note named in Str2); M the
+   mode (0 auto, 1 ASCII, 2 alphanumeric: kept as M because the QR standard calls them modes,
+   and 0 auto to match V's 0 = auto in prgmQR); V the version, 1-11, read only by a draw. A
+   missing variable reads as 0, so a call with none is a harmless check of Str1. A draw
+   refuses M=0 and V=0 (65535): auto is the check's (it reads the whole text), so a draw never
+   scans the text; that removes the whole-text rescan a draw in auto mode used to do on every
+   piece (item 38). Considered and not done: packing command and input into one variable's
+   bits (TI-BASIC has no bitwise operators, and `6→C` reads worse than two variables; OS
+   variables cost nothing to read); M = 0 ASCII, 1 alphanumeric, 2 auto (a missing M would be
+   the always-safe byte mode, but 0 = auto for V and not for M would be inconsistent); numeric
+   mode (worth it only for CodeChat's all-digit output, about 65% more per code, and CodeChat
+   will probably draw its own codes). prgmQR: M and V hold the user's settings themselves (D
+   and U are gone). It is safe because every way back to the main menu comes before they are
+   overwritten (check errors, the NoteFolio menu's Back and No Files), and after drawing
+   starts prgmQR ends instead: an engine error while drawing shows ERR:ENGINE and the code,
+   then ends. Its other scratch letters moved off the interface's: the capacity per code C →
+   U, the picked note's index and the counter's loop I → A. prgmQR 1358 → 1349 token bytes,
+   the engine 3391 → 3409 bytes (the extra checks). Tests: test_engine.py and the note tests
+   speak the new interface (qrtest's CHECK DRAW LIST, STR1 NOTE); the older set's engine keeps
+   the old one, so its tests moved to a frozen copy, test_legacy_engine.py; the frozen QRAXE
+   keeps the old interface and isn't tested any more (`--axe` is gone). The front-end test's
+   stand-in engine logs (C, I, V, M, N) per call.
+
 Ideas offered but not done: transliterate accents (é → e), spell out multi-character tokens
 (`sin(` → "sin("), uppercase lowercase letters in alphanumeric mode, mask selection with penalty
 scoring instead of fixed mask 0.
@@ -426,16 +451,18 @@ P-7-length. Only names made of A-Z, 0-9, θ are listed (others couldn't be opene
 ## BASIC front end of the release (src/QR.basic.txt)
 
 The legacy front end below, except the NoteFolio entry (Lbl N) and no Binary entry (item
-48): it runs the engine with E=3 (`65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
+48): it runs the engine with C=2 (E=3 before item 53; `65534` in Ans first, as for every call): Ans = the number of notes K (0 → "No Files"
 menu), Str3 = their names, 8 characters each, sorted, padded to a multiple of 5 names
 (item 51). A `Menu(` shows five names at a time
 (`sub(Str3,8P+1,8)` ...) with "Next" (P+5; blank on the last page, item 52) and "Back" (P-5, or the main menu from the first
 page); the chosen name goes to Str2 (`sub(Str3,8I-7,8)`), Str3 is deleted (also on Back from the
-first page and on No Files; it is up to 688 bytes), then E=2 and the check flow of Lbl C.
+first page and on No Files; it is up to 688 bytes), then I=1 (E=2 before item 53) and the check flow of Lbl C.
 An engine answer of 65534 or 65535 goes to Lbl Y: ERR:ENGINE and Code= the answer (K) on
 the home screen, Pause, main menu (it was a Back/Exit menu titled "Error in Asm").
-The main menu also has a Mode entry cycling Auto/ASCII/Alnum (D); a Text-mode label rename
-there is the user's call (the pure-BASIC set's menu says Text).
+The main menu also has a Mode entry cycling Auto/ASCII/Alnum (M itself since item 53; it was
+D); a Text-mode label rename there is the user's call (the pure-BASIC set's menu says Text).
+Since item 53 the engine calls use C (2 list, 0 check, 1 draw) and I (0 Str1, 1 a note); the
+user's version is V itself (0 auto until Lbl Q picks one; it was U).
 
 ## BASIC front end of the legacy set (src/legacy/QR.basic.txt)
 

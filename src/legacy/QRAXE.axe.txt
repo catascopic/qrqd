@@ -2,7 +2,9 @@
 .Frozen (docs/design.md item 52): the release's engine is now
 .the Z80 one, src/_theta_QR.z80. This is the Axe engine as it
 .was then (the sorted note list of item 51 included), kept as
-.the Z80 port's reference; it isn't maintained.
+.the Z80 port's reference; it isn't maintained or tested. It
+.keeps the interface from before item 53 (E=1 Str1, 2 a note,
+.3 the list; V=0 a check), so the release's prgmQR can't use it.
 .QR code engine for prgmQR: versions 1-11,
 .EC level L, mask 0.
 .Called from BASIC with Asm(prgmθQR); inputs are OS variables

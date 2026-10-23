@@ -2,10 +2,11 @@
 ; (docs/asm_port.md). Assembled by spasm-ng (tools/build.py runs it), run by prgmQR with
 ; Asm(prgmθQR) exactly like the Axe engine; the interface is docs/API.md.
 ;
-; Everything the Axe engine does: for Str1 (E=1) and a NoteFolio note (E=2, in
-; RAM or archived), the check call (V=0: the length, the mode, the first problem character's
-; position in B) and the draw calls (V=1-11: data codewords, error correction, the drawing,
-; Ans = 0); and E=3, the list of notes in Str3 for prgmQR's menu.
+; The command is C: 0 checks the input (the length, the mode, the first problem character's
+; position in B), 1 draws one code of it (version V 1-11, mode M 1 or 2, N characters after
+; skipping O: data codewords, error correction, the drawing, Ans = 0), 2 lists the NoteFolio
+; notes in Str3 for prgmQR's menu. The input is I: 0 Str1, 1 the note named in Str2 (in RAM
+; or archived). M: 0 auto (the check decides), 1 ASCII, 2 alphanumeric.
 ;
 ; Rules for the whole program (the OS needs them): keep IY (the OS flags pointer), leave
 ; interrupts on, return with the stack where it started, put back the page in bank A (port 6,
@@ -19,7 +20,7 @@
 
 ; Answers in Ans besides lengths and 0 (docs/API.md). 65534 is prgmQR's own: it
 ; stores it before Asm(, so it is left if the engine didn't run.
-AnsBadInput	= 65535		; bad E, V or M, or the input doesn't exist
+AnsBadInput	= 65535		; bad C, I, V or M, or the input doesn't exist
 AnsBadChar	= 65533		; a character the mode can't encode (its position in B)
 AnsTooLong	= 65532		; a check of more than 32765 characters
 
@@ -28,7 +29,7 @@ AnsTooLong	= 65532		; a check of more than 32765 characters
 ; engine's letter for each is in brackets.
 Vars		= saveSScreen+714
 SaveSP		= Vars		; word: the stack pointer at the start, for Quit
-Source		= Vars+2	; byte: [E] 1 Str1, 2 a note
+Source		= Vars+2	; byte: the input, I+1: 1 Str1, 2 a note
 Version		= Vars+3	; byte: [V] 0-11, 0 = only check
 Mode		= Vars+4	; byte: [F] 0 auto, 1 ASCII (byte mode), 2 alphanumeric
 InputPtr	= Vars+5	; word: [P] the input's first byte (Str1's first token)
@@ -115,24 +116,39 @@ Start:
 	out (20h),a
 SlowModel:
 
-; Read the parameters (GV gives 0 for a missing variable); GVBelow ends with bad input for a
-; value that is too big
-	ld a,'E'
-	ld c,4
-	call GVBelow			; E = 0-3
-	cp 3				; E=3 is a separate job: list the notes
+; Read the parameters (GV gives 0 for a missing variable, so a call with none is a check of
+; Str1 in auto mode); GVBelow ends with bad input for a value that is too big. Inside the
+; engine Version 0 means a check, as the old interface's V=0 did.
+	ld a,'C'
+	ld c,3
+	call GVBelow			; C = 0-2
+	cp 2				; C=2 is a separate job: list the notes
 	jp z,ListNotes
-	or a
-	jp z,BadInput
+	ld (Version),a			; 0 a check; a draw's version comes below
+	ld a,'I'
+	ld c,2
+	call GVBelow			; I = 0-1
+	inc a
 	ld (Source),a
-	ld a,'V'
-	ld c,12
-	call GVBelow
-	ld (Version),a
 	ld a,'M'
 	ld c,3
-	call GVBelow
+	call GVBelow			; M = 0-2
 	ld (Mode),a
+	ld a,(Version)
+	or a
+	jr z,ParamsRead			; a check doesn't use V
+; A draw: V 1-11, and a mode already decided (auto belongs to the check, which reads the
+; whole text; a draw never does)
+	ld a,(Mode)
+	or a
+	jp z,BadInput
+	ld a,'V'
+	ld c,12
+	call GVBelow			; V = 0-11
+	or a
+	jp z,BadInput
+	ld (Version),a
+ParamsRead:
 
 ; Find the input. A missing one (or an archived one: the Axe engine's GetCalc doesn't open
 ; those either) is bad input.
@@ -198,15 +214,10 @@ Measured:
 	jp Quit
 LengthOK:
 
-; Scan the text: always for a check (V=0), and for a draw in auto mode (M=0: no check told us
-; the mode); otherwise the draw trusts the earlier check.
+; Scan the text for a check; a draw trusts the check that came before it.
 	ld a,(Version)
 	or a
-	jr z,Scan
-	ld a,(Mode)
-	or a
 	jp nz,Scanned
-Scan:
 	ld hl,0
 	ld (Pos),hl
 	ld (BadPos),hl

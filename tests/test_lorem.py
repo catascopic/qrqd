@@ -7,7 +7,7 @@ of a real note, and the QR engine must read it like any other note.
 """
 import sys
 
-from qrtest import ROOT, Machine, decode, matrix_from, AUTO, NOTE
+from qrtest import ROOT, Machine, decode, matrix_from, AUTO, CHECK, DRAW, NOTE
 from test_notefolio import machine, expect, failures, SIG
 
 SRC = (ROOT / 'src' / 'LOREMSRC.axe.txt').read_text(encoding='utf-8')
@@ -74,11 +74,11 @@ if __name__ == '__main__':
     content = note(3)
     notes = [('LOREM', content, False)]
     length = 3 * 446 - 1
-    m = machine(notes, {'E': NOTE, 'V': 0, 'M': AUTO}, str2='LOREM')
+    m = machine(notes, {'C': CHECK, 'I': NOTE, 'M': AUTO}, str2='LOREM')
     expect('engine checks it as %d ASCII characters' % length, m.ans == 2 * length, m.ans)
-    m = machine(notes, {'E': NOTE, 'V': 11, 'N': 321, 'M': AUTO}, str2='LOREM')
+    m = machine(notes, {'C': DRAW, 'I': NOTE, 'V': 11, 'N': 321, 'M': AUTO}, str2='LOREM')
     expect('engine encodes the first 321', decode(matrix_from(m, 11))[0].bytes == TEXT[:321])
-    m = machine(notes, {'E': NOTE, 'V': 1, 'N': 11, 'M': AUTO, 'O': 445}, str2='LOREM')
+    m = machine(notes, {'C': DRAW, 'I': NOTE, 'V': 1, 'N': 11, 'M': AUTO, 'O': 445}, str2='LOREM')
     expect('engine skips into copy 2 (newline, then Lorem ipsu)',
            decode(matrix_from(m, 1))[0].bytes == b'\nLorem ipsu')
     print('\nALL PASSED' if not failures else '\n%d FAILED' % len(failures))

@@ -1,3 +1,7 @@
+What does the engine set Str3 to when no files?
+DispGraph/ClrDraw check
+
+
 I have a couple ideas for how to redo the API a bit, because I keep finding it a bit confusing. Basically, I'd like the C variable represent the command: 0=check; 1=draw; 2=fetch notefolio files. We'd use I for input method, V for version and E for encoding (replacing M). V would be 1-11, but not 0. I think the thing that was confusing me was there was no single variable that controlled what the engine actually did, so this fixes that. Alternatively, we could package the command and input method bitwise (0b00=check|string, 0b01=check|notefolio, 0b10=draw|string, 0b11=draw|notefolio, 0b100=fetch notefolio files. I suppose we could also package the encoding and even the version into a single variable, but that's probably too confusing. What do you think?
 
 4:Encode:Auto
